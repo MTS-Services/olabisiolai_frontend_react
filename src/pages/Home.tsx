@@ -10,16 +10,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useFeaturedProducts } from "@/features/products/useFeaturedProducts";
-import { Hero } from "@/components/sections/home/Hero";
 import { Category } from "@/components/sections/home/Category";
+import { Hero } from "@/components/sections/home/hero";
+import Featured from "@/components/sections/home/Featured";
 
 export default function Home() {
   const { data: products = [] } = useFeaturedProducts();
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh">
       <Hero />
       <Category />
+      <Featured />
 
 
       {/* <section className=" bg-[#253143] py-20">

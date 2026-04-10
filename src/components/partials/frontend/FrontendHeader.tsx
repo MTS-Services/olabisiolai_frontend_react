@@ -22,7 +22,7 @@ export function FrontendHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <div className="container mx-auto flex items-center justify-between px-4 py-3">
         <div className="">
           <Link to="/" className="font-semibold tracking-tight">
             {/* React + Vite + Laravel */}

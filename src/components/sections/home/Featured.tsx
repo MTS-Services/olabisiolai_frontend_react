@@ -116,7 +116,7 @@ export default function Featured() {
         </div>
         <div className="mt-8 text-center">
           <Link
-            to="/categories"
+            to="/filters"
             className="bg-primary text-white font-inter font-normal text-lg px-4 py-3 rounded-xl"
           >
             View All Businesses

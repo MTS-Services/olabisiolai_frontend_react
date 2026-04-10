@@ -21,6 +21,7 @@ import { AdminLayout } from '@/layouts/admin/AdminLayout'
 
 import { RoleGate } from '@/routes/RoleGate'
 import { GuestGate } from '@/routes/GuestGate'
+import Filters from '@/pages/Filters'
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/cart', element: <Cart /> },
+      { path: '/filters', element: <Filters /> },
     ],
   },
   {

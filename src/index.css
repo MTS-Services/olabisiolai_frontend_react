@@ -1,5 +1,6 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
+@import "tailwindcss";
+
 
 @theme {
   --color-background: var(--background);
@@ -24,6 +25,10 @@
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
+  --color-text-white: var(--text-white);
+  
+  --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-plus-jakarta-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -64,6 +69,7 @@
     --text-primary: #191b23;
     --text-secondary: #6b7280;
     --text-tertiary: #fdfeff;
+    --text-white: #ffffff;
   }
 
   .dark {
@@ -97,6 +103,7 @@
     --text-primary: #ffffff;
     --text-secondary: #9ca3af;
     --text-tertiary: #fdfeff;
+    --text-white: #ffffff;
   }
 
   * {

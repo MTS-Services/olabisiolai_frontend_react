@@ -72,7 +72,7 @@ export function FrontendHeader() {
             <Button
               type="button"
               variant="secondary"
-              className="bg-primary text-primary-foreground hover:bg-primary"
+              className="bg-primary text-primary-foreground hover:bg-primary py-4 px-8"
             >
               Trade
             </Button>

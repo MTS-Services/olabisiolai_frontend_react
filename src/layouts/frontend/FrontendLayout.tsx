@@ -7,7 +7,7 @@ export function FrontendLayout() {
   return (
     <div className="min-h-dvh bg-background">
       <FrontendHeader />
-      <main className="mx-auto w-full max-w-6xl px-4 py-8">
+      <main className="mx-auto w-full">
         <Outlet />
       </main>
       <FrontendFooter />

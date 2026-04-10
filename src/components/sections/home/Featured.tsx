@@ -1,4 +1,5 @@
 import { FeaturedCard } from "@/components/FeaturedCard";
+import { Link } from "react-router-dom";
 
 interface BusinessType {
   id: number;
@@ -21,7 +22,8 @@ export default function Featured() {
       location: "Lagos, Ikeja",
       rating: 4.8,
       reviews: 127,
-      description: "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
+      description:
+        "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
       image: "src/assets/feature/1.jpg",
       verified: true,
     },
@@ -32,7 +34,8 @@ export default function Featured() {
       location: "Lagos, Surulere",
       rating: 4.9,
       reviews: 203,
-      description: "Professional cleaning services for homes and offices. Eco-friendly products available.",
+      description:
+        "Professional cleaning services for homes and offices. Eco-friendly products available.",
       image: "src/assets/feature/1 (1).jpg",
       verified: true,
     },
@@ -43,7 +46,8 @@ export default function Featured() {
       location: "Lagos, Victoria Island",
       rating: 4.6,
       reviews: 89,
-      description: "Certified electricians providing safe and reliable electrical installations and repairs.",
+      description:
+        "Certified electricians providing safe and reliable electrical installations and repairs.",
       image: "src/assets/feature/1 (2).jpg",
       verified: true,
     },
@@ -54,7 +58,8 @@ export default function Featured() {
       location: "Lagos, Lekki",
       rating: 4.7,
       reviews: 156,
-      description: "Luxury spa and beauty treatments in a relaxing environment.",
+      description:
+        "Luxury spa and beauty treatments in a relaxing environment.",
       image: "src/assets/feature/1 (3).jpg",
       verified: true,
     },
@@ -65,7 +70,8 @@ export default function Featured() {
       location: "Lagos, Lekki",
       rating: 4.9,
       reviews: 178,
-      description: "Full-service catering for weddings, corporate events, and private parties with local and international cuisines.",
+      description:
+        "Full-service catering for weddings, corporate events, and private parties with local and international cuisines.",
       image: "src/assets/feature/1 (5).jpg",
       verified: true,
     },
@@ -76,15 +82,16 @@ export default function Featured() {
       location: "Lagos, IkeAbuja, Wuseja",
       rating: 4.5,
       reviews: 92,
-      description: "Complete construction services from foundation to finishing. Licensed and insured.",
+      description:
+        "Complete construction services from foundation to finishing. Licensed and insured.",
       image: "src/assets/feature/1 (4).jpg",
       verified: true,
     },
   ];
 
   return (
-    <div className="mb-20 bg-[#F4F5F7]">
-      <div className="container mx-auto px-4 py-20">
+    <div className="mb-20 bg-bg-section">
+      <div className="container mx-auto px-4 py-24">
         <div className="">
           <h2 className="text-3xl font-inter font-bold text-text-primary">
             Featured & Verified Businesses
@@ -93,7 +100,7 @@ export default function Featured() {
         <div className="mt-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {featuredBusinesses.map((business) => (
-              <FeaturedCard 
+              <FeaturedCard
                 key={business.id}
                 name={business.name}
                 category={business.category}
@@ -106,6 +113,14 @@ export default function Featured() {
               />
             ))}
           </div>
+        </div>
+        <div className="mt-8 text-center">
+          <Link
+            to="/categories"
+            className="bg-primary text-white font-inter font-normal text-lg px-4 py-3 rounded-xl"
+          >
+            View All Businesses
+          </Link>
         </div>
       </div>
     </div>

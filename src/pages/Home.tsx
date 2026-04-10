@@ -1,27 +1,18 @@
-import { ArrowRight, CirclePlay, Grid2x2Plus } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { useFeaturedProducts } from "@/features/products/useFeaturedProducts";
 import { Category } from "@/components/sections/home/Category";
-import { Hero } from "@/components/sections/home/hero";
+import { Hero } from "@/components/sections/home/Hero";
 import Featured from "@/components/sections/home/Featured";
+import HowGidiraWorks from "@/components/sections/home/HowGidiraWorks";
+import WhyChooseGidira from "@/components/sections/home/WhyChooseGidira";
 
 export default function Home() {
-  const { data: products = [] } = useFeaturedProducts();
 
   return (
     <div className="min-h-dvh">
       <Hero />
       <Category />
       <Featured />
+      <HowGidiraWorks />
+      <WhyChooseGidira />
 
 
       {/* <section className=" bg-[#253143] py-20">

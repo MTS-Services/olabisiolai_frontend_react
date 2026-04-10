@@ -34,12 +34,17 @@ export function Category() {
        <div className="mt-12">
          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
            {categories.map((category) => (
-             <CategoryCard key={category.name} name={category.name} icon={category.icon} />
+             <CategoryCard 
+               key={category.name} 
+               name={category.name} 
+               icon={category.icon} 
+               to="/filters"
+             />
            ))}
          </div>
        </div>
        <div className="mt-8 text-center">
-        <Link to="/categories" className="bg-primary text-white font-inter font-medium text-lg px-4 py-3 rounded-xl">All Category</Link>
+        <Link to="/filters" className="bg-primary text-white font-inter font-medium text-lg px-4 py-3 rounded-xl">All Category</Link>
        </div>
       </div>
     </div>

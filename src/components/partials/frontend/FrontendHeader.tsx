@@ -83,7 +83,7 @@ function HeaderToolbar({ isLanding }: { isLanding: boolean }) {
           variant="secondary"
           className="h-11 rounded-lg bg-brand px-6 text-base font-medium text-ice shadow-none hover:bg-brand/90"
         >
-          <Link to="/login" className="inline-flex items-center gap-2">
+          <Link to="/home" className="inline-flex items-center gap-2">
             <Plus className="size-5 shrink-0" aria-hidden />
             Trade
           </Link>

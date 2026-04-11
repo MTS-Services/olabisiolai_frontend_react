@@ -1,16 +1,17 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
 
-import Home from "@/pages/Home";
-import Cart from "@/pages/Cart";
-import NotFound from "@/pages/NotFound";
-import Unauthorized from "@/pages/Unauthorized";
+import Home from "@/pages/frontend/Home";
+import Cart from "@/pages/frontend/Cart";
+import NotFound from "@/pages/frontend/NotFound";
+import Unauthorized from "@/pages/frontend/Unauthorized";
 
-import Login from "@/pages/Login";
+import Login from "@/pages/frontend/auth/Login";
 
 import UserDashboard from "@/pages/user/UserDashboard";
-import Account from "@/pages/Account";
+import Account from "@/pages/frontend/Account";
 
 import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminLogin from "@/pages/admin/AdminLogin";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminProducts from "@/pages/admin/AdminProducts";
@@ -21,8 +22,8 @@ import { AdminLayout } from "@/layouts/admin/AdminLayout";
 
 import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
-import Filters from "@/pages/Filters";
-import Landding from "@/pages/Landding";
+import Filters from "@/pages/frontend/Filters";
+import Landding from "@/pages/frontend/Landding";
 
 export const router = createBrowserRouter([
   {
@@ -45,6 +46,14 @@ export const router = createBrowserRouter([
           </GuestGate>
         ),
       },
+      {
+        path: '/admin/login',
+        element: (
+          <GuestGate>
+            <AdminLogin />
+          </GuestGate>
+        ),
+      },
     ],
   },
   {
@@ -64,7 +73,7 @@ export const router = createBrowserRouter([
   },
   {
     element: (
-      <RoleGate allow="admin" fallback="/login">
+      <RoleGate allow="admin" fallback="/admin/login">
         <AdminLayout />
       </RoleGate>
     ),

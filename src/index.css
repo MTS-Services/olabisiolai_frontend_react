@@ -30,6 +30,39 @@
   --color-text-white: var(--text-white);
   --color-bg-section: var(--bg-section);
 
+  /* Landing / marketing (Figma vendor page) — use bg-brand, text-ink, bg-surface-soft, etc. */
+  --color-brand: var(--brand);
+  --color-brand-red: var(--brand-red);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-heading: var(--ink-heading);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-wash: var(--surface-wash);
+  --color-ice: var(--ice);
+  --color-border-light: var(--border-light);
+  --color-border-gray: var(--border-gray);
+  --color-placeholder-text: var(--placeholder-text);
+  --color-body-secondary: var(--body-secondary);
+  --color-stat-muted: var(--stat-muted);
+  --color-step-line: var(--step-line);
+  --color-step-badge: var(--step-badge);
+  --color-tint-red: var(--tint-red);
+  --color-plan-ring: var(--plan-ring);
+  --color-card-ice: var(--card-ice);
+  --color-footer-bar: var(--footer-bar);
+  --color-footer-muted: var(--footer-muted);
+  --color-quote-muted: var(--quote-muted);
+  --color-avatar-a: var(--avatar-a);
+  --color-avatar-b: var(--avatar-b);
+  --color-avatar-c: var(--avatar-c);
+
+  --background-image-landing-hero: radial-gradient(
+    ellipse 120% 80% at 50% 40%,
+    #253143 0%,
+    #191b23 55%,
+    #12151c 100%
+  );
+
   /* Default UI font; match Figma by changing --font-sans to the file’s text styles */
   --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-plus-jakarta-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
@@ -81,6 +114,31 @@
     --text-tertiary: #aeaeb2;
     --text-white: #ffffff;
     --bg-section: #f8f9fa;
+
+    --brand: #158de0;
+    --brand-red: #e82c3d;
+    --ink: #191b23;
+    --ink-muted: #6b7280;
+    --ink-heading: #0a1a2f;
+    --surface-soft: #eff6ff;
+    --surface-wash: rgb(249 250 251 / 0.5);
+    --ice: #fdfeff;
+    --border-light: #f3f4f6;
+    --border-gray: #e5e7eb;
+    --placeholder-text: #9ca3af;
+    --body-secondary: #4b5563;
+    --stat-muted: #99a1af;
+    --step-line: #e2e8f0;
+    --step-badge: #ef4444;
+    --tint-red: #fef2f2;
+    --plan-ring: #eff6ff;
+    --card-ice: #fdfeff;
+    --footer-bar: #0052cc;
+    --footer-muted: #e5e7eb;
+    --quote-muted: #99a1af;
+    --avatar-a: #2563eb;
+    --avatar-b: #dc2626;
+    --avatar-c: #3b82f6;
   }
 
   .dark {
@@ -119,6 +177,31 @@
     --text-tertiary: #636366;
     --text-white: #ffffff;
     --bg-section: #1c1c1e;
+
+    --brand: #4da3ff;
+    --brand-red: #ff6b6b;
+    --ink: #f4f4f5;
+    --ink-muted: #a1a1aa;
+    --ink-heading: #e4e4e7;
+    --surface-soft: #1e293b;
+    --surface-wash: rgb(24 24 27 / 0.5);
+    --ice: #fafafa;
+    --border-light: #27272a;
+    --border-gray: #3f3f46;
+    --placeholder-text: #71717a;
+    --body-secondary: #a1a1aa;
+    --stat-muted: #71717a;
+    --step-line: #3f3f46;
+    --step-badge: #ef4444;
+    --tint-red: #3f1515;
+    --plan-ring: #27272a;
+    --card-ice: #18181b;
+    --footer-bar: #1e40af;
+    --footer-muted: #d4d4d8;
+    --quote-muted: #a1a1aa;
+    --avatar-a: #2563eb;
+    --avatar-b: #dc2626;
+    --avatar-c: #3b82f6;
   }
 
   * {

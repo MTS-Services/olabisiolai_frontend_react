@@ -1,8 +1,16 @@
 # Coolify / production: build Vite app, serve static files with nginx
 # -----------------------------------------------------------------------------
-# Vite bakes VITE_* variables in at build time. In Coolify, add the same keys
-# under Build Arguments (or ensure they are available during `docker build`).
-# Example — duplicate for every variable your app reads:
+# Coolify defaults to Nixpacks for Node apps. That generates a different image
+# (nix-env + nixpkgs) and often fails on small builders during nixpkgs unpack.
+# Use THIS file instead: Application → Settings → Build → Build Pack → Dockerfile
+# (not Nixpacks). Dockerfile path: /Dockerfile (repo root).
+#
+# Network: nginx listens on port 80. Set the application port in Coolify to 80
+# (Coolify’s default 3000 does not match this image).
+#
+# Vite bakes VITE_* at build time. In Coolify, add those keys as build arguments
+# and uncomment matching ARG/ENV pairs below.
+# Example:
 #   ARG VITE_AUTH_ME_PATH
 #   ENV VITE_AUTH_ME_PATH=$VITE_AUTH_ME_PATH
 # -----------------------------------------------------------------------------

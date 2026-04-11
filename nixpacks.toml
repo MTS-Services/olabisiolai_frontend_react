@@ -1,0 +1,5 @@
+# Nixpacks defaults to Node 18 (EOL). Vite 8 needs Node 20.19+ or 22.12+.
+# Coolify often uses Nixpacks even when a Dockerfile exists unless you pick the
+# Dockerfile build pack; this file keeps Nixpacks builds on a supported runtime.
+[variables]
+NIXPACKS_NODE_VERSION = "22"

@@ -1,9 +1,8 @@
 # Coolify / production: build Vite app, serve static files with nginx
 # -----------------------------------------------------------------------------
-# Coolify defaults to Nixpacks for Node apps. That generates a different image
-# (nix-env + nixpkgs) and often fails on small builders during nixpkgs unpack.
-# Use THIS file instead: Application → Settings → Build → Build Pack → Dockerfile
-# (not Nixpacks). Dockerfile path: /Dockerfile (repo root).
+# Coolify defaults to Nixpacks for Node apps (Node 18 unless overridden). Vite 8
+# needs Node 22.12+; repo root nixpacks.toml sets NIXPACKS_NODE_VERSION=22 for that path.
+# Prefer Dockerfile here: Settings → Build → Build Pack → Dockerfile (path: /Dockerfile).
 #
 # Network: nginx listens on port 80. Set the application port in Coolify to 80
 # (Coolify’s default 3000 does not match this image).

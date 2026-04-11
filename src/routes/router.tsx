@@ -22,12 +22,14 @@ import { AdminLayout } from "@/layouts/admin/AdminLayout";
 import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
 import Filters from "@/pages/Filters";
+import Landding from "@/pages/Landding";
 
 export const router = createBrowserRouter([
   {
     element: <FrontendLayout />,
     children: [
-      { path: '/', element: <Home /> },
+      { path: '/', element: <Landding /> },
+      { path: '/home', element: <Home /> },
       { path: '/cart', element: <Cart /> },
       { path: '/filters', element: <Filters /> },
     ],

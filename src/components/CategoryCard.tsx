@@ -23,11 +23,11 @@ export function CategoryCard({ name, icon, to, onClick }: CategoryCardProps) {
   };
 
   const cardContent = (
-    <div 
+    <div
       onClick={handleClick}
-      className="flex flex-col items-center gap-2 py-6 px-4 bg-[#F4F5F7] rounded-2xl hover:shadow-lg transition-all cursor-pointer hover:scale-105 active:scale-95"
+      className="flex flex-col items-center gap-2 py-6 px-4 bg-bg-section rounded-2xl hover:shadow-lg transition-all cursor-pointer hover:scale-105 active:scale-95"
     >
-      <div className="p-4 bg-white rounded-full">
+      <div className="p-4 bg-card rounded-full">
         {IconComponent && <IconComponent className="w-8 h-8 text-text-primary" />}
       </div>
       <p className="text-base font-inter text-text-primary font-medium text-center">

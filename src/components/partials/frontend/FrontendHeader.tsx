@@ -89,13 +89,8 @@ export function FrontendHeader() {
                 Logout
               </Button>
             ) : (
-              <Button asChild type="button">
-                <Link
-                  to="/login"
-                  className="font-inter bg-white text-text-primary! border border-text-primary hover:bg-primary hover:text-text-tertiary hover:border-primary"
-                >
-                  Login / Sign Up
-                </Link>
+              <Button asChild type="button" className="bg-background text-text-primary! border border-text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary">
+                <Link to="/login">Login / Sign Up</Link>
               </Button>
             )}
           </div>

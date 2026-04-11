@@ -3,29 +3,29 @@ import { ShieldCheck, Star, MessageSquare, MapPin } from "lucide-react";
 export default function WhyChooseGidira() {
   const features = [
     {
-      icon: <ShieldCheck size={24} className="text-blue-600" />,
-      bgColor: "bg-blue-100",
+      icon: <ShieldCheck size={24} className="text-primary" />,
+      bgColor: "bg-primary/10",
       title: "Verified Businesses",
       description:
         "Every listed business goes through ID, CAC, and trust verification checks.",
     },
     {
-      icon: <Star size={24} className="text-red-500" />,
-      bgColor: "bg-red-100",
+      icon: <Star size={24} className="text-destructive" />,
+      bgColor: "bg-destructive/10",
       title: "Trusted Reviews",
       description:
         "Real reviews from real customers help you make confident decisions.",
     },
     {
-      icon: <MessageSquare size={24} className="text-green-500" />,
-      bgColor: "bg-green-100",
+      icon: <MessageSquare size={24} className="text-success" />,
+      bgColor: "bg-success/10",
       title: "Direct Contact",
       description:
         "Connect instantly with businesses via WhatsApp - no middleman needed.",
     },
     {
-      icon: <MapPin size={24} className="text-red-500" />,
-      bgColor: "bg-red-100",
+      icon: <MapPin size={24} className="text-destructive" />,
+      bgColor: "bg-destructive/10",
       title: "Local Search",
       description:
         "Find businesses by State, LGA, and Area for accurate local results.",
@@ -33,7 +33,7 @@ export default function WhyChooseGidira() {
   ];
 
   return (
-    <div className="bg-accent/5 py-20">
+    <div className="bg-bg-section py-20">
       <div className="container mx-auto px-4">
         <h2 className="text-4xl font-inter font-extrabold text-text-primary text-center mb-4">
           Why Choose GIDIRA?
@@ -46,7 +46,7 @@ export default function WhyChooseGidira() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-start text-left"
+              className="bg-card p-6 rounded-lg shadow-sm flex flex-col items-start text-left"
             >
               <div className={`p-3 rounded-lg ${feature.bgColor} mb-4`}>
                 {feature.icon}

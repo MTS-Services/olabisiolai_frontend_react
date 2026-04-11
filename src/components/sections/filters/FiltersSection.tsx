@@ -2,7 +2,7 @@ import { Star } from "lucide-react";
 
 export default function FiltersSection() {
   return (
-    <div className="w-1/6 bg-white p-6 rounded-lg shadow-md h-screen sticky top-20">
+    <div className="w-1/6 bg-card p-6 rounded-lg shadow-md h-screen sticky top-20">
       <h2 className="text-2xl font-inter font-bold text-text-primary mb-6">
         Filters
       </h2>
@@ -13,7 +13,7 @@ export default function FiltersSection() {
           <span className="text-text-primary">Verified Only</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+            <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-card after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
           </label>
         </div>
       </div>
@@ -38,7 +38,7 @@ export default function FiltersSection() {
               <input
                 type="radio"
                 name="category"
-                className="mr-2 text-blue-600"
+                className="mr-2 accent-primary"
               />
               <span className="text-text-secondary">{category}</span>
             </label>
@@ -58,7 +58,7 @@ export default function FiltersSection() {
                 <input
                   type="radio"
                   name="distance"
-                  className="mr-2 text-blue-600"
+                  className="mr-2 accent-primary"
                 />
                 <span className="text-text-secondary">{distance}</span>
               </label>
@@ -78,7 +78,7 @@ export default function FiltersSection() {
               <input
                 type="radio"
                 name="rating"
-                className="mr-2 text-blue-600"
+                className="mr-2 accent-primary"
               />
               <div className="flex items-center mr-2">
                 {[...Array(5)].map((_, i) => (
@@ -88,12 +88,12 @@ export default function FiltersSection() {
                     className={
                       i < rating
                         ? "text-yellow-400 fill-yellow-400"
-                        : "text-gray-300"
+                        : "text-muted-foreground/40"
                     }
                   />
                 ))}
               </div>
-              <div className="flex-1 bg-gray-200 rounded-full h-2">
+              <div className="flex-1 bg-muted rounded-full h-2">
                 <div
                   className="bg-primary h-2 rounded-full"
                   style={{ width: `${rating * 20}%` }}

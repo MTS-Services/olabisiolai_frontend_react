@@ -31,21 +31,21 @@ export function Category() {
         <div className="">
           <h2 className="text-3xl font-inter font-bold text-text-primary text-center">Browse by Category</h2>
         </div>
-       <div className="mt-12">
-         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
-           {categories.map((category) => (
-             <CategoryCard 
-               key={category.name} 
-               name={category.name} 
-               icon={category.icon} 
-               to="/filters"
-             />
-           ))}
-         </div>
-       </div>
-       <div className="mt-8 text-center">
-        <Link to="/filters" className="bg-primary text-white font-inter font-medium text-lg px-4 py-3 rounded-xl">All Category</Link>
-       </div>
+        <div className="mt-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
+            {categories.map((category) => (
+              <CategoryCard
+                key={category.name}
+                name={category.name}
+                icon={category.icon}
+                to="/filters"
+              />
+            ))}
+          </div>
+        </div>
+        <div className="mt-8 text-center">
+          <Link to="/filters" className="bg-primary text-primary-foreground font-inter font-medium text-lg px-4 py-3 rounded-xl">All Category</Link>
+        </div>
       </div>
     </div>
   );

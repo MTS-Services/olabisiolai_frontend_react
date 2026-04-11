@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-const LOGO_FOOTER = "/images/landing/gidira-logo-footer.png";
+const LOGO_FOOTER = "/images/landing/gidira-logo-footer.svg";
 
 const footerColumns = [
   {
@@ -53,13 +53,14 @@ export function FrontendFooter() {
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-8">
           <div className="max-w-xs lg:max-w-sm">
             <Link to="/" className="inline-block">
-              <div className="relative h-8 w-28">
-                <img
-                  src={LOGO_FOOTER}
-                  alt="Gidira"
-                  className="h-full w-full object-contain object-left"
-                />
-              </div>
+              <img
+                src={LOGO_FOOTER}
+                alt="Gidira"
+                width={103}
+                height={32}
+                decoding="async"
+                className="block h-8 w-auto max-w-full object-contain object-left sm:h-9"
+              />
             </Link>
             <p className="mt-4 text-sm leading-5 text-ice">
               FIND BETTER | CONNECT FASTER

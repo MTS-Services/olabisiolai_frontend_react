@@ -1,12 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { ChevronDown, Plus, Search } from "lucide-react";
+
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,85 +12,167 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { container } from "@/lib/container";
+import { cn } from "@/lib/utils";
 
-export function FrontendHeader() {
+const LOGO_HEADER = "/images/landing/gidira-logo-header.svg";
+
+/** Figma-style light nav: soft search field on white. */
+function HeaderSearch({ className }: { className?: string }) {
+  return (
+    <InputGroup
+      className={cn(
+        "h-11 w-full rounded-lg border border-border-light bg-bg-section shadow-sm transition-[box-shadow,border-color]",
+        "focus-within:border-brand/35 focus-within:ring-2 focus-within:ring-brand/15",
+        className,
+      )}
+    >
+      <InputGroupInput
+        placeholder="Search for businesses, services, or location…"
+        className="text-base text-foreground placeholder:text-placeholder-text md:text-sm"
+      />
+      <InputGroupAddon align="inline-end" className="text-placeholder-text">
+        <Search className="size-5 shrink-0" aria-hidden />
+      </InputGroupAddon>
+    </InputGroup>
+  );
+}
+
+function HeaderToolbar({ isLanding }: { isLanding: boolean }) {
   const { isAuthenticated, logout } = useAuth();
 
+  const regionTrigger = cn(
+    "gap-1.5 rounded-lg border-0 bg-transparent font-medium text-ink-heading",
+    "hover:bg-muted",
+  );
+
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="container mx-auto flex items-center justify-between px-4 py-3">
-        <div className="">
-          <Link to="/" className="font-semibold tracking-tight">
-            {/* React + Vite + Laravel */}
+    <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button type="button" variant="outline" className={regionTrigger}>
+            Nigeria
+            <ChevronDown className="size-4 opacity-70" aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-48">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Region</DropdownMenuLabel>
+            <DropdownMenuItem>Nigeria</DropdownMenuItem>
+            <DropdownMenuItem disabled>More regions soon</DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Billing</DropdownMenuItem>
+            <DropdownMenuItem>Settings</DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {isLanding ? (
+        <Button
+          asChild
+          type="button"
+          variant="secondary"
+          className="h-11 rounded-lg bg-brand px-6 text-base font-medium text-ice shadow-none hover:bg-brand/90"
+        >
+          <Link to="/login" className="inline-flex items-center gap-2">
+            <Plus className="size-5 shrink-0" aria-hidden />
+            Trade
+          </Link>
+        </Button>
+      ) : null}
+
+      {isAuthenticated ? (
+        <Button
+          type="button"
+          variant={isLanding ? "outline" : "default"}
+          className={cn(
+            "rounded-lg px-5 font-medium",
+            isLanding && "border-border-gray bg-white text-ink-heading hover:bg-muted",
+          )}
+          onClick={() => {
+            void logout();
+          }}
+        >
+          Logout
+        </Button>
+      ) : (
+        <Button
+          asChild
+          type="button"
+          variant="outline"
+          className={cn(
+            "h-11 rounded-lg border-border-gray bg-white px-5 text-base font-medium text-ink-heading shadow-none",
+            "hover:border-brand hover:bg-brand hover:text-ice",
+          )}
+        >
+          <Link to="/login">Login / Sign Up</Link>
+        </Button>
+      )}
+    </div>
+  );
+}
+
+export function FrontendHeader() {
+  const { pathname } = useLocation();
+  const isLanding = pathname === "/";
+
+  return (
+    <header
+      className={cn(
+        "sticky top-0 z-40 border-b",
+        isLanding
+          ? "border-border-light bg-white text-foreground shadow-[0_1px_0_0_rgb(0_0_0_/0.04)]"
+          : "border-border bg-background/90 text-foreground backdrop-blur-md",
+      )}
+    >
+      <div className={cn(container, "flex flex-col gap-3 py-3 md:hidden")}>
+        <div className="flex items-center justify-between gap-3">
+          <Link to="/" className="inline-flex shrink-0 items-center">
             <img
-              src="src/assets/Gidira_Logo_final_2.png"
-              alt="Logo"
-              className="w-full h-auto"
+              src={LOGO_HEADER}
+              alt="Gidira"
+              width={155}
+              height={48}
+              decoding="async"
+              className="block h-8 w-auto"
             />
           </Link>
+          <HeaderToolbar isLanding={isLanding} />
+        </div>
+        <HeaderSearch />
+      </div>
+
+      <div
+        className={cn(
+          container,
+          "hidden py-3 md:flex md:items-center md:gap-4 lg:gap-6 lg:py-4",
+        )}
+      >
+        <Link to="/" className="inline-flex shrink-0 items-center">
+          <img
+            src={LOGO_HEADER}
+            alt="Gidira"
+            width={155}
+            height={48}
+            decoding="async"
+            className="block h-9 w-auto lg:h-10"
+          />
+        </Link>
+
+        <div className="flex min-w-0 flex-1 justify-center px-2">
+          <HeaderSearch className="max-w-xl lg:max-w-2xl" />
         </div>
 
-        <div className="">
-          <InputGroup className="max-w-xs">
-            <InputGroupInput placeholder="Search..." />
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-none bg-transparent"
-                >
-                  Nigeria
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuItem>Profile</DropdownMenuItem>
-                  <DropdownMenuItem>Billing</DropdownMenuItem>
-                  <DropdownMenuItem>Settings</DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>GitHub</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
-                <DropdownMenuItem disabled>API</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <div className="">
-            <Button
-              type="button"
-              variant="secondary"
-              className="bg-primary text-primary-foreground hover:bg-primary py-4 px-8"
-            >
-              Trade
-            </Button>
-          </div>
-          <div className="">
-            {isAuthenticated ? (
-              <Button
-                type="button"
-                variant="default"
-                onClick={() => {
-                  void logout();
-                }}
-              >
-                Logout
-              </Button>
-            ) : (
-              <Button asChild type="button" className="bg-background text-text-primary! border border-text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary">
-                <Link to="/login">Login / Sign Up</Link>
-              </Button>
-            )}
-          </div>
-        </div>
+        <HeaderToolbar isLanding={isLanding} />
       </div>
     </header>
   );

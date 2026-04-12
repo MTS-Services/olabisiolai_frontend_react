@@ -25,7 +25,7 @@ export default function Filters() {
       reviews: 127,
       description:
         "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
-      image: "src/assets/feature/1.jpg",
+      image: "/images/feature/1.jpg",
       verified: true,
     },
     {
@@ -37,7 +37,7 @@ export default function Filters() {
       reviews: 203,
       description:
         "Professional cleaning services for homes and offices. Eco-friendly products available.",
-      image: "src/assets/feature/1 (1).jpg",
+      image: "/images/feature/1-1.jpg",
       verified: true,
     },
     {
@@ -49,7 +49,7 @@ export default function Filters() {
       reviews: 89,
       description:
         "Certified electricians providing safe and reliable electrical installations and repairs.",
-      image: "src/assets/feature/1 (2).jpg",
+      image: "/images/feature/1-2.jpg",
       verified: true,
     },
     {
@@ -61,7 +61,7 @@ export default function Filters() {
       reviews: 156,
       description:
         "Luxury spa and beauty treatments in a relaxing environment.",
-      image: "src/assets/feature/1 (3).jpg",
+      image: "/images/feature/1-3.jpg",
       verified: true,
     },
   ];
@@ -122,8 +122,8 @@ export default function Filters() {
               <button
                 key={page}
                 className={`w-10 h-10 rounded-lg ${page === 1
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border text-text-primary hover:bg-muted"
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border text-text-primary hover:bg-muted"
                   }`}
               >
                 {page.toString().padStart(2, "0")}

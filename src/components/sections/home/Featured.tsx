@@ -24,7 +24,7 @@ export default function Featured() {
       reviews: 127,
       description:
         "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
-      image: "src/assets/feature/1.jpg",
+      image: "/images/feature/1.jpg",
       verified: true,
     },
     {
@@ -36,7 +36,7 @@ export default function Featured() {
       reviews: 203,
       description:
         "Professional cleaning services for homes and offices. Eco-friendly products available.",
-      image: "src/assets/feature/1 (1).jpg",
+      image: "/images/feature/1-1.jpg",
       verified: true,
     },
     {
@@ -48,7 +48,7 @@ export default function Featured() {
       reviews: 89,
       description:
         "Certified electricians providing safe and reliable electrical installations and repairs.",
-      image: "src/assets/feature/1 (2).jpg",
+      image: "/images/feature/1-2.jpg",
       verified: true,
     },
     {
@@ -60,7 +60,7 @@ export default function Featured() {
       reviews: 156,
       description:
         "Luxury spa and beauty treatments in a relaxing environment.",
-      image: "src/assets/feature/1 (3).jpg",
+      image: "/images/feature/1-3.jpg",
       verified: true,
     },
     {
@@ -72,7 +72,7 @@ export default function Featured() {
       reviews: 178,
       description:
         "Full-service catering for weddings, corporate events, and private parties with local and international cuisines.",
-      image: "src/assets/feature/1 (5).jpg",
+      image: "/images/feature/1-5.jpg",
       verified: true,
     },
     {
@@ -84,7 +84,7 @@ export default function Featured() {
       reviews: 92,
       description:
         "Complete construction services from foundation to finishing. Licensed and insured.",
-      image: "src/assets/feature/1 (4).jpg",
+      image: "/images/feature/1-4.jpg",
       verified: true,
     },
   ];

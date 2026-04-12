@@ -129,7 +129,11 @@ function HeaderToolbar({
 
 export function FrontendHeader() {
   const { pathname } = useLocation();
-  const isLightHeader = pathname === "/" || pathname === "/trend";
+  const isLightHeader =
+    pathname === "/" ||
+    pathname === "/trend" ||
+    pathname === "/service" ||
+    pathname === "/messages";
   const showTrendNav = pathname !== "/trend";
 
   return (

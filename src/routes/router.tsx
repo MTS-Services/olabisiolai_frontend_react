@@ -25,6 +25,7 @@ import { GuestGate } from "@/routes/GuestGate";
 import Filters from "@/pages/frontend/Filters";
 import Trend from "@/pages/frontend/Trend";
 import Service from "@/pages/frontend/Service";
+import DirectMessage from "@/pages/frontend/DirectMessage";
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
       { path: '/filters', element: <Filters /> },
       { path: '/trend', element: <Trend /> },
       { path: '/service', element: <Service /> },
+      { path: '/messages', element: <DirectMessage /> },
     ],
   },
   {

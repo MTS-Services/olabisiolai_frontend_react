@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -89,6 +89,7 @@ function StarRow({ className }: { className?: string }) {
 
 export default function Service() {
   const [photosOpen, setPhotosOpen] = useState(false);
+  const { pathname } = useLocation();
 
   return (
     <div className="bg-bg-section font-sans text-ink">
@@ -241,11 +242,17 @@ export default function Service() {
                   Show phone number
                 </Button>
                 <Button
-                  type="button"
+                  asChild
                   className="h-14 rounded-xl border border-ice bg-brand text-base font-medium text-ice hover:bg-brand/90"
                 >
-                  <MessageCircle className="size-5" aria-hidden />
-                  Direct Message
+                  <Link
+                    to="/messages"
+                    state={{ from: pathname }}
+                    className="inline-flex w-full items-center justify-center gap-2"
+                  >
+                    <MessageCircle className="size-5" aria-hidden />
+                    Direct Message
+                  </Link>
                 </Button>
                 <Button
                   type="button"

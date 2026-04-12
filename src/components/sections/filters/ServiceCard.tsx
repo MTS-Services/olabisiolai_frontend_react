@@ -1,3 +1,4 @@
+import { Link, useLocation } from "react-router-dom";
 import { Heart, MapPin, Star, Phone, MessageCircle, CheckCircle } from "lucide-react";
 
 interface ServiceCardProps {
@@ -21,6 +22,8 @@ export default function ServiceCard({
   image,
   verified,
 }: ServiceCardProps) {
+  const { pathname } = useLocation();
+
   return (
     <div className="bg-card rounded-lg shadow-md overflow-hidden flex mb-6">
       <div className="w-full relative">
@@ -67,9 +70,13 @@ export default function ServiceCard({
         <button className="w-full bg-destructive text-destructive-foreground py-3 rounded-lg flex items-center justify-center font-semibold mb-3 hover:bg-destructive/90 transition-colors">
           <Phone className="w-5 h-5 mr-2" /> Show phone number
         </button>
-        <button className="w-full border border-primary text-primary py-3 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors">
+        <Link
+          to="/messages"
+          state={{ from: pathname }}
+          className="w-full border border-primary text-primary py-3 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors"
+        >
           <MessageCircle className="w-5 h-5 mr-2" /> Direct Message
-        </button>
+        </Link>
       </div>
     </div>
   );

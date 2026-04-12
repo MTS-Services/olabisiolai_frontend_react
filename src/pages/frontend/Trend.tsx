@@ -5,7 +5,7 @@ import { LandingPricing } from "@/components/sections/landing/LandingPricing";
 import { LandingTestimonials } from "@/components/sections/landing/LandingTestimonials";
 import { LandingCta } from "@/components/sections/landing/LandingCta";
 
-export default function Landding() {
+export default function Trend() {
     return (
         <div className="min-h-dvh bg-white font-sans text-ink">
             <LandingHero />

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { ChevronDown, Search, TrendingUp } from "lucide-react";
 
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,13 @@ function HeaderSearch({ className }: { className?: string }) {
   );
 }
 
-function HeaderToolbar({ isLanding }: { isLanding: boolean }) {
+function HeaderToolbar({
+  isLightHeader,
+  showTrendNav,
+}: {
+  isLightHeader: boolean;
+  showTrendNav: boolean;
+}) {
   const { isAuthenticated, logout } = useAuth();
 
   const regionTrigger = cn(
@@ -76,16 +82,16 @@ function HeaderToolbar({ isLanding }: { isLanding: boolean }) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {isLanding ? (
+      {showTrendNav ? (
         <Button
           asChild
           type="button"
           variant="secondary"
           className="h-11 rounded-lg bg-brand px-6 text-base font-medium text-ice shadow-none hover:bg-brand/90"
         >
-          <Link to="/home" className="inline-flex items-center gap-2">
-            <Plus className="size-5 shrink-0" aria-hidden />
-            Trade
+          <Link to="/trend" className="inline-flex items-center gap-2">
+            <TrendingUp className="size-5 shrink-0" aria-hidden />
+            Trend
           </Link>
         </Button>
       ) : null}
@@ -93,10 +99,10 @@ function HeaderToolbar({ isLanding }: { isLanding: boolean }) {
       {isAuthenticated ? (
         <Button
           type="button"
-          variant={isLanding ? "outline" : "default"}
+          variant={isLightHeader ? "outline" : "default"}
           className={cn(
             "rounded-lg px-5 font-medium",
-            isLanding && "border-border-gray bg-white text-ink-heading hover:bg-muted",
+            isLightHeader && "border-border-gray bg-white text-ink-heading hover:bg-muted",
           )}
           onClick={() => {
             void logout();
@@ -123,13 +129,14 @@ function HeaderToolbar({ isLanding }: { isLanding: boolean }) {
 
 export function FrontendHeader() {
   const { pathname } = useLocation();
-  const isLanding = pathname === "/";
+  const isLightHeader = pathname === "/" || pathname === "/trend";
+  const showTrendNav = pathname !== "/trend";
 
   return (
     <header
       className={cn(
         "sticky top-0 z-40 border-b",
-        isLanding
+        isLightHeader
           ? "border-border-light bg-white text-foreground shadow-[0_1px_0_0_rgb(0_0_0_/0.04)]"
           : "border-border bg-background/90 text-foreground backdrop-blur-md",
       )}
@@ -146,7 +153,7 @@ export function FrontendHeader() {
               className="block h-8 w-auto"
             />
           </Link>
-          <HeaderToolbar isLanding={isLanding} />
+          <HeaderToolbar isLightHeader={isLightHeader} showTrendNav={showTrendNav} />
         </div>
         <HeaderSearch />
       </div>
@@ -172,7 +179,7 @@ export function FrontendHeader() {
           <HeaderSearch className="max-w-xl lg:max-w-2xl" />
         </div>
 
-        <HeaderToolbar isLanding={isLanding} />
+        <HeaderToolbar isLightHeader={isLightHeader} showTrendNav={showTrendNav} />
       </div>
     </header>
   );

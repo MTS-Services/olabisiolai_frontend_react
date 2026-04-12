@@ -1,0 +1,1 @@
+var e=`mx-auto w-full container px-4`;export{e as t};

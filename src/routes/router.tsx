@@ -1,20 +1,21 @@
+import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from "react";
 import { createBrowserRouter, Outlet } from "react-router-dom";
 
-import Home from "@/pages/frontend/Home";
-import Cart from "@/pages/frontend/Cart";
-import NotFound from "@/pages/frontend/NotFound";
-import Unauthorized from "@/pages/frontend/Unauthorized";
+const Home = lazy(() => import("@/pages/frontend/Home"));
+const Cart = lazy(() => import("@/pages/frontend/Cart"));
+const NotFound = lazy(() => import("@/pages/frontend/NotFound"));
+const Unauthorized = lazy(() => import("@/pages/frontend/Unauthorized"));
 
-import Login from "@/pages/frontend/auth/Login";
+const Login = lazy(() => import("@/pages/frontend/auth/Login"));
 
-import UserDashboard from "@/pages/user/UserDashboard";
-import Account from "@/pages/frontend/Account";
+const UserDashboard = lazy(() => import("@/pages/user/UserDashboard"));
+const Account = lazy(() => import("@/pages/frontend/Account"));
 
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminLogin from "@/pages/admin/AdminLogin";
-import AdminUsers from "@/pages/admin/AdminUsers";
-import AdminOrders from "@/pages/admin/AdminOrders";
-import AdminProducts from "@/pages/admin/AdminProducts";
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
+const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
+const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
+const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
 
 import { FrontendLayout } from "@/layouts/frontend/FrontendLayout";
 import { AuthLayout } from "@/layouts/auth/AuthLayout";
@@ -22,23 +23,37 @@ import { AdminLayout } from "@/layouts/admin/AdminLayout";
 
 import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
-import Filters from "@/pages/frontend/Filters";
-import Trend from "@/pages/frontend/Trend";
-import Service from "@/pages/frontend/Service";
-import DirectMessage from "@/pages/frontend/DirectMessage";
-import GiveReview from "@/pages/frontend/GiveReview";
+const Filters = lazy(() => import("@/pages/frontend/Filters"));
+const Trend = lazy(() => import("@/pages/frontend/Trend"));
+const Service = lazy(() => import("@/pages/frontend/Service"));
+const DirectMessage = lazy(() => import("@/pages/frontend/DirectMessage"));
+const GiveReview = lazy(() => import("@/pages/frontend/GiveReview"));
+
+const pageFallback = (
+  <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
+    Loading…
+  </div>
+);
+
+function suspensePage(Comp: LazyExoticComponent<ComponentType>) {
+  return (
+    <Suspense fallback={pageFallback}>
+      <Comp />
+    </Suspense>
+  );
+}
 
 export const router = createBrowserRouter([
   {
     element: <FrontendLayout />,
     children: [
-      { path: '/', element: <Home /> },
-      { path: '/cart', element: <Cart /> },
-      { path: '/filters', element: <Filters /> },
-      { path: '/trend', element: <Trend /> },
-      { path: '/service', element: <Service /> },
-      { path: '/messages', element: <DirectMessage /> },
-      { path: '/reviews', element: <GiveReview /> },
+      { path: '/', element: suspensePage(Home) },
+      { path: '/cart', element: suspensePage(Cart) },
+      { path: '/filters', element: suspensePage(Filters) },
+      { path: '/trend', element: suspensePage(Trend) },
+      { path: '/service', element: suspensePage(Service) },
+      { path: '/messages', element: suspensePage(DirectMessage) },
+      { path: '/reviews', element: suspensePage(GiveReview) },
     ],
   },
   {
@@ -48,7 +63,7 @@ export const router = createBrowserRouter([
         path: '/login',
         element: (
           <GuestGate>
-            <Login />
+            {suspensePage(Login)}
           </GuestGate>
         ),
       },
@@ -56,7 +71,7 @@ export const router = createBrowserRouter([
         path: '/admin/login',
         element: (
           <GuestGate>
-            <AdminLogin />
+            {suspensePage(AdminLogin)}
           </GuestGate>
         ),
       },
@@ -64,7 +79,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/unauthorized',
-    element: <Unauthorized />,
+    element: suspensePage(Unauthorized),
   },
   {
     element: (
@@ -73,8 +88,8 @@ export const router = createBrowserRouter([
       </RoleGate>
     ),
     children: [
-      { path: '/dashboard', element: <UserDashboard /> },
-      { path: '/account', element: <Account /> },
+      { path: '/dashboard', element: suspensePage(UserDashboard) },
+      { path: '/account', element: suspensePage(Account) },
     ],
   },
   {
@@ -84,15 +99,15 @@ export const router = createBrowserRouter([
       </RoleGate>
     ),
     children: [
-      { path: '/admin', element: <AdminDashboard /> },
-      { path: '/admin/users', element: <AdminUsers /> },
-      { path: '/admin/orders', element: <AdminOrders /> },
-      { path: '/admin/products', element: <AdminProducts /> },
+      { path: '/admin', element: suspensePage(AdminDashboard) },
+      { path: '/admin/users', element: suspensePage(AdminUsers) },
+      { path: '/admin/orders', element: suspensePage(AdminOrders) },
+      { path: '/admin/products', element: suspensePage(AdminProducts) },
     ],
   },
   {
     path: '*',
-    element: <NotFound />,
+    element: suspensePage(NotFound),
   },
 
   // Single

@@ -1,9 +1,0 @@
-# Nixpacks (Coolify / Railway): Node 18 is default and too old for Vite 8.
-# Coolify: keep Build Pack = Nixpacks. Optional: set PORT=80 in env if "Ports Exposed" is 80.
-[variables]
-NIXPACKS_NODE_VERSION = "22"
-NODE_ENV = "production"
-
-# Vite outputs static files to dist/; -s serves SPA (fallback to index.html for client routes).
-[start]
-cmd = "npm run start"

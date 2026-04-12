@@ -23,6 +23,8 @@ import { AdminLayout } from "@/layouts/admin/AdminLayout";
 
 import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
+
+const Faq = lazy(() => import("@/pages/frontend/Faq"));
 const Filters = lazy(() => import("@/pages/frontend/Filters"));
 const Trend = lazy(() => import("@/pages/frontend/Trend"));
 const Service = lazy(() => import("@/pages/frontend/Service"));
@@ -54,6 +56,7 @@ export const router = createBrowserRouter([
       { path: '/service', element: suspensePage(Service) },
       { path: '/messages', element: suspensePage(DirectMessage) },
       { path: '/reviews', element: suspensePage(GiveReview) },
+      { path: '/faq', element: suspensePage(Faq) },
     ],
   },
   {

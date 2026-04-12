@@ -8,15 +8,23 @@ const LOGO_FOOTER = "/images/landing/gidira-logo-footer.svg";
 const footerColumns = [
   {
     title: "Company",
-    links: ["About Gidira", "Contact Us", "Careers"] as const,
+    links: [
+      { label: "About Gidira", to: "/about" },
+      { label: "Contact Us", to: "/contact" },
+      { label: "Careers", to: "/careers" },
+    ] as const,
   },
   {
     title: "Legal",
-    links: ["Terms & Conditions", "Privacy Policy", "Cookies Policy"] as const,
+    links: [
+      { label: "Terms & Conditions", to: "/terms" },
+      { label: "Privacy Policy" },
+      { label: "Cookies Policy" },
+    ] as const,
   },
   {
     title: "Resources",
-    links: ["Business Tips", "FAQ's"] as const,
+    links: [{ label: "Business Tips" }, { label: "FAQ's", to: "/faq" }] as const,
   },
 ] as const;
 
@@ -25,20 +33,29 @@ function FooterCol({
   links,
 }: {
   title: string;
-  links: readonly string[];
+  links: readonly { label: string; to?: string }[];
 }) {
   return (
     <div>
       <h4 className="font-heading text-base font-semibold text-white">{title}</h4>
       <ul className="mt-4 flex list-none flex-col gap-2 p-0">
-        {links.map((label) => (
+        {links.map(({ label, to }) => (
           <li key={label}>
-            <a
-              href="#"
-              className="text-sm text-footer-muted transition-colors hover:text-white"
-            >
-              {label}
-            </a>
+            {to ? (
+              <Link
+                to={to}
+                className="text-sm text-footer-muted transition-colors hover:text-white"
+              >
+                {label}
+              </Link>
+            ) : (
+              <a
+                href="#"
+                className="text-sm text-footer-muted transition-colors hover:text-white"
+              >
+                {label}
+              </a>
+            )}
           </li>
         ))}
       </ul>

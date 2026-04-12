@@ -27,6 +27,7 @@ import { GuestGate } from "@/routes/GuestGate";
 const About = lazy(() => import("@/pages/frontend/About"));
 const Contact = lazy(() => import("@/pages/frontend/Contact"));
 const Terms = lazy(() => import("@/pages/frontend/Terms"));
+const Careers = lazy(() => import("@/pages/frontend/Careers"));
 const Faq = lazy(() => import("@/pages/frontend/Faq"));
 const Filters = lazy(() => import("@/pages/frontend/Filters"));
 const Trend = lazy(() => import("@/pages/frontend/Trend"));
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
       { path: '/contact', element: suspensePage(Contact) },
       { path: '/faq', element: suspensePage(Faq) },
       { path: '/terms', element: suspensePage(Terms) },
+      { path: '/careers', element: suspensePage(Careers) },
     ],
   },
   {

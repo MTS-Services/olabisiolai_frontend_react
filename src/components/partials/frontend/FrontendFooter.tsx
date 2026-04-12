@@ -11,7 +11,7 @@ const footerColumns = [
     links: [
       { label: "About Gidira", to: "/about" },
       { label: "Contact Us", to: "/contact" },
-      { label: "Careers" },
+      { label: "Careers", to: "/careers" },
     ] as const,
   },
   {

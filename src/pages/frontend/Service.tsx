@@ -406,12 +406,13 @@ export default function Service() {
             <h2 className="font-heading text-3xl font-semibold tracking-tight text-ink md:text-4xl">
               Reviews
             </h2>
-            <button
-              type="button"
+            <Link
+              to="/reviews"
+              state={{ from: pathname }}
               className="border-b-2 border-accent-foreground/20 pb-0.5 text-base font-semibold text-accent-foreground hover:opacity-90"
             >
               Write a review
-            </button>
+            </Link>
           </div>
           <div className="space-y-10">
             <article className="flex gap-6">

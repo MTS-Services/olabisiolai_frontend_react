@@ -26,6 +26,7 @@ import Filters from "@/pages/frontend/Filters";
 import Trend from "@/pages/frontend/Trend";
 import Service from "@/pages/frontend/Service";
 import DirectMessage from "@/pages/frontend/DirectMessage";
+import GiveReview from "@/pages/frontend/GiveReview";
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: '/trend', element: <Trend /> },
       { path: '/service', element: <Service /> },
       { path: '/messages', element: <DirectMessage /> },
+      { path: '/reviews', element: <GiveReview /> },
     ],
   },
   {

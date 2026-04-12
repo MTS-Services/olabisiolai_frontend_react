@@ -133,7 +133,8 @@ export function FrontendHeader() {
     pathname === "/" ||
     pathname === "/trend" ||
     pathname === "/service" ||
-    pathname === "/messages";
+    pathname === "/messages" ||
+    pathname === "/reviews";
   const showTrendNav = pathname !== "/trend";
 
   return (

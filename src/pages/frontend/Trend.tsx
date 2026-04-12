@@ -6,14 +6,14 @@ import { LandingTestimonials } from "@/components/sections/landing/LandingTestim
 import { LandingCta } from "@/components/sections/landing/LandingCta";
 
 export default function Trend() {
-    return (
-        <div className="min-h-dvh bg-white font-sans text-ink">
-            <LandingHero />
-            <LandingWhyVendors />
-            <LandingSteps />
-            <LandingPricing />
-            <LandingTestimonials />
-            <LandingCta />
-        </div>
-    );
+  return (
+    <div className="min-h-dvh bg-white font-sans text-ink">
+      <LandingHero />
+      <LandingWhyVendors />
+      <LandingSteps />
+      <LandingPricing />
+      <LandingTestimonials />
+      <LandingCta />
+    </div>
+  );
 }

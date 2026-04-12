@@ -25,6 +25,7 @@ import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
 
 const About = lazy(() => import("@/pages/frontend/About"));
+const Contact = lazy(() => import("@/pages/frontend/Contact"));
 const Faq = lazy(() => import("@/pages/frontend/Faq"));
 const Filters = lazy(() => import("@/pages/frontend/Filters"));
 const Trend = lazy(() => import("@/pages/frontend/Trend"));
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
       { path: '/messages', element: suspensePage(DirectMessage) },
       { path: '/reviews', element: suspensePage(GiveReview) },
       { path: '/about', element: suspensePage(About) },
+      { path: '/contact', element: suspensePage(Contact) },
       { path: '/faq', element: suspensePage(Faq) },
     ],
   },

@@ -17,7 +17,7 @@ const footerColumns = [
   {
     title: "Legal",
     links: [
-      { label: "Terms & Conditions" },
+      { label: "Terms & Conditions", to: "/terms" },
       { label: "Privacy Policy" },
       { label: "Cookies Policy" },
     ] as const,

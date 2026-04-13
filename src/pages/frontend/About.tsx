@@ -37,7 +37,7 @@ export default function About() {
       <div
         className={cn(
           container,
-          "flex flex-col gap-10 py-16 sm:gap-9 sm:py-20 lg:gap-10",
+          "flex flex-col gap-10 lg:py-16 sm:gap-9 py-10 lg:gap-10",
         )}
       >
         <header className="mx-auto flex w-full max-w-4xl flex-col gap-4 text-center">

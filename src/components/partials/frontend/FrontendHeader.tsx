@@ -203,7 +203,7 @@ export function FrontendHeader() {
         </div>
 
         {/* Search stays prominent on mobile */}
-        <HeaderSearch />
+        {/* <HeaderSearch /> */}
 
         {/* Expandable Mobile Menu */}
         {isMenuOpen && (

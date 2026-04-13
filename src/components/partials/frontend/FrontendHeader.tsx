@@ -97,7 +97,7 @@ function HeaderToolbar({
           type="button"
           variant="secondary"
           className={cn(
-            "h-11 rounded-lg bg-brand px-6 text-base font-medium text-ice shadow-none hover:bg-brand/90",
+            "h-11 rounded-lg bg-destructive px-6 text-base font-medium text-ice shadow-none hover:bg-brand/90",
             isMobile && "w-full"
           )}
         >
@@ -129,12 +129,27 @@ function HeaderToolbar({
           type="button"
           variant="outline"
           className={cn(
-            "h-11 rounded-lg border-border-gray bg-white px-5 text-base font-medium text-ink-heading shadow-none",
-            "hover:border-brand hover:bg-brand hover:text-ice",
+            "h-full rounded-lg border-border-gray bg-white px-5 text-base font-medium text-ink-heading shadow-none",
+            "hover:border-brand bg-brand hover:text-ice",
             isMobile && "w-full"
           )}
         >
-          <Link to="/login">Login / Sign Up</Link>
+          <Link to="/login" className="inline-flex items-center gap-2">
+            <svg
+              className="w-24 h-24"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="12" cy="12" r="12" fill="#ffffff"/>
+              <circle cx="12" cy="12" r="8.25" fill="none" stroke="#A5D6A7" strokeWidth="0.75"/>
+              <circle cx="12" cy="9.375" r="2.25" fill="#A5D6A7" />
+              <path
+                d="M7.5 16.125c0-2.4375 1.875-4.125 4.5-4.125s4.5 1.6875 4.5 4.125 Z"
+                fill="#A5D6b3 "
+              />
+            </svg>
+          </Link>
+          
         </Button>
       )}
     </div>

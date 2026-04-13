@@ -81,7 +81,7 @@ export default function Contact() {
         )}
       >
         <header className="flex w-full  flex-col gap-4 px-1">
-          <h1 className="text-4xl font-bold leading-10 text-ink-heading">
+          <h1 className="lg:text-4xl text-2xl font-bold leading-10 text-ink-heading">
             Contact Us
           </h1>
           <p className="max-w-4xl text-xl font-normal leading-7 text-body-secondary">

@@ -24,7 +24,7 @@ const footerColumns = [
   },
   {
     title: "Resources",
-    links: [{ label: "Business Tips" }, { label: "FAQ's", to: "/faq" }] as const,
+    links: [{ label: "Business Tips" }, { label: "FAQs", to: "/faq" }] as const,
   },
 ] as const;
 

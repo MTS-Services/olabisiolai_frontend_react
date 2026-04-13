@@ -24,7 +24,7 @@ function Section({
 }) {
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-2xl font-bold leading-8 text-ink-heading">{title}</h2>
+      <h2 className="lg:text-2xl text-xl font-bold leading-8 text-ink-heading">{title}</h2>
       <div className="flex flex-col gap-3">{children}</div>
     </section>
   );
@@ -35,7 +35,7 @@ export default function Terms() {
     <div className="w-full bg-muted">
       <div className={cn(container, "flex flex-col gap-6 py-16 sm:py-20")}>
         <header className="flex w-full flex-col gap-2">
-          <h1 className="text-4xl font-bold leading-10 text-ink-heading">
+          <h1 className="lg:text-4xl text-2xl font-bold leading-10 text-ink-heading">
             Terms &amp; Conditions
           </h1>
           <p className="text-base leading-6 text-body-secondary">

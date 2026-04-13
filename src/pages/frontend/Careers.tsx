@@ -99,7 +99,7 @@ export default function Careers() {
             aria-hidden
           />
           <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-ice sm:text-5xl md:text-6xl lg:text-7xl lg:leading-[1.05]">
+            <h1 className=" font-extrabold tracking-tight text-ice text-3xl md:text-6xl lg:text-7xl lg:leading-[1.05]">
               Join the Gidira Team
             </h1>
             <p className="max-w-xl text-lg leading-7 text-ice sm:text-xl">
@@ -124,7 +124,7 @@ export default function Careers() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-red">
               Careers at Gidira
             </p>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground lg:text-4xl">
               Why Work at Gidira
             </h2>
           </div>
@@ -157,7 +157,7 @@ export default function Careers() {
             />
           </div>
           <div className="flex flex-col gap-8">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground lg:text-4xl">
               Our Mission
             </h2>
             <div className="flex flex-col gap-6 text-lg leading-relaxed text-body-secondary">
@@ -189,7 +189,7 @@ export default function Careers() {
       >
         <div className={cn(container, "mx-auto flex max-w-4xl flex-col gap-10")}>
           <div className="flex flex-col gap-4 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground lg:text-4xl">
               Open Positions
             </h2>
             <p className="text-base text-body-secondary">

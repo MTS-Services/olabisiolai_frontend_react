@@ -29,7 +29,7 @@ export function Category() {
     <div className="mb-20">
       <div className="container mx-auto px-4">
         <div className="">
-          <h2 className="text-3xl font-inter font-bold text-text-primary text-center">Browse by Category</h2>
+          <h2 className="lg:text-3xl text-2xl font-inter font-bold text-text-primary text-center">Browse by Category</h2>
         </div>
         <div className="mt-12">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">

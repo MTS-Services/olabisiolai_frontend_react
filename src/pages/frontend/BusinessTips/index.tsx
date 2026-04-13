@@ -39,7 +39,7 @@ const BUSINESS_TIPS: Tip[] = [
     icon: PencilLine,
     iconWrapClass: "bg-surface-soft",
     iconClass: "text-brand",
-    to: "/business-tips/pricing-your-services-right",
+    to: "/business-tips/writing-a-compelling-description",
   },
   {
     title: "Responding to Customer Enquiries",
@@ -48,6 +48,7 @@ const BUSINESS_TIPS: Tip[] = [
     icon: Reply,
     iconWrapClass: "bg-surface-soft",
     iconClass: "text-avatar-a",
+    to: "/business-tips/responding-to-customer-enquiries",
   },
   {
     title: "Pricing Your Services Right",
@@ -56,6 +57,7 @@ const BUSINESS_TIPS: Tip[] = [
     icon: CircleDollarSign,
     iconWrapClass: "bg-surface-soft",
     iconClass: "text-avatar-b",
+    to: "/business-tips/pricing-your-services-right",
   },
   {
     title: "Getting More Positive Reviews",
@@ -64,6 +66,7 @@ const BUSINESS_TIPS: Tip[] = [
     icon: Star,
     iconWrapClass: "bg-surface-soft",
     iconClass: "text-brand",
+    to: "/business-tips/getting-more-positive-reviews",
   },
   {
     title: "Marketing Beyond Gidira",
@@ -72,6 +75,7 @@ const BUSINESS_TIPS: Tip[] = [
     icon: Megaphone,
     iconWrapClass: "bg-surface-soft",
     iconClass: "text-brand",
+    to: "/business-tips/marketing-beyond-gidira",
   },
 ];
 

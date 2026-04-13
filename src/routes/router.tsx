@@ -27,10 +27,24 @@ import { GuestGate } from "@/routes/GuestGate";
 const About = lazy(() => import("@/pages/frontend/About"));
 const Contact = lazy(() => import("@/pages/frontend/Contact"));
 const Terms = lazy(() => import("@/pages/frontend/Terms"));
+const PrivacyPolicy = lazy(() => import("@/pages/frontend/PrivacyPolicy"));
+const CookiesPolicy = lazy(() => import("@/pages/frontend/CookiesPolicy"));
 const Careers = lazy(() => import("@/pages/frontend/Careers"));
 const Faq = lazy(() => import("@/pages/frontend/Faq"));
 const BusinessTips = lazy(() => import("@/pages/frontend/BusinessTips/index"));
 const PhotosThatSell = lazy(() => import("@/pages/frontend/BusinessTips/PhotosThatSell"));
+const WritingACompellingDescription = lazy(
+  () => import("@/pages/frontend/BusinessTips/WritingACompellingDescription"),
+);
+const GettingMorePositiveReviews = lazy(
+  () => import("@/pages/frontend/BusinessTips/GettingMorePositiveReviews"),
+);
+const RespondingToCustomerEnquiries = lazy(
+  () => import("@/pages/frontend/BusinessTips/RespondingToCustomerEnquiries"),
+);
+const MarketingBeyondGidira = lazy(
+  () => import("@/pages/frontend/BusinessTips/MarketingBeyondGidira"),
+);
 const PricingYourServicesRight = lazy(
   () => import("@/pages/frontend/BusinessTips/PricingYourServicesRight"),
 );
@@ -71,10 +85,28 @@ export const router = createBrowserRouter([
       { path: '/business-tips', element: suspensePage(BusinessTips) },
       { path: '/business-tips/photos-that-sell', element: suspensePage(PhotosThatSell) },
       {
+        path: '/business-tips/writing-a-compelling-description',
+        element: suspensePage(WritingACompellingDescription),
+      },
+      {
+        path: '/business-tips/getting-more-positive-reviews',
+        element: suspensePage(GettingMorePositiveReviews),
+      },
+      {
+        path: '/business-tips/responding-to-customer-enquiries',
+        element: suspensePage(RespondingToCustomerEnquiries),
+      },
+      {
+        path: '/business-tips/marketing-beyond-gidira',
+        element: suspensePage(MarketingBeyondGidira),
+      },
+      {
         path: '/business-tips/pricing-your-services-right',
         element: suspensePage(PricingYourServicesRight),
       },
       { path: '/terms', element: suspensePage(Terms) },
+      { path: '/privacy-policy', element: suspensePage(PrivacyPolicy) },
+      { path: '/cookies-policy', element: suspensePage(CookiesPolicy) },
       { path: '/careers', element: suspensePage(Careers) },
     ],
   },

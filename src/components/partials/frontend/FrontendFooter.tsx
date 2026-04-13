@@ -18,8 +18,8 @@ const footerColumns = [
     title: "Legal",
     links: [
       { label: "Terms & Conditions", to: "/terms" },
-      { label: "Privacy Policy" },
-      { label: "Cookies Policy" },
+      { label: "Privacy Policy", to: "/privacy-policy" },
+      { label: "Cookies Policy", to: "/cookies-policy" },
     ] as const,
   },
   {

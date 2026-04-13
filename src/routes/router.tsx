@@ -29,6 +29,7 @@ const Contact = lazy(() => import("@/pages/frontend/Contact"));
 const Terms = lazy(() => import("@/pages/frontend/Terms"));
 const Careers = lazy(() => import("@/pages/frontend/Careers"));
 const Faq = lazy(() => import("@/pages/frontend/Faq"));
+const BusinessTips = lazy(() => import("@/pages/frontend/BusinessTips"));
 const Filters = lazy(() => import("@/pages/frontend/Filters"));
 const Trend = lazy(() => import("@/pages/frontend/Trend"));
 const Service = lazy(() => import("@/pages/frontend/Service"));
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
       { path: '/about', element: suspensePage(About) },
       { path: '/contact', element: suspensePage(Contact) },
       { path: '/faq', element: suspensePage(Faq) },
+      { path: '/business-tips', element: suspensePage(BusinessTips) },
       { path: '/terms', element: suspensePage(Terms) },
       { path: '/careers', element: suspensePage(Careers) },
     ],

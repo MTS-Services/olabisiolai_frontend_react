@@ -175,7 +175,7 @@ export default function Filters() {
       <div className="container mx-auto px-4 py-6 lg:py-8 flex gap-6">
 
         {/* Filters Sidebar — hidden on mobile, visible on lg+ */}
-        <aside className="hidden lg:block w-1/4 shrink-0">
+        <aside className="hidden lg:block w-1/6 shrink-0">
           <FiltersSection />
         </aside>
 

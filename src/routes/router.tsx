@@ -29,7 +29,11 @@ const Contact = lazy(() => import("@/pages/frontend/Contact"));
 const Terms = lazy(() => import("@/pages/frontend/Terms"));
 const Careers = lazy(() => import("@/pages/frontend/Careers"));
 const Faq = lazy(() => import("@/pages/frontend/Faq"));
-const BusinessTips = lazy(() => import("@/pages/frontend/BusinessTips"));
+const BusinessTips = lazy(() => import("@/pages/frontend/BusinessTips/index"));
+const PhotosThatSell = lazy(() => import("@/pages/frontend/BusinessTips/PhotosThatSell"));
+const PricingYourServicesRight = lazy(
+  () => import("@/pages/frontend/BusinessTips/PricingYourServicesRight"),
+);
 const Filters = lazy(() => import("@/pages/frontend/Filters"));
 const Trend = lazy(() => import("@/pages/frontend/Trend"));
 const Service = lazy(() => import("@/pages/frontend/Service"));
@@ -65,6 +69,11 @@ export const router = createBrowserRouter([
       { path: '/contact', element: suspensePage(Contact) },
       { path: '/faq', element: suspensePage(Faq) },
       { path: '/business-tips', element: suspensePage(BusinessTips) },
+      { path: '/business-tips/photos-that-sell', element: suspensePage(PhotosThatSell) },
+      {
+        path: '/business-tips/pricing-your-services-right',
+        element: suspensePage(PricingYourServicesRight),
+      },
       { path: '/terms', element: suspensePage(Terms) },
       { path: '/careers', element: suspensePage(Careers) },
     ],

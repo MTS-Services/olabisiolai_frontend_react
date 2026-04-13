@@ -19,6 +19,7 @@ type Tip = {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   iconWrapClass: string;
   iconClass: string;
+  to?: string;
 };
 
 const BUSINESS_TIPS: Tip[] = [
@@ -29,6 +30,7 @@ const BUSINESS_TIPS: Tip[] = [
     icon: Camera,
     iconWrapClass: "bg-tint-red",
     iconClass: "text-brand-red",
+    to: "/business-tips/photos-that-sell",
   },
   {
     title: "Writing a Compelling Description",
@@ -37,6 +39,7 @@ const BUSINESS_TIPS: Tip[] = [
     icon: PencilLine,
     iconWrapClass: "bg-surface-soft",
     iconClass: "text-brand",
+    to: "/business-tips/pricing-your-services-right",
   },
   {
     title: "Responding to Customer Enquiries",
@@ -90,11 +93,8 @@ export default function BusinessTips() {
         <div className={cn(container, "grid gap-4 sm:gap-6 md:grid-cols-2")}>
           {BUSINESS_TIPS.map((tip) => {
             const Icon = tip.icon;
-            return (
-              <article
-                key={tip.title}
-                className="rounded-xl border border-border-gray bg-card p-5 shadow-sm sm:p-6 lg:p-8"
-              >
+            const content = (
+              <article className="rounded-xl border border-border-gray bg-card p-5 shadow-sm sm:p-6 lg:p-8">
                 <div
                   className={cn(
                     "mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg",
@@ -108,6 +108,14 @@ export default function BusinessTips() {
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-body-secondary">{tip.description}</p>
               </article>
+            );
+
+            if (!tip.to) return <div key={tip.title}>{content}</div>;
+
+            return (
+              <Link key={tip.title} to={tip.to} className="block transition-opacity hover:opacity-95">
+                {content}
+              </Link>
             );
           })}
         </div>

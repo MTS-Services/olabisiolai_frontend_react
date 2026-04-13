@@ -67,16 +67,21 @@ export default function ServiceCard({
         <p className="font-normal font-inter text-sm text-text-secondary mb-6">
           {description}
         </p>
-        <button className="w-full bg-destructive text-destructive-foreground py-3 rounded-lg flex items-center justify-center font-semibold mb-3 hover:bg-destructive/90 transition-colors">
-          <Phone className="w-5 h-5 mr-2" /> Show phone number
-        </button>
-        <Link
-          to="/messages"
-          state={{ from: pathname }}
-          className="w-full border border-primary text-primary py-3 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors"
-        >
-          <MessageCircle className="w-5 h-5 mr-2" /> Direct Message
+
+        <button className="bg-destructive text-destructive-foreground lg:w-50 w-full lg:p-3 p-1 rounded-lg flex items-center justify-center font-semibold hover:bg-destructive/90 transition-colors text-sm mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-phone w-4 h-4 mr-1.5" aria-hidden="true">
+          <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path>
+        </svg>
+        Show phone number
+      </button>
+
+        <Link to="/messages" className="border border-primary text-primary lg:w-50 w-full lg:p-3 p-1 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors text-sm" data-discover="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-message-circle w-4 h-4 mr-1.5" aria-hidden="true">
+            <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path>
+          </svg>
+          Direct Message
         </Link>
+
       </div>
     </div>
   );

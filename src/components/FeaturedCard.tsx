@@ -74,13 +74,13 @@ export function FeaturedCard({
         <p className="font-normal font-inter text-sm text-text-secondary mb-6">
           {description}
         </p>
-        <button className="w-full bg-destructive text-destructive-foreground py-3 rounded-lg flex items-center justify-center font-semibold mb-3 hover:bg-destructive/90 transition-colors">
+        <button className="w-full bg-destructive text-destructive-foreground py-2 rounded-lg flex items-center justify-center font-semibold mb-3 hover:bg-destructive/90 transition-colors">
           <Phone className="w-5 h-5 mr-2" /> Show phone number
         </button>
         <Link
           to="/messages"
           state={{ from: pathname }}
-          className="w-full border border-primary text-primary py-3 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors"
+          className="w-full border border-primary text-primary py-2 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors"
         >
           <MessageCircle className="w-5 h-5 mr-2" /> Direct Message
         </Link>

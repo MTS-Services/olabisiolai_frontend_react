@@ -4,11 +4,11 @@ import { Search } from "lucide-react";
 
 export function Hero() {
   return (
-    <section className="mb-20 bg-accent py-20">
+    <section className="lg:mb-20 mb-8 bg-accent lg:py-20 py-8">
       <div className="container mx-auto px-4">
         <div className="text-center">
           <ScrollReveal>
-            <h2 className="font-inter text-[56px] font-semibold text-text-primary">
+            <h2 className="font-inter lg:text-[56px] text-[32px] font-semibold text-text-primary">
               What are you looking for today?
             </h2>
           </ScrollReveal>

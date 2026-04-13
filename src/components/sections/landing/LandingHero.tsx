@@ -46,7 +46,7 @@ export function LandingHero() {
               to="/login"
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-8 py-4 text-base font-medium text-ice"
             >
-              <Plus className="size-5 shrink-0" />
+              <Plus  className="size-5 shrink-0" />
               Start Trading Now
             </Link>
             <button

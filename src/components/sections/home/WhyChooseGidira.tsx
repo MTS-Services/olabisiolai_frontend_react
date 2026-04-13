@@ -33,9 +33,9 @@ export default function WhyChooseGidira() {
   ];
 
   return (
-    <div className="bg-bg-section py-20">
+    <div className="bg-bg-section lg:py-20 py-12">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-inter font-extrabold text-text-primary text-center mb-4">
+        <h2 className="lg:text-4xl text-2xl font-inter font-extrabold text-text-primary text-center mb-4">
           Why Choose GIDIRA?
         </h2>
         <p className="text-lg text-text-secondary text-center mb-16">

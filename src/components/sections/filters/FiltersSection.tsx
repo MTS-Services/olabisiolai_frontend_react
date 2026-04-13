@@ -2,7 +2,7 @@ import { Star } from "lucide-react";
 
 export default function FiltersSection() {
   return (
-    <div className="w-1/6 bg-card p-6 rounded-lg shadow-md h-screen sticky top-20">
+    <div className="bg-card p-6 rounded-lg shadow-md h-screen sticky top-20">
       <h2 className="text-2xl font-inter font-bold text-text-primary mb-6">
         Filters
       </h2>

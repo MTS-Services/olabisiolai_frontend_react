@@ -10,7 +10,7 @@ export function LandingCta() {
         className={`${container} flex max-w-3xl flex-col items-center gap-6 text-center`}
       >
         <ScrollReveal>
-          <h2 className="text-3xl font-bold text-ink sm:text-4xl sm:leading-10">
+          <h2 className="lg:text-3xl text-2xl font-bold text-ink sm:text-4xl sm:leading-10">
             Ready to Grow Your Business?
           </h2>
         </ScrollReveal>

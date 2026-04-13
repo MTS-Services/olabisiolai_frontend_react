@@ -194,7 +194,7 @@ export default function About() {
         </SectionCard>
 
         <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4">
-          <h2 className="text-center lg:text-2xl text-1xl font-bold leading-8 text-ink-heading">
+          <h2 className="text-center lg:text-2xl text-2xl font-bold leading-8 text-ink-heading">
             Ready to Get Started?
           </h2>
           <div className="flex flex-wrap items-center justify-center gap-4">

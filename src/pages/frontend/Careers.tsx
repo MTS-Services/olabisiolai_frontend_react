@@ -118,7 +118,7 @@ export default function Careers() {
         </section>
       </div>
 
-      <section className="w-full bg-muted py-20 sm:py-24">
+      <section className="w-full bg-muted lg:py-20 py-12">
         <div className={cn(container, "flex flex-col gap-12 sm:gap-16")}>
           <div className="flex flex-col gap-3">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-red">
@@ -157,7 +157,7 @@ export default function Careers() {
             />
           </div>
           <div className="flex flex-col gap-8">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground lg:text-4xl">
+            <h2 className="text-1xl font-bold tracking-tight text-foreground lg:text-4xl">
               Our Mission
             </h2>
             <div className="flex flex-col gap-6 text-lg leading-relaxed text-body-secondary">

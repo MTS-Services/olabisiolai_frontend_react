@@ -1,5 +1,5 @@
-import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from "react";
-import { createBrowserRouter, Outlet } from "react-router-dom";
+import { lazy, Suspense, useEffect, type ComponentType, type LazyExoticComponent } from "react";
+import { createBrowserRouter, Outlet, useLocation } from "react-router-dom";
 
 const Home = lazy(() => import("@/pages/frontend/Home"));
 const Cart = lazy(() => import("@/pages/frontend/Cart"));
@@ -49,7 +49,7 @@ const PricingYourServicesRight = lazy(
   () => import("@/pages/frontend/BusinessTips/PricingYourServicesRight"),
 );
 const Filters = lazy(() => import("@/pages/frontend/Filters"));
-const Trend = lazy(() => import("@/pages/frontend/Trend"));
+const Trade = lazy(() => import("@/pages/frontend/Trade"));
 const Service = lazy(() => import("@/pages/frontend/Service"));
 const DirectMessage = lazy(() => import("@/pages/frontend/DirectMessage"));
 const GiveReview = lazy(() => import("@/pages/frontend/GiveReview"));
@@ -68,100 +68,115 @@ function suspensePage(Comp: LazyExoticComponent<ComponentType>) {
   );
 }
 
+function ScrollToTopLayout() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return <Outlet />;
+}
+
 export const router = createBrowserRouter([
   {
-    element: <FrontendLayout />,
-    children: [
-      { path: '/', element: suspensePage(Home) },
-      { path: '/cart', element: suspensePage(Cart) },
-      { path: '/filters', element: suspensePage(Filters) },
-      { path: '/trend', element: suspensePage(Trend) },
-      { path: '/service', element: suspensePage(Service) },
-      { path: '/messages', element: suspensePage(DirectMessage) },
-      { path: '/reviews', element: suspensePage(GiveReview) },
-      { path: '/about', element: suspensePage(About) },
-      { path: '/contact', element: suspensePage(Contact) },
-      { path: '/faq', element: suspensePage(Faq) },
-      { path: '/business-tips', element: suspensePage(BusinessTips) },
-      { path: '/business-tips/photos-that-sell', element: suspensePage(PhotosThatSell) },
-      {
-        path: '/business-tips/writing-a-compelling-description',
-        element: suspensePage(WritingACompellingDescription),
-      },
-      {
-        path: '/business-tips/getting-more-positive-reviews',
-        element: suspensePage(GettingMorePositiveReviews),
-      },
-      {
-        path: '/business-tips/responding-to-customer-enquiries',
-        element: suspensePage(RespondingToCustomerEnquiries),
-      },
-      {
-        path: '/business-tips/marketing-beyond-gidira',
-        element: suspensePage(MarketingBeyondGidira),
-      },
-      {
-        path: '/business-tips/pricing-your-services-right',
-        element: suspensePage(PricingYourServicesRight),
-      },
-      { path: '/terms', element: suspensePage(Terms) },
-      { path: '/privacy-policy', element: suspensePage(PrivacyPolicy) },
-      { path: '/cookies-policy', element: suspensePage(CookiesPolicy) },
-      { path: '/careers', element: suspensePage(Careers) },
-    ],
-  },
-  {
-    element: <AuthLayout />,
+    element: <ScrollToTopLayout />,
     children: [
       {
-        path: '/login',
+        element: <FrontendLayout />,
+        children: [
+          { path: '/', element: suspensePage(Home) },
+          { path: '/cart', element: suspensePage(Cart) },
+          { path: '/filters', element: suspensePage(Filters) },
+          { path: '/trade', element: suspensePage(Trade) },
+          { path: '/service', element: suspensePage(Service) },
+          { path: '/messages', element: suspensePage(DirectMessage) },
+          { path: '/reviews', element: suspensePage(GiveReview) },
+          { path: '/about', element: suspensePage(About) },
+          { path: '/contact', element: suspensePage(Contact) },
+          { path: '/faq', element: suspensePage(Faq) },
+          { path: '/business-tips', element: suspensePage(BusinessTips) },
+          { path: '/business-tips/photos-that-sell', element: suspensePage(PhotosThatSell) },
+          {
+            path: '/business-tips/writing-a-compelling-description',
+            element: suspensePage(WritingACompellingDescription),
+          },
+          {
+            path: '/business-tips/getting-more-positive-reviews',
+            element: suspensePage(GettingMorePositiveReviews),
+          },
+          {
+            path: '/business-tips/responding-to-customer-enquiries',
+            element: suspensePage(RespondingToCustomerEnquiries),
+          },
+          {
+            path: '/business-tips/marketing-beyond-gidira',
+            element: suspensePage(MarketingBeyondGidira),
+          },
+          {
+            path: '/business-tips/pricing-your-services-right',
+            element: suspensePage(PricingYourServicesRight),
+          },
+          { path: '/terms', element: suspensePage(Terms) },
+          { path: '/privacy-policy', element: suspensePage(PrivacyPolicy) },
+          { path: '/cookies-policy', element: suspensePage(CookiesPolicy) },
+          { path: '/careers', element: suspensePage(Careers) },
+        ],
+      },
+      {
+        element: <AuthLayout />,
+        children: [
+          {
+            path: '/login',
+            element: (
+              <GuestGate>
+                {suspensePage(Login)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/admin/login',
+            element: (
+              <GuestGate>
+                {suspensePage(AdminLogin)}
+              </GuestGate>
+            ),
+          },
+        ],
+      },
+      {
+        path: '/unauthorized',
+        element: suspensePage(Unauthorized),
+      },
+      {
         element: (
-          <GuestGate>
-            {suspensePage(Login)}
-          </GuestGate>
+          <RoleGate allow={['user', 'buyer']} fallback="/unauthorized">
+            <Outlet />
+          </RoleGate>
         ),
+        children: [
+          { path: '/dashboard', element: suspensePage(UserDashboard) },
+          { path: '/account', element: suspensePage(Account) },
+        ],
       },
       {
-        path: '/admin/login',
         element: (
-          <GuestGate>
-            {suspensePage(AdminLogin)}
-          </GuestGate>
+          <RoleGate allow="admin" fallback="/admin/login">
+            <AdminLayout />
+          </RoleGate>
         ),
+        children: [
+          { path: '/admin', element: suspensePage(AdminDashboard) },
+          { path: '/admin/users', element: suspensePage(AdminUsers) },
+          { path: '/admin/orders', element: suspensePage(AdminOrders) },
+          { path: '/admin/products', element: suspensePage(AdminProducts) },
+        ],
+      },
+      {
+        path: '*',
+        element: suspensePage(NotFound),
       },
     ],
-  },
-  {
-    path: '/unauthorized',
-    element: suspensePage(Unauthorized),
-  },
-  {
-    element: (
-      <RoleGate allow={['user', 'buyer']} fallback="/unauthorized">
-        <Outlet />
-      </RoleGate>
-    ),
-    children: [
-      { path: '/dashboard', element: suspensePage(UserDashboard) },
-      { path: '/account', element: suspensePage(Account) },
-    ],
-  },
-  {
-    element: (
-      <RoleGate allow="admin" fallback="/admin/login">
-        <AdminLayout />
-      </RoleGate>
-    ),
-    children: [
-      { path: '/admin', element: suspensePage(AdminDashboard) },
-      { path: '/admin/users', element: suspensePage(AdminUsers) },
-      { path: '/admin/orders', element: suspensePage(AdminOrders) },
-      { path: '/admin/products', element: suspensePage(AdminProducts) },
-    ],
-  },
-  {
-    path: '*',
-    element: suspensePage(NotFound),
   },
 
   // Single

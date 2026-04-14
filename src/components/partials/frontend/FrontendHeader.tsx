@@ -1,5 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Search, TrendingUp } from "lucide-react";
+import {
+  ChevronDown,
+  CircleUserRound,
+  Home,
+  LogIn,
+  LogOut,
+  Search,
+  TrendingUp,
+  X,
+} from "lucide-react";
+import { useState } from "react";
 
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
@@ -12,43 +22,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
 const LOGO_HEADER = "/images/landing/gidira-logo-header.svg";
 
-/** Figma-style light nav: soft search field on white. */
-function HeaderSearch({ className }: { className?: string }) {
-  return (
-    <InputGroup
-      className={cn(
-        "h-11 w-full rounded-lg border border-border-light bg-bg-section shadow-sm transition-[box-shadow,border-color]",
-        "focus-within:border-brand/35 focus-within:ring-2 focus-within:ring-brand/15",
-        className,
-      )}
-    >
-      <InputGroupInput
-        placeholder="Search for businesses, services, or location…"
-        className="text-base text-foreground placeholder:text-placeholder-text md:text-sm"
-      />
-      <InputGroupAddon align="inline-end" className="text-placeholder-text">
-        <Search className="size-5 shrink-0" aria-hidden />
-      </InputGroupAddon>
-    </InputGroup>
-  );
-}
-
 function HeaderToolbar({
   isLightHeader,
-  showTrendNav,
+  showTradeNav,
 }: {
   isLightHeader: boolean;
-  showTrendNav: boolean;
+  showTradeNav: boolean;
 }) {
   const { isAuthenticated, logout } = useAuth();
 
@@ -82,16 +66,16 @@ function HeaderToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {showTrendNav ? (
+      {showTradeNav ? (
         <Button
           asChild
           type="button"
           variant="secondary"
-          className="h-11 rounded-lg bg-brand px-6 text-base font-medium text-ice shadow-none hover:bg-brand/90"
+          className="h-11 rounded-lg bg-brand-red px-6 text-base font-medium text-ice shadow-none hover:bg-brand-red/90"
         >
-          <Link to="/trend" className="inline-flex items-center gap-2">
+          <Link to="/trade" className="inline-flex items-center gap-2">
             <TrendingUp className="size-5 shrink-0" aria-hidden />
-            Trend
+            Trade
           </Link>
         </Button>
       ) : null}
@@ -127,15 +111,109 @@ function HeaderToolbar({
   );
 }
 
+function MobileMenu({
+  showTradeNav,
+  isAuthenticated,
+  logout,
+}: {
+  showTradeNav: boolean;
+  isAuthenticated: boolean;
+  logout: () => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-10 w-10 rounded-xl bg-brand-red p-0 text-ice shadow-md hover:bg-brand-red/90 hover:text-ice"
+          aria-label={open ? "Close menu" : "Open menu"}
+        >
+          {open ? (
+            <X className="size-5" aria-hidden />
+          ) : (
+            <CircleUserRound className="size-5" aria-hidden />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      {open ? (
+        <button
+          type="button"
+          aria-label="Close menu overlay"
+          className="fixed inset-0 z-40 bg-black/25 backdrop-blur-sm md:hidden"
+          onClick={() => setOpen(false)}
+        />
+      ) : null}
+      <DropdownMenuContent
+        align="end"
+        collisionPadding={8}
+        sideOffset={10}
+        className="z-50 w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] rounded-2xl border-border-light p-3 shadow-xl md:hidden mr-1"
+      >
+        <div className="mb-1 flex items-center px-2 py-1">
+          <DropdownMenuLabel className="p-0 text-sm font-semibold text-ink-heading">
+            Quick Menu
+          </DropdownMenuLabel>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild className="rounded-lg">
+            <Link to="/" className="flex items-center gap-2 py-2">
+              <Home className="size-4" aria-hidden />
+              Home
+            </Link>
+          </DropdownMenuItem>
+          {showTradeNav ? (
+            <DropdownMenuItem asChild className="rounded-lg">
+              <Link to="/trade" className="flex items-center gap-2 py-2">
+                <TrendingUp className="size-4" aria-hidden />
+                Trade
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem asChild className="rounded-lg">
+            <Link to="/filters" className="flex items-center gap-2 py-2">
+              <Search className="size-4" aria-hidden />
+              Browse Businesses
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        {isAuthenticated ? (
+          <DropdownMenuItem
+            onSelect={() => {
+              void logout();
+            }}
+            className="rounded-lg text-brand-red focus:text-brand-red"
+          >
+            <LogOut className="size-4" aria-hidden />
+            Logout
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem asChild className="rounded-lg">
+            <Link to="/login" className="flex items-center gap-2 py-2">
+              <LogIn className="size-4" aria-hidden />
+              Login / Sign Up
+            </Link>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function FrontendHeader() {
   const { pathname } = useLocation();
+  const { isAuthenticated, logout } = useAuth();
   const isLightHeader =
     pathname === "/" ||
-    pathname === "/trend" ||
+    pathname === "/trade" ||
     pathname === "/service" ||
     pathname === "/messages" ||
     pathname === "/reviews";
-  const showTrendNav = pathname !== "/trend";
+  const showTradeNav = pathname !== "/trade";
 
   return (
     <header
@@ -158,9 +236,13 @@ export function FrontendHeader() {
               className="block h-8 w-auto"
             />
           </Link>
-          <HeaderToolbar isLightHeader={isLightHeader} showTrendNav={showTrendNav} />
+          <MobileMenu
+            showTradeNav={showTradeNav}
+            isAuthenticated={isAuthenticated}
+            logout={logout}
+          />
         </div>
-        <HeaderSearch />
+        {/* <HeaderSearch /> */}
       </div>
 
       <div
@@ -181,10 +263,10 @@ export function FrontendHeader() {
         </Link>
 
         <div className="flex min-w-0 flex-1 justify-center px-2">
-          <HeaderSearch className="max-w-xl lg:max-w-2xl" />
+          {/* <HeaderSearch className="max-w-xl lg:max-w-2xl" /> */}
         </div>
 
-        <HeaderToolbar isLightHeader={isLightHeader} showTrendNav={showTrendNav} />
+        <HeaderToolbar isLightHeader={isLightHeader} showTradeNav={showTradeNav} />
       </div>
     </header>
   );

@@ -37,11 +37,11 @@ export default function About() {
       <div
         className={cn(
           container,
-          "flex flex-col gap-10 py-16 sm:gap-9 sm:py-20 lg:gap-10",
+          "flex flex-col gap-10 lg:py-16 sm:gap-9 py-10 lg:gap-10",
         )}
       >
         <header className="mx-auto flex w-full max-w-4xl flex-col gap-4 text-center">
-          <h1 className="text-4xl font-bold leading-10 text-ink-heading">
+          <h1 className="lg:text-4xl text-2xl font-bold leading-10 text-ink-heading">
             About Gidira
           </h1>
           <p className="text-xl font-normal leading-7 text-body-secondary">
@@ -194,21 +194,21 @@ export default function About() {
         </SectionCard>
 
         <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4">
-          <h2 className="text-center text-2xl font-bold leading-8 text-ink-heading">
+          <h2 className="text-center lg:text-2xl text-2xl font-bold leading-8 text-ink-heading">
             Ready to Get Started?
           </h2>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/filters"
-              className="inline-flex items-center justify-center rounded-xl bg-brand px-8 py-4 text-base font-normal text-ice transition-opacity hover:opacity-90"
+              className="inline-flex items-center justify-center rounded-xl bg-brand lg:px-8 px-4 lg:py-4 py-2 text-base font-normal text-ice transition-opacity hover:opacity-90"
             >
               Explore businesses
             </Link>
             <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-xl bg-brand-red px-8 py-4 text-base font-normal text-primary-foreground transition-opacity hover:opacity-90"
+              to="/trade"
+              className="inline-flex items-center justify-center rounded-xl bg-brand-red lg:px-8 px-4 lg:py-4 py-2 text-base font-normal text-primary-foreground transition-opacity hover:opacity-90"
             >
-              Join Gidira
+              Trade
             </Link>
           </div>
         </div>

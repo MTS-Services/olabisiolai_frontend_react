@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Heart,
   MessageCircle,
@@ -17,6 +17,7 @@ interface FeaturedCardProps {
   description: string;
   image: string;
   verified: boolean;
+  serviceRoute?: string;
 }
 
 export function FeaturedCard({
@@ -27,12 +28,29 @@ export function FeaturedCard({
   reviews,
   description,
   image,
-  verified
+  verified,
+  serviceRoute = "/service",
 }: FeaturedCardProps) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  const goToService = () => {
+    navigate(serviceRoute, { state: { from: pathname } });
+  };
 
   return (
-    <div className="bg-card rounded-lg shadow-md overflow-hidden">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={goToService}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          goToService();
+        }
+      }}
+      className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+    >
       <div className="relative">
         <img
           src={image}
@@ -74,13 +92,18 @@ export function FeaturedCard({
         <p className="font-normal font-inter text-sm text-text-secondary mb-6">
           {description}
         </p>
-        <button className="w-full bg-destructive text-destructive-foreground py-3 rounded-lg flex items-center justify-center font-semibold mb-3 hover:bg-destructive/90 transition-colors">
+        <button
+          type="button"
+          onClick={(event) => event.stopPropagation()}
+          className="w-full bg-destructive text-destructive-foreground py-2 rounded-lg flex items-center justify-center font-semibold mb-3 hover:bg-destructive/90 transition-colors"
+        >
           <Phone className="w-5 h-5 mr-2" /> Show phone number
         </button>
         <Link
           to="/messages"
           state={{ from: pathname }}
-          className="w-full border border-primary text-primary py-3 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors"
+          onClick={(event) => event.stopPropagation()}
+          className="w-full border border-primary text-primary py-2 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors"
         >
           <MessageCircle className="w-5 h-5 mr-2" /> Direct Message
         </Link>

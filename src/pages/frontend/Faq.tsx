@@ -70,12 +70,7 @@ const FAQ_ITEMS: FaqItem[] = [
         <p>• Verification badge</p>
       </div>
     ),
-  },
-  {
-    question: "Are all businesses on Gidira verified?",
-    answer:
-      "Yes. Only verified businesses appear publicly to ensure trust and quality.",
-  },
+  },  
   {
     question: "Can I leave a review?",
     answer:
@@ -209,10 +204,10 @@ export default function Faq() {
       <div
         className={cn(
           container,
-          "flex flex-col items-center gap-12 overflow-x-hidden py-24",
+          "flex flex-col items-center gap-12 overflow-x-hidden lg:py-24 py-8",
         )}
       >
-        <h1 className="text-center font-medium tracking-tight text-ink-heading text-3xl leading-9 sm:text-4xl sm:leading-10 lg:text-4xl lg:leading-12">
+        <h1 className="text-center font-medium tracking-tight text-ink-heading text-2xl leading-9  sm:leading-10 lg:text-4xl lg:leading-12">
           Gidira – Frequently Asked Questions (FAQs)
         </h1>
         <h2 className="text-center font-medium tracking-tight text-ink-heading text-2xl leading-8 sm:text-3xl sm:leading-9 lg:text-3xl lg:leading-10">

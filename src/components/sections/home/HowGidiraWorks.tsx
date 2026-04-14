@@ -23,9 +23,9 @@ export default function HowGidiraWorks() {
   ];
 
   return (
-    <div className="bg-card py-10">
+    <div className="bg-card lg:py-10 py-0">
       <div className="max-w-5xl mx-auto px-4">
-        <h2 className="text-4xl font-inter font-extrabold text-text-primary text-center mb-4">
+        <h2 className="lg:text-4xl text-2xl font-inter font-extrabold text-text-primary text-center mb-4">
           How Gidira Works
         </h2>
         <p className="text-lg text-text-secondary text-center mb-16">

@@ -1,25 +1,44 @@
 import { Star } from "lucide-react";
 
 export default function FiltersSection() {
+  const size = 24;
+
   return (
-    <div className="w-1/6 bg-card p-6 rounded-lg shadow-md h-screen sticky top-20">
+    <div className="bg-card p-8 rounded-lg  sticky top-20">
       <h2 className="text-2xl font-inter font-bold text-text-primary mb-6">
         Filters
       </h2>
 
       {/* Verified Only Toggle */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <span className="text-text-primary">Verified Only</span>
+        <div className="flex items-center justify-between p-2 bg-muted rounded-md shadow-md">
+          <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="12" cy="12" r="12" fill="#1A73E8" />
+            <path
+              d="M7 12.5l3 3 7-7"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        
+          <span className="text-primary text-sm font-medium">Verified Only</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" />
-            <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-card after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            <div className="w-11 h-6 bg-red-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-card after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
           </label>
         </div>
       </div>
 
       {/* Category Section */}
-      <div className="mb-6">
+      <div className="mb-8">
         <h3 className="font-inter font-semibold text-text-primary mb-3">
           Category
         </h3>

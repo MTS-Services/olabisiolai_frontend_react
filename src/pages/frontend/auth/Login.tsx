@@ -104,7 +104,7 @@ export default function Login() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-5xl items-center justify-center px-4 py-12">
+    <div className="mx-auto flex max-w-5xl items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>

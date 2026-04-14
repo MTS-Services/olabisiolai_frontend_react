@@ -42,21 +42,23 @@ export function LandingHero() {
 
         <ScrollReveal delayMs={200}>
           <div className="flex flex-col items-stretch gap-3 pt-2 sm:flex-row sm:items-center sm:justify-center">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-8 py-4 text-base font-medium text-ice"
-            >
-              <Plus className="size-5 shrink-0" />
-              Start Trading Now
-            </Link>
-            <button
-              type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 px-8 py-4 text-base font-medium text-white backdrop-blur-sm"
-            >
-              <Play className="size-5 shrink-0 fill-white text-white" />
-              See How It Works
-            </button>
-          </div>
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-8 py-4 text-base font-medium text-ice"
+          >
+            <Plus className="size-5 shrink-0" />
+            Start Trading Now
+          </Link>
+          <a
+            href="https://youtu.be/x9bj30cWolA?si=S_sBL0wqHMxxYgJD"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 px-8 py-4 text-base font-medium text-white backdrop-blur-sm"
+          >
+            <Play className="size-5 shrink-0 fill-white text-white" />
+            See How It Works
+          </a>
+        </div>
         </ScrollReveal>
 
         <ScrollReveal delayMs={260} className="mt-8 w-full max-w-4xl">

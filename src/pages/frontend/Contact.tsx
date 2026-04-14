@@ -81,7 +81,7 @@ export default function Contact() {
         )}
       >
         <header className="flex w-full  flex-col gap-4 px-1">
-          <h1 className="text-4xl font-bold leading-10 text-ink-heading">
+          <h1 className="lg:text-4xl text-2xl font-bold leading-10 text-ink-heading">
             Contact Us
           </h1>
           <p className="max-w-4xl text-xl font-normal leading-7 text-body-secondary">
@@ -207,7 +207,7 @@ export default function Contact() {
           </div>
 
           <div className="flex flex-col gap-6">
-            <div className="rounded-2xl border border-black/10 bg-card p-6 shadow-sm">
+            {/* <div className="rounded-2xl border border-black/10 bg-card p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <MapPin
                   className="size-6 shrink-0 text-brand-red"
@@ -230,7 +230,7 @@ export default function Contact() {
                   Office hours: Monday - Friday, 9:00 AM - 5:00 PM WAT
                 </p>
               </div>
-            </div>
+            </div> */}
 
             <div className="rounded-2xl border border-black/10 bg-card p-6 shadow-sm">
               <div className="mb-4 flex flex-col gap-1">

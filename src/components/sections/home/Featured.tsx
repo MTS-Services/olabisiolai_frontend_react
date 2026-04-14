@@ -90,10 +90,10 @@ export default function Featured() {
   ];
 
   return (
-    <div className="mb-20 bg-bg-section">
-      <div className="container mx-auto px-4 py-24">
+    <div className="lg:mb-20 mb-12 bg-bg-section">
+      <div className="container mx-auto px-4 lg:py-24 py-12">
         <div className="">
-          <h2 className="text-3xl font-inter font-bold text-text-primary">
+          <h2 className="lg:text-3xl text-2xl font-inter font-bold text-text-primary">
             Featured & Verified Businesses
           </h2>
         </div>
@@ -110,6 +110,7 @@ export default function Featured() {
                 description={business.description}
                 image={business.image}
                 verified={business.verified}
+                serviceRoute="/service"
               />
             ))}
           </div>

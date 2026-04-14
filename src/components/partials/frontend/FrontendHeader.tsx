@@ -207,8 +207,8 @@ export function FrontendHeader() {
 
         {/* Expandable Mobile Menu */}
         {isMenuOpen && (
-          <div className="flex flex-col gap-4 pb-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
-             <div className="h-px bg-border-light w-full" />
+          <div className="flex flex-col gap-4 pb-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200 fixed top-16 left-0 right-0 bg-white shadow-lg z-50">
+             <div className="h-px bg-border-light w-full " />
              <HeaderToolbar 
                 isLightHeader={isLightHeader} 
                 showTrendNav={showTrendNav} 

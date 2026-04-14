@@ -92,14 +92,6 @@ export function FeaturedCard({
         <p className="font-normal font-inter text-sm text-text-secondary mb-6">
           {description}
         </p>
-        <Link
-          to={serviceRoute}
-          state={{ from: pathname }}
-          onClick={(event) => event.stopPropagation()}
-          className="mb-3 flex w-full items-center justify-center rounded-lg bg-primary py-2 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          View Service
-        </Link>
         <button
           type="button"
           onClick={(event) => event.stopPropagation()}

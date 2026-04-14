@@ -18,13 +18,13 @@ const footerColumns = [
     title: "Legal",
     links: [
       { label: "Terms & Conditions", to: "/terms" },
-      { label: "Privacy Policy" },
-      { label: "Cookies Policy" },
+      { label: "Privacy Policy", to: "/privacy-policy" },
+      { label: "Cookies Policy", to: "/cookies-policy" },
     ] as const,
   },
   {
     title: "Resources",
-    links: [{ label: "Business Tips" }, { label: "FAQs", to: "/faq" }] as const,
+    links: [{ label: "Business Tips", to: "/business-tips" }, { label: "FAQ's", to: "/faq" }] as const,
   },
 ] as const;
 

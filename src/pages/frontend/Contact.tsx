@@ -207,7 +207,7 @@ export default function Contact() {
           </div>
 
           <div className="flex flex-col gap-6">
-            <div className="rounded-2xl border border-black/10 bg-card p-6 shadow-sm">
+            {/* <div className="rounded-2xl border border-black/10 bg-card p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <MapPin
                   className="size-6 shrink-0 text-brand-red"
@@ -230,7 +230,7 @@ export default function Contact() {
                   Office hours: Monday - Friday, 9:00 AM - 5:00 PM WAT
                 </p>
               </div>
-            </div>
+            </div> */}
 
             <div className="rounded-2xl border border-black/10 bg-card p-6 shadow-sm">
               <div className="mb-4 flex flex-col gap-1">

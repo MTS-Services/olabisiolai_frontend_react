@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Menu, Search, TrendingUp, X } from "lucide-react";
+import { ChevronDown, Menu, Search, TrendingUp, User, X } from "lucide-react";
 
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
@@ -197,7 +197,7 @@ export function FrontendHeader() {
                 className="md:hidden"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
-                {isMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+                {isMenuOpen ? <X className="size-6" /> : <User className="size-6" />}
              </Button>
           </div>
         </div>

@@ -70,12 +70,7 @@ const FAQ_ITEMS: FaqItem[] = [
         <p>• Verification badge</p>
       </div>
     ),
-  },
-  {
-    question: "Are all businesses on Gidira verified?",
-    answer:
-      "Yes. Only verified businesses appear publicly to ensure trust and quality.",
-  },
+  },  
   {
     question: "Can I leave a review?",
     answer:

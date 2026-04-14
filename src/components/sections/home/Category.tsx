@@ -44,7 +44,7 @@ export function Category() {
           </div>
         </div>
         <div className="mt-8 text-center">
-          <Link to="/filters" className="bg-primary text-primary-foreground font-inter font-medium text-lg px-4 py-3 rounded-xl">All Category</Link>
+          <Link to="/filters" className="bg-primary text-primary-foreground font-inter font-medium text-lg px-4 py-3 rounded-xl">All Categories</Link>
         </div>
       </div>
     </div>

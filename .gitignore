@@ -24,5 +24,4 @@ node_modules
 *.sln
 *.sw?
 
-# Cursor workspace image artifacts
-assets/c__Users_*
+

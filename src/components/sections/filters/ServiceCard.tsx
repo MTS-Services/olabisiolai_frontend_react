@@ -1,5 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
-import { Heart, MapPin, Star, Phone, MessageCircle, CheckCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Heart, MapPin, Star, CheckCircle } from "lucide-react";
 
 interface ServiceCardProps {
   name: string;
@@ -22,8 +22,6 @@ export default function ServiceCard({
   image,
   verified,
 }: ServiceCardProps) {
-  const { pathname } = useLocation();
-
   return (
     <div className="bg-card rounded-lg shadow-md overflow-hidden flex mb-6">
       <div className="w-full relative">
@@ -69,11 +67,11 @@ export default function ServiceCard({
         </p>
 
         <button className="bg-destructive text-destructive-foreground lg:w-50 w-full lg:p-3 p-1 rounded-lg flex items-center justify-center font-semibold hover:bg-destructive/90 transition-colors text-sm mb-3">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-phone w-4 h-4 mr-1.5" aria-hidden="true">
-          <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path>
-        </svg>
-        Show phone number
-      </button>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-phone w-4 h-4 mr-1.5" aria-hidden="true">
+            <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path>
+          </svg>
+          Show phone number
+        </button>
 
         <Link to="/messages" className="border border-primary text-primary lg:w-50 w-full lg:p-3 p-1 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors text-sm" data-discover="true">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-message-circle w-4 h-4 mr-1.5" aria-hidden="true">

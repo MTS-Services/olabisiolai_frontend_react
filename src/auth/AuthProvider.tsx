@@ -53,10 +53,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // After reload, re-fetch profile when Bearer token was restored from session/local storage
+  // After reload, re-fetch profile when Bearer token was restored from session/local storage.
+  // Skip when on the register-OTP page: the token belongs to an unverified user
+  // whose /me endpoint returns 404. The token is used for the verify-otp call instead.
   React.useEffect(() => {
     if (env.authStrategy !== 'bearer_memory') return
     if (!getAccessToken()) return
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      if (
+        url.pathname === '/otp-verification' &&
+        url.searchParams.get('purpose') === 'register'
+      ) {
+        setIsUserLoading(false)
+        return
+      }
+    }
+
     void refreshSession()
   }, [refreshSession])
 
@@ -98,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated:
         env.authStrategy === 'http_only_cookie'
           ? Boolean(user)
-          : Boolean(accessTokenState),
+          : Boolean(accessTokenState) && !isUserLoading,
       isSessionLoading,
       isUserLoading,
       user,

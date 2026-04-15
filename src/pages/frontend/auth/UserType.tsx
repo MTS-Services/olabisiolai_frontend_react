@@ -9,7 +9,7 @@ export default function UserType() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-auth-bg p-4">
+    <div className="min-h-[70vh] flex items-center justify-center bg-auth-bg p-4">
       <div className="max-w-md w-full ">
         {/* Logo and Title */}
         <div className="text-center mb-8">

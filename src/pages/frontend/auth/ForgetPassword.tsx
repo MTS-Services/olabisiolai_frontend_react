@@ -1,9 +1,33 @@
-import {  Button } from "@/components/ui/button";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { getAuthErrorMessage } from "@/features/auth/errorMessage";
+import { requestPasswordResetOtp } from "@/features/auth/service";
 
 export default function ForgetPassword() {
+  const navigate = useNavigate();
+  const [email, setEmail] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await requestPasswordResetOtp({ email });
+      navigate(`/otp-verification?purpose=reset&email=${encodeURIComponent(email)}`, {
+        replace: true,
+      });
+    } catch (err) {
+      setError(getAuthErrorMessage(err, "Failed to send reset code. Please try again."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div>
       {" "}
@@ -22,35 +46,41 @@ export default function ForgetPassword() {
             </div>
 
             {/* Email Login Form */}
-            <div className="space-y-4">
+            <form className="space-y-4" onSubmit={onSubmit}>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Email/phone
                 </label>
                 <Input
-                  type="text"
+                  type="email"
                   className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="Enter your email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
                 />
               </div>
 
+              {error ? (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </div>
+              ) : null}
+
               <div className="my-7">
                 <Button
-                  asChild
-                  type="button"
+                  type="submit"
                   variant="default"
+                  disabled={loading}
                   className="flex justify-center w-full h-11 rounded-lg bg-brand px-6 text-base font-medium text-ice shadow-none hover:bg-brand/90"
                 >
-                  <Link
-                    to="/otp-verification"
-                    className="inline-flex items-center gap-2 bg-brand"
-                  >
-                    Send Code
+                  <span className="inline-flex items-center gap-2 bg-brand">
+                    {loading ? "Sending..." : "Send Code"}
                     <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  </span>
                 </Button>
               </div>
-            </div>
+            </form>
 
             {/* Sign Up Link */}
             <div className="flex items-center gap-2 mb-2">

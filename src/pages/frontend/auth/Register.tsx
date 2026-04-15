@@ -5,14 +5,13 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resolveAuthRole, saveAuthRole } from "@/features/auth/roleSelection";
-import { registerUser } from "@/features/auth/service";
+import { registerAndLoginUser } from "@/features/auth/service";
 import { type AuthRole } from "@/features/auth/types";
 
 
 export default function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -52,7 +51,7 @@ export default function Register() {
     saveAuthRole(role);
 
     try {
-      await registerUser({
+      const loggedInUser = await registerAndLoginUser({
         first_name: firstName,
         last_name: lastName,
         email,
@@ -61,8 +60,13 @@ export default function Register() {
         password_confirmation: passwordConfirmation,
         role,
       });
-      setSuccess("Registration successful. You can now log in.");
-      navigate(`/login/email?role=${role}`, { replace: true });
+      setSuccess("Registration successful. Redirecting to OTP verification...");
+      const verifiedRole = role;
+      const verifiedEmail = encodeURIComponent(loggedInUser?.email ?? email);
+      navigate(
+        `/otp-verification?purpose=register&email=${verifiedEmail}&role=${verifiedRole}`,
+        { replace: true },
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
       setError(message);

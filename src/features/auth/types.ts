@@ -20,3 +20,12 @@ export type RegisterPayload = {
   password_confirmation: string
   role: AuthRole
 }
+
+export type VerifyOtpPayload = {
+  email: string
+  otp: string
+}
+
+export type PasswordResetOtpPayload = {
+  email: string
+}

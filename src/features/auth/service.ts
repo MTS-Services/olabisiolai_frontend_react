@@ -7,13 +7,49 @@ import { request } from '@/api/request'
 import { type AuthContextValue } from '@/auth/context'
 import { rolePolicy } from '@/auth/rolePolicy'
 import { getUserRoles } from '@/auth/roles'
-import { setRefreshToken } from '@/auth/token'
-import { type AdminLoginPayload, type AuthRole, type LoginPayload, type RegisterPayload } from '@/features/auth/types'
+import { setAccessToken, setRefreshToken } from '@/auth/token'
+import {
+  type AdminLoginPayload,
+  type AuthRole,
+  type LoginPayload,
+  type PasswordResetOtpPayload,
+  type RegisterPayload,
+  type VerifyOtpPayload,
+} from '@/features/auth/types'
 
 type AuthHandlers = Pick<
   AuthContextValue,
   'authStrategy' | 'setToken' | 'setUser' | 'refreshSession' | 'resetAuthState'
 >
+
+function pickOtpValue(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null
+  const record = data as Record<string, unknown>
+  const direct = [record.otp, record.code, record.verification_code].find(
+    (value): value is string => typeof value === 'string' && value.trim().length > 0,
+  )
+  if (direct) return direct
+
+  const nestedData = record.data
+  if (nestedData && typeof nestedData === 'object') {
+    const nestedRecord = nestedData as Record<string, unknown>
+    const nested = [nestedRecord.otp, nestedRecord.code, nestedRecord.verification_code].find(
+      (value): value is string => typeof value === 'string' && value.trim().length > 0,
+    )
+    if (nested) return nested
+  }
+
+  return null
+}
+
+function logOtpFromResponse(data: unknown, context: string) {
+  if (import.meta.env.DEV) {
+    console.log(`[auth] ${context} raw response:`, data)
+  }
+  const otp = pickOtpValue(data)
+  if (!otp) return
+  console.log(`[auth] ${context} OTP:`, otp)
+}
 
 function ensureRoleMatchesExpected(user: unknown, expectedRole: AuthRole) {
   const roles = getUserRoles(extractUserFromAuthPayload(user))
@@ -87,7 +123,43 @@ export async function loginAdmin(payload: AdminLoginPayload, handlers: AuthHandl
 }
 
 export async function registerUser(payload: RegisterPayload) {
-  await request.post('/auth/register', payload)
+  const res = await request.post<unknown>('/auth/register', payload)
+  logOtpFromResponse(res.data, 'register')
+}
+
+export async function registerAndLoginUser(payload: RegisterPayload) {
+  const res = await request.post<unknown>('/auth/register', payload)
+  logOtpFromResponse(res.data, 'register')
+
+  // Write the token directly to storage (NOT React state via handlers.setToken).
+  // Updating React state here would make isAuthenticated=true on /register,
+  // causing GuestGate to redirect before navigate() to /otp-verification fires.
+  // AuthProvider picks up the stored token when the OTP page mounts or on reload,
+  // and skips the /me call (which 404s for unverified users).
+  const token = extractBearerTokenFromLoginBody(res.data)
+  if (token) {
+    setAccessToken(token)
+    const refresh = extractRefreshTokenFromLoginBody(res.data)
+    if (refresh) setRefreshToken(refresh)
+  }
+
+  return extractUserFromAuthPayload(res.data)
+}
+
+export async function requestPasswordResetOtp(payload: PasswordResetOtpPayload) {
+  const res = await request.post<unknown>('/auth/forgot-password', payload)
+  logOtpFromResponse(res.data, 'password reset')
+}
+
+export async function verifyRegistrationOtp(payload: VerifyOtpPayload, handlers: AuthHandlers) {
+  const res = await request.post<unknown>('/auth/otp/verify', payload)
+  logOtpFromResponse(res.data, 'verify-otp')
+  return hydrateSessionFromLoginBody(
+    res.data,
+    handlers,
+    'OTP verified, but we could not restore your session.',
+    'OTP verified, but login token was not returned.',
+  )
 }
 
 export function resolveDashboardPath(user: unknown, selectedRole: AuthRole) {

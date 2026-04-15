@@ -1,12 +1,17 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { getAuthErrorMessage } from "@/features/auth/errorMessage";
 import { resolveAuthRole, saveAuthRole } from "@/features/auth/roleSelection";
 import { getAccessToken } from "@/auth/token";
-import { resolveDashboardPath, verifyRegistrationOtp } from "@/features/auth/service";
+import {
+  requestPasswordResetOtp,
+  resendRegistrationOtp,
+  resolveDashboardPath,
+  verifyRegistrationOtp,
+} from "@/features/auth/service";
 import { type AuthRole } from "@/features/auth/types";
 
 const OTP_LENGTH = 6;
@@ -18,7 +23,9 @@ export default function OTPVerification() {
 
   const [otp, setOtp] = React.useState<string[]>(Array.from({ length: OTP_LENGTH }, () => ""));
   const [loading, setLoading] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [resendMessage, setResendMessage] = React.useState<string | null>(null);
 
   const inputRefs = React.useRef<Array<HTMLInputElement | null>>([]);
 
@@ -98,6 +105,30 @@ export default function OTPVerification() {
     }
   }
 
+  async function onResend() {
+    setError(null);
+    setResendMessage(null);
+
+    if (!email) {
+      setError("Missing email. Please go back and try again.");
+      return;
+    }
+
+    setResending(true);
+    try {
+      if (purpose === "register") {
+        await resendRegistrationOtp({ email });
+      } else {
+        await requestPasswordResetOtp({ email });
+      }
+      setResendMessage("A new OTP has been sent.");
+    } catch (err) {
+      setError(getAuthErrorMessage(err, "Unable to resend OTP. Please try again."));
+    } finally {
+      setResending(false);
+    }
+  }
+
   return (
     <div>
       <div className="min-h-screen flex items-center justify-center bg-auth-bg p-4">
@@ -143,6 +174,11 @@ export default function OTPVerification() {
                   {error}
                 </div>
               ) : null}
+              {resendMessage ? (
+                <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                  {resendMessage}
+                </div>
+              ) : null}
 
               <div className="my-7">
                 <Button
@@ -160,9 +196,14 @@ export default function OTPVerification() {
               <p className="text-base font-inter font-normal text-muted-foreground">
                 Didn’t receive a code?
               </p>
-              <Link to="#" className="text-primary hover:underline font-medium">
-                Resend
-              </Link>
+              <button
+                type="button"
+                onClick={onResend}
+                disabled={resending}
+                className="text-primary hover:underline font-medium disabled:opacity-60"
+              >
+                {resending ? "Resending..." : "Resend"}
+              </button>
             </div>
           </div>
         </div>

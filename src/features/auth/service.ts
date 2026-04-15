@@ -151,6 +151,11 @@ export async function requestPasswordResetOtp(payload: PasswordResetOtpPayload) 
   logOtpFromResponse(res.data, 'password reset')
 }
 
+export async function resendRegistrationOtp(payload: PasswordResetOtpPayload) {
+  const res = await request.post<unknown>('/auth/otp/resend', payload)
+  logOtpFromResponse(res.data, 'register resend')
+}
+
 export async function verifyRegistrationOtp(payload: VerifyOtpPayload, handlers: AuthHandlers) {
   const res = await request.post<unknown>('/auth/otp/verify', payload)
   logOtpFromResponse(res.data, 'verify-otp')

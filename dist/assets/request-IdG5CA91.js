@@ -1,0 +1,1 @@
+import{t as e}from"./client-Cj0dsMlq.js";var t={get:e.get,post:e.post,put:e.put,patch:e.patch,delete:e.delete};export{t};

@@ -8,7 +8,7 @@ import { LandingCta } from "@/components/sections/landing/LandingCta";
 export default function Trade() {
   return (
     <div className="min-h-dvh bg-white font-sans text-ink">
-      <LandingHero />
+      <LandingHero />   
       <LandingWhyVendors />
       <LandingSteps />
       <LandingPricing />

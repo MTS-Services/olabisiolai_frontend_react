@@ -76,7 +76,7 @@ export function FeaturedCard({
         </p>
         <div className="flex items-center mb-2">
           <MapPin className="w-4 h-4 mr-1 text-text-secondary" />
-          <span className="text-text-secondary font-inter font-medium">
+          <span className="text-sm text-text-secondary font-inter font-medium wrap-break-word">
             {location}
           </span>
         </div>

@@ -1,35 +1,183 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
-  CheckCircle2,
-  ClipboardCheck,
-  MessageSquareQuote,
-  ShieldCheck,
+  ArrowRight,
+  Check,
+  Copy,
+  Handshake,
+  Heart,
+  Sparkles,
   Star,
-  TriangleAlert,
+  UserRound,
+  Zap,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-const TEAM_IMAGE = "https://www.figma.com/api/mcp/asset/b684f1c3-9b4c-48a0-8f5d-0d3486f3913e";
-const CUSTOMER_IMAGE =
-  "https://www.figma.com/api/mcp/asset/73e7ba8f-54dd-4902-87c8-81e13061c269";
+/** Assets from Figma node 591:5611 — olabisiolai--Copy- */
+const TEAM_IMAGE = "/images/business-tips/getting-more-reviews-team.jpg";
+const CUSTOMER_IMAGE = "/images/business-tips/getting-more-reviews-customer.jpg";
+const AVATAR_1 = "/images/business-tips/getting-more-reviews-avatar-1.jpg";
+const AVATAR_2 = "/images/business-tips/getting-more-reviews-avatar-2.jpg";
+
+const MESSAGE_TEMPLATE = `"Hi [Customer Name]! It was a pleasure serving you today at [Business Name].
+We'd love to hear your feedback—could you take 30 seconds to leave us a
+review on Gidira? It really helps our small business grow! Link:
+[YourLink]"`;
+
+const PRINCIPLES = [
+  {
+    icon: Zap,
+    title: "Exceed Expectations",
+    body: (
+      <>
+        Under-promise and over-deliver
+        <br />
+        to create a &apos;wow&apos; moment.
+      </>
+    ),
+  },
+  {
+    icon: Handshake,
+    title: "Be Professional",
+    body: (
+      <>
+        Politeness and respect are the
+        <br />
+        bare minimum for excellence.
+      </>
+    ),
+  },
+  {
+    icon: Heart,
+    title: "Personal Touches",
+    body: (
+      <>
+        Remember names or specific
+        <br />
+        preferences to build a real bond.
+      </>
+    ),
+  },
+  {
+    icon: Sparkles,
+    title: "Consistency",
+    body: (
+      <>
+        Ensure every customer gets the
+        <br />
+        same premium experience.
+      </>
+    ),
+  },
+] as const;
+
+const NEGATIVE_STEPS = [
+  {
+    n: 1,
+    title: "Stay Calm",
+    body: (
+      <>
+        Never respond in anger. Take 10 minutes to
+        <br />
+        cool off before typing.
+      </>
+    ),
+  },
+  {
+    n: 2,
+    title: "Respond Professionally",
+    body: (
+      <>
+        Acknowledge the issue publicly so others
+        <br />
+        see you care.
+      </>
+    ),
+  },
+  {
+    n: 3,
+    title: "Offer Solutions",
+    body: (
+      <>
+        Invite them to a private chat or offer a
+        <br />
+        refund/redo.
+      </>
+    ),
+  },
+  {
+    n: 4,
+    title: "Turn Positives",
+    body: (
+      <>
+        Fix the root cause to ensure it never
+        <br />
+        happens again.
+      </>
+    ),
+  },
+] as const;
+
+const CHECKLIST = [
+  {
+    title: "Service Excellence First",
+    desc: "Review generation only works if the core product is solid.",
+  },
+  {
+    title: "Perfect the Timing",
+    desc: 'Ask during the "Happiness Peak" of the transaction.',
+  },
+  {
+    title: "Use WhatsApp",
+    desc: "Leverage Nigeria's most active platform for highest conversion.",
+  },
+  {
+    title: "Respond to Everyone",
+    desc: "Show that you are a listening and caring business owner.",
+  },
+] as const;
 
 export default function GettingMorePositiveReviews() {
+  const [copied, setCopied] = useState(false);
+  const [checklistDone, setChecklistDone] = useState<Record<string, boolean>>({});
+
+  async function handleCopyTemplate() {
+    try {
+      await navigator.clipboard.writeText(MESSAGE_TEMPLATE.replace(/\n/g, " "));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
   return (
     <div className="w-full bg-background">
-      <section className="bg-ink py-14 text-center sm:py-20 lg:py-24">
-        <div className={cn(container, "flex flex-col items-center")}>
-          <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-success/20 text-success">
-            <Star className="h-7 w-7" />
+      {/* Hero — matches Figma dark band + green glow */}
+      <section className="relative overflow-hidden bg-[#191b23] py-14 text-center sm:py-20 lg:py-28">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-20"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "radial-gradient(ellipse 120% 80% at 100% 100%, rgb(0 109 54) 0%, transparent 55%)",
+          }}
+        />
+        <div className={cn(container, "relative z-10 flex flex-col items-center")}>
+          <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-lg bg-[#eff6ff]">
+            <Star className="h-9 w-9 fill-[#158de0] text-[#158de0]" aria-hidden />
           </div>
-          <h1 className="text-3xl font-bold text-ice sm:text-4xl lg:text-6xl">
+          <h1 className="max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-6xl lg:leading-[1.1]">
             Getting More Positive Reviews
           </h1>
-          <p className="mt-4 max-w-3xl text-sm text-stat-muted sm:text-base lg:text-xl">
-            Transform your customer feedback into a powerful growth engine for your business in
-            Nigeria.
+          <p className="mt-6 max-w-3xl text-base font-medium leading-relaxed text-[#99a1af] sm:text-lg lg:text-2xl lg:leading-snug">
+            Transform your customer feedback into a powerful growth engine for
+            <br className="hidden sm:block" />
+            your business in Nigeria.
           </p>
         </div>
       </section>
@@ -38,170 +186,295 @@ export default function GettingMorePositiveReviews() {
         <div className={cn(container)}>
           <Link
             to="/business-tips"
-            className="inline-flex items-center gap-2 text-sm font-medium text-body-secondary hover:text-ink"
+            className="inline-flex items-center gap-2 text-base font-medium text-[#44474d] hover:text-ink"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
             Back to Business Tips
           </Link>
         </div>
       </section>
 
-      <section className="pb-10 lg:pb-16">
-        <div className={cn(container, "space-y-8 lg:space-y-12")}>
-          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-ink sm:text-3xl">Why Reviews Matter</h2>
-              <p className="text-base leading-7 text-body-secondary">
-                In our digital-first market, reviews act as your digital handshake. They build trust
-                quickly and influence purchase decisions.
+      <section className="pb-10 lg:pb-20">
+        <div className={cn(container, "flex flex-col gap-12 lg:gap-16")}>
+          {/* Why Reviews Matter */}
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-12">
+            <div className="flex flex-col gap-6 rounded-[24px] bg-[#f3f4f6] p-8 sm:p-10 lg:p-12">
+              <div className="flex items-center gap-4">
+                <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#006d36]/15">
+                  <Star className="h-4 w-4 text-[#006d36]" aria-hidden />
+                </div>
+                <h2 className="text-[28px] font-bold leading-tight text-[#191c1e] sm:text-[30px]">
+                  Why Reviews Matter
+                </h2>
+              </div>
+              <p className="text-lg leading-relaxed text-[#44474d]">
+                In the digital-first Nigerian market, reviews are your digital handshake. They bridge
+                the trust gap and act as social proof that drives new customer acquisition.
               </p>
-              <div className="rounded-r-xl border-l-4 border-success bg-success/10 p-4">
-                <p className="text-sm text-body-secondary">
-                  90% of Nigerian customers read online reviews before buying. Strong positive
-                  reviews increase your chance of conversion significantly.
+              <div className="rounded-xl border-l-4 border-[#006d36] bg-white p-6 shadow-sm sm:p-8">
+                <p className="text-base font-medium italic leading-relaxed text-[#191c1e]">
+                  &quot;92% of Nigerian consumers read online reviews before making a purchase decision
+                  for local services.&quot;
+                </p>
+                <p className="mt-3 text-sm text-[#75777d]">— Industry Insight Box</p>
+              </div>
+            </div>
+            <div className="relative min-h-[280px] overflow-hidden rounded-[40px] shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.25)] lg:min-h-[450px]">
+              <img
+                src={TEAM_IMAGE}
+                alt="Team collaborating on client reviews"
+                className="absolute inset-0 size-full object-cover"
+                decoding="async"
+              />
+            </div>
+          </div>
+
+          {/* Delivering Review-Worthy Service */}
+          <div className="rounded-xl bg-[#f3f4f6] px-4 pb-16 pt-12 sm:px-8 sm:pb-24 sm:pt-20 lg:px-12 lg:pb-24 lg:pt-28">
+            <div className="mx-auto flex container flex-col gap-10">
+              <div className="flex flex-col gap-4 text-center">
+                <h2 className="text-3xl font-bold text-[#191c1e] sm:text-4xl">
+                  Delivering Review-Worthy Service
+                </h2>
+                <p className="mx-auto max-w-2xl text-base leading-relaxed text-[#44474d]">
+                  The foundation of a 5-star review is the experience you provide. Focus on these
+                  core principles.
+                </p>
+              </div>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {PRINCIPLES.map(({ icon: Icon, title, body }) => (
+                  <div
+                    key={title}
+                    className="flex flex-col gap-3 rounded-2xl bg-white p-6 shadow-sm sm:p-8"
+                  >
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-[#76f99e]">
+                      <Icon className="size-5 text-[#0a1a2f]" strokeWidth={2} aria-hidden />
+                    </div>
+                    <h3 className="pt-2 text-xl font-semibold text-[#191c1e]">{title}</h3>
+                    <p className="text-sm leading-5 text-[#44474d]">{body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* When to Ask */}
+          <div className="overflow-hidden rounded-[40px] bg-[#191b23] lg:flex">
+            <div className="flex flex-1 flex-col gap-6 p-8 sm:gap-8 sm:p-12 lg:p-16 xl:p-20">
+              <h2 className="text-3xl font-bold text-white sm:text-4xl">When to Ask for Reviews</h2>
+              <div className="flex flex-col gap-8">
+                <div className="flex gap-4">
+                  <span className="w-10 shrink-0 text-3xl font-semibold tabular-nums text-[#79fca0]/30">
+                    01
+                  </span>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">The Happiness Peak</h3>
+                    <p className="mt-2 text-base leading-relaxed text-[#76859e]">
+                      The best time is immediately after a successful delivery or service completion
+                      when the value is most felt.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <span className="w-10 shrink-0 text-3xl font-semibold tabular-nums text-[#79fca0]/30">
+                    02
+                  </span>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">Service-Specific Timing</h3>
+                    <p className="mt-2 text-base leading-relaxed text-[#76859e]">
+                      For products, wait 3-5 days for them to use it. For services (like a haircut),
+                      ask before they leave the premises.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="relative min-h-[280px] flex-1 lg:min-h-[400px]">
+              <img
+                src={CUSTOMER_IMAGE}
+                alt="Smiling customer using mobile phone"
+                className="absolute inset-0 size-full object-cover object-top"
+                decoding="async"
+              />
+            </div>
+          </div>
+
+          {/* How to Ask + Message template */}
+          <div className="grid gap-8 pt-2 lg:grid-cols-3 lg:gap-10">
+            <div className="flex flex-col gap-6 lg:col-span-1">
+              <h2 className="text-3xl font-bold text-[#191c1e] sm:text-4xl">How to Ask</h2>
+              <div className="flex flex-col gap-4 rounded-2xl bg-[#edeef0] p-6">
+                <div className="flex items-center gap-3">
+                  <UserRound className="size-5 shrink-0 text-[#006d36]" aria-hidden />
+                  <span className="font-semibold text-[#191c1e]">In Person</span>
+                </div>
+                <p className="text-sm leading-relaxed text-[#44474d]">
+                  Mention it casually during checkout: &quot;If you enjoyed our service today, we&apos;d love
+                  for you to share your experience on Gidira.&quot;
+                </p>
+              </div>
+              <div className="flex flex-col gap-4 rounded-2xl bg-[#edeef0] p-6">
+                <div className="flex items-center gap-3">
+                  <Star className="size-5 shrink-0 text-[#006d36]" aria-hidden />
+                  <span className="font-semibold text-[#191c1e]">Via WhatsApp</span>
+                </div>
+                <p className="text-sm leading-relaxed text-[#44474d]">
+                  The most effective channel in Nigeria. Send a direct link shortly after the
+                  transaction.
                 </p>
               </div>
             </div>
-            <img
-              src={TEAM_IMAGE}
-              alt="Team discussing customer reviews"
-              className="h-56 w-full rounded-2xl object-cover sm:h-72"
-            />
+            <div className="flex flex-col lg:col-span-2">
+              <div className="flex h-full flex-col gap-8 rounded-[32px] border border-black/5 bg-white p-8 shadow-sm sm:p-10 lg:p-12">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <h3 className="text-2xl font-semibold text-[#191c1e]">Message Template Box</h3>
+                  <span className="rounded-full bg-[rgba(0,109,54,0.1)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#006d36]">
+                    Recommended
+                  </span>
+                </div>
+                <div className="rounded-xl border-2 border-dashed border-[#c5c6cd] bg-[#f3f4f6] p-6 sm:p-8">
+                  <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-[#44474d]">
+                    {MESSAGE_TEMPLATE}
+                  </pre>
+                </div>
+                <div>
+                  <Button
+                    type="button"
+                    onClick={() => void handleCopyTemplate()}
+                    className="h-12 rounded-xl bg-[#006d36] px-6 text-base font-semibold text-white hover:bg-[#006d36]/90"
+                  >
+                    <Copy className="mr-2 size-4" aria-hidden />
+                    {copied ? "Copied!" : "Copy Template"}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-3xl bg-muted p-6 sm:p-8">
-            <h2 className="text-center text-2xl font-bold text-ink sm:text-3xl">
-              Delivering Review-Worthy Service
-            </h2>
-            <div className="mt-5 grid gap-4 md:grid-cols-4">
-              {[
-                "Exceed Expectations",
-                "Be Professional",
-                "Personal Touches",
-                "Consistency",
-              ].map((item) => (
-                <div key={item} className="rounded-xl bg-card p-4 text-sm font-semibold text-ink">
-                  {item}
+          {/* Handling Negative Reviews */}
+          <div className="flex flex-col gap-8 pt-4">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-[#191c1e]">Handling Negative Reviews</h2>
+              <p className="mx-auto mt-3 max-w-xl text-base text-[#44474d]">
+                Don&apos;t panic. A handled complaint is an opportunity for loyalty.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {NEGATIVE_STEPS.map(({ n, title, body }) => (
+                <div key={n} className="flex flex-col gap-2 rounded-2xl bg-[#f3f4f6] p-6">
+                  <span className="text-2xl font-semibold text-[#006d36]">{n}</span>
+                  <h4 className="font-semibold text-[#191c1e]">{title}</h4>
+                  <p className="text-xs leading-snug text-[#44474d]">{body}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="rounded-2xl bg-ink p-6">
-              <h3 className="text-xl font-semibold text-ice">When to Ask for Reviews</h3>
-              <div className="mt-4 space-y-3 text-sm text-stat-muted">
-                <p>
-                  <span className="font-semibold text-success">01 -</span> The Happiness Peak:
-                  ask right after successful delivery.
-                </p>
-                <p>
-                  <span className="font-semibold text-success">02 -</span> Service-Specific Timing:
-                  ask after impact is visible.
+          {/* Responding + Building culture */}
+          <div className="grid gap-8 pt-4 lg:grid-cols-2">
+            <div className="flex flex-col justify-between gap-8 rounded-[32px] bg-[#ecfdf5] p-8 sm:p-10">
+              <div>
+                <h3 className="text-2xl font-semibold text-[#191c1e]">Responding to All Reviews</h3>
+                <p className="mt-4 text-base leading-relaxed text-[#005227]">
+                  Even positive ones deserve a &quot;Thank you!&quot; It shows prospective customers that you
+                  are active, engaged, and appreciate their business.
                 </p>
               </div>
-            </div>
-            <img
-              src={CUSTOMER_IMAGE}
-              alt="Happy customer checking phone"
-              className="h-56 w-full rounded-2xl object-cover sm:h-72"
-            />
-          </div>
-
-          <div className="rounded-2xl border border-border-gray bg-card p-6">
-            <h2 className="text-2xl font-bold text-ink sm:text-3xl">How to Ask</h2>
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              <div className="space-y-3">
-                <div className="rounded-lg bg-success/10 p-3 text-sm text-body-secondary">
-                  <p className="font-semibold text-success">In Person</p>
-                  Ask politely once the customer confirms satisfaction.
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex -space-x-3">
+                  <img
+                    src={AVATAR_1}
+                    alt=""
+                    className="size-10 rounded-full border-2 border-white object-cover ring-2 ring-slate-200"
+                  />
+                  <img
+                    src={AVATAR_2}
+                    alt=""
+                    className="size-10 rounded-full border-2 border-white object-cover ring-2 ring-slate-200"
+                  />
                 </div>
-                <div className="rounded-lg bg-success/10 p-3 text-sm text-body-secondary">
-                  <p className="font-semibold text-success">Via WhatsApp</p>
-                  Send a short and friendly follow-up message with your review link.
-                </div>
+                <p className="text-sm font-medium text-[#007239]">+45 businesses responded today</p>
               </div>
-              <div className="rounded-lg border border-border-gray bg-muted p-4 text-sm text-body-secondary">
-                <p className="font-semibold text-ink">Message Template Box</p>
-                <p className="mt-2 italic">
-                  “Hi [Name], thank you for your support. If you enjoyed our service, please share a
-                  quick review on Gidira. It helps more customers find us.”
-                </p>
-              </div>
+            </div>
+            <div className="flex flex-col gap-4 rounded-[32px] bg-[#191b23] p-8 sm:p-10">
+              <h3 className="text-2xl font-semibold text-emerald-400">Building a Review Culture</h3>
+              <p className="text-base leading-relaxed text-slate-300">
+                Make reviews a part of your internal team goals. Reward staff who are mentioned by
+                name in positive reviews.
+              </p>
+              <ul className="mt-2 flex flex-col gap-4 border-t border-white/10 pt-4">
+                {[
+                  "Incentivize staff training",
+                  "Display positive reviews in-store",
+                  "Weekly team feedback syncs",
+                ].map((line) => (
+                  <li key={line} className="flex items-center gap-3 text-base text-white">
+                    <Check className="size-4 shrink-0 text-emerald-400" strokeWidth={3} aria-hidden />
+                    {line}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h2 className="text-center text-2xl font-bold text-ink sm:text-3xl">
-              Handling Negative Reviews
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {["Stay Calm", "Respond Professionally", "Offer Solution", "Turn Positive"].map((s) => (
-                <div key={s} className="rounded-xl bg-muted p-4 text-sm font-semibold text-ink">
-                  {s}
-                </div>
-              ))}
-            </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-2xl bg-success/10 p-5">
-                <p className="font-semibold text-ink">Responding to All Reviews</p>
-                <p className="mt-2 text-sm text-body-secondary">
-                  Thank positive reviewers and acknowledge every complaint respectfully. This shows
-                  accountability and builds confidence for new customers.
-                </p>
+          {/* Key takeaways */}
+          <div className="mx-auto w-full max-w-3xl">
+            <div className="rounded-[32px] border border-black/10 bg-[#eff6ff] px-6 py-10 shadow-sm sm:px-10 sm:py-12">
+              <div className="mb-8 flex items-center gap-3">
+                <Star className="size-5 text-[#158de0]" aria-hidden />
+                <h3 className="text-2xl font-semibold text-[#191c1e]">Key Takeaways Checklist</h3>
               </div>
-              <div className="rounded-2xl bg-ink p-5">
-                <p className="font-semibold text-ice">Building a Review Culture</p>
-                <ul className="mt-3 space-y-2 text-sm text-stat-muted">
-                  <li className="inline-flex gap-2">
-                    <ShieldCheck className="h-4 w-4 text-success" />
-                    Make reviews part of your service routine.
-                  </li>
-                  <li className="inline-flex gap-2">
-                    <MessageSquareQuote className="h-4 w-4 text-success" />
-                    Provide clear review links.
-                  </li>
-                  <li className="inline-flex gap-2">
-                    <ClipboardCheck className="h-4 w-4 text-success" />
-                    Train your team to request feedback.
-                  </li>
-                </ul>
-              </div>
+              <ul className="flex flex-col gap-6">
+                {CHECKLIST.map(({ title, desc }) => {
+                  const done = checklistDone[title] ?? false;
+                  return (
+                    <li key={title} className="flex items-start gap-4 rounded-xl p-2 sm:p-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setChecklistDone((prev) => ({ ...prev, [title]: !prev[title] }))
+                        }
+                        className={cn(
+                          "mt-1.25 inline-flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border shadow-inner transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#158de0]",
+                          done
+                            ? "border-[#158de0] bg-[#158de0] ring-1 ring-[#158de0]/25"
+                            : "border-[#b8bcc8] bg-white ring-1 ring-black/4 hover:border-[#158de0]/60",
+                        )}
+                        aria-pressed={done}
+                        aria-label={done ? `Unmark: ${title}` : `Mark done: ${title}`}
+                      >
+                        {done ? (
+                          <Check className="size-3 text-white" strokeWidth={3} aria-hidden />
+                        ) : null}
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold leading-snug text-[#191c1e]">{title}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-[#44474d]">{desc}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </div>
 
-          <div className="mx-auto max-w-2xl rounded-3xl bg-surface-soft p-6 sm:p-8">
-            <h3 className="text-xl font-bold text-ink">Key Takeaways Checklist</h3>
-            <ul className="mt-4 space-y-2 text-sm text-body-secondary">
-              {[
-                "Deliver excellent service consistently.",
-                "Ask at the right moment.",
-                "Use friendly and clear language.",
-                "Respond to every review quickly.",
-              ].map((line) => (
-                <li key={line} className="inline-flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="rounded-3xl bg-surface-soft px-4 py-10 text-center sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-ink sm:text-3xl">
+          {/* CTA */}
+          <div className="rounded-2xl bg-[#eff6ff] px-6 py-14 text-center sm:px-12 sm:py-16">
+            <h2 className="text-3xl font-bold tracking-tight text-[#191b23] sm:text-4xl">
               Ready to Put These Tips Into Action?
             </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-body-secondary sm:text-base">
-              Collecting positive reviews consistently can significantly improve your profile
-              performance.
+            <p className="mx-auto mt-4 max-w-xl text-base text-[#44474d]">
+              Create or upgrade your Gidira profile and start growing your business today.
             </p>
-            <Link
-              to="/login"
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand px-8 py-3 text-sm font-medium text-ice hover:opacity-90 sm:text-base"
+            <Button
+              asChild
+              className="mt-8 h-12 rounded-lg bg-[#158de0] px-8 text-base font-medium text-white hover:bg-[#158de0]/90"
             >
-              <TriangleAlert className="h-4 w-4" />
-              Start Now
-            </Link>
+              <Link to="/login" className="inline-flex items-center gap-2">
+                <ArrowRight className="size-4" aria-hidden />
+                Get Started
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

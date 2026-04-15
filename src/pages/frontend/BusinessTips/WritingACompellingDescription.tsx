@@ -10,8 +10,8 @@ import {
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-const HERO_IMAGE =
-  "https://www.figma.com/api/mcp/asset/047669a3-9b94-42e9-9d72-4574ea6db4f6";
+/** Hero photo from Figma (node 591:4771), exported to repo: olabisiolai--Copy- */
+const HERO_IMAGE = "/images/business-tips/writing-compelling-description-hero.jpg";
 
 export default function WritingACompellingDescription() {
   return (
@@ -50,27 +50,30 @@ export default function WritingACompellingDescription() {
             <div className="grid gap-5 lg:grid-cols-2">
               <div className="space-y-4 text-base leading-7 text-body-secondary">
                 <p>
-                  You have about 6-8 seconds to capture a potential customer&apos;s attention.
-                  Your description is the first thing visitors see and why someone should choose
-                  you over competitors.
+                  Your business description is often the first thing a potential customer reads
+                  about you on Gidira. While photos grab attention, your description explains what
+                  you do and why someone should choose you over competitors.
                 </p>
                 <p>
                   Profiles with detailed, well-written descriptions receive{" "}
-                  <span className="font-semibold text-success">2x more inquiries</span> than those
+                  <span className="font-semibold text-success">3x more inquiries</span> than those
                   with vague or missing information.
                 </p>
               </div>
-              <img
-                src={HERO_IMAGE}
-                alt="Business owner writing notes in a notebook"
-                className="h-52 w-full rounded-2xl object-cover sm:h-64"
-              />
+              <div className="overflow-hidden rounded-2xl border border-border-light bg-card p-2 shadow-md">
+                <img
+                  src={HERO_IMAGE}
+                  alt="Person writing in a notebook next to a laptop in a bright office"
+                  className="h-52 w-full rounded-xl object-cover sm:h-64"
+                  decoding="async"
+                />
+              </div>
             </div>
             <div className="rounded-r-xl border-l-4 border-success bg-success/10 p-5">
               <p className="text-sm font-semibold text-ink">Gidira Insight</p>
               <p className="mt-2 text-sm italic text-body-secondary">
-                Customers look for clarity, trust signals, and proof points. A clear description
-                makes your business feel dependable.
+                Customers look for key pieces of info: what you offer, how you&apos;re different,
+                your experience, and how to contact you.
               </p>
             </div>
           </div>

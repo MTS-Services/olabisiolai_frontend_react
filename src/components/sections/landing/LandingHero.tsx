@@ -50,7 +50,7 @@ export function LandingHero() {
             Start Trading Now
           </Link>
           <a
-            href="https://youtu.be/x9bj30cWolA?si=S_sBL0wqHMxxYgJD"
+            href="https://www.youtube.com/@Gidira"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 px-8 py-4 text-base font-medium text-white backdrop-blur-sm"

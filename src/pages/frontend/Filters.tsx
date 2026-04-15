@@ -1,6 +1,7 @@
 import FiltersSection from "@/components/sections/filters/FiltersSection";
 import ServiceCard from "@/components/sections/filters/ServiceCard";
 import { ChevronLeft, Map, SlidersHorizontal, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 
 interface BusinessType {
@@ -75,13 +76,13 @@ export default function Filters() {
       {/* Header */}
       <div className="bg-card shadow-sm py-4 px-6">
         <div className="container mx-auto px-4">
-          <a
-            href="#"
+          <Link
+            to="/"
             className="flex items-center font-inter font-normal text-base text-primary hover:text-primary/80"
           >
             <ChevronLeft size={20} className="mr-1" />
             Back to Home
-          </a>
+          </Link>
           <h1 className="text-2xl sm:text-3xl font-inter font-bold text-text-primary mt-4">
             All Business
           </h1>
@@ -208,11 +209,10 @@ export default function Filters() {
               {[1, 2, 3, 4, 5, 6, 7].map((page) => (
                 <button
                   key={page}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg ${
-                    page === 1
+                  className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg ${page === 1
                       ? "bg-primary text-primary-foreground"
                       : "border border-border text-text-primary hover:bg-muted"
-                  } ${page > 5 ? "hidden sm:flex items-center justify-center" : "flex items-center justify-center"}`}
+                    } ${page > 5 ? "hidden sm:flex items-center justify-center" : "flex items-center justify-center"}`}
                 >
                   {page.toString().padStart(2, "0")}
                 </button>

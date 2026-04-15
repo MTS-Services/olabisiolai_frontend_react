@@ -2,25 +2,26 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
     ArrowLeft,
+    Briefcase,
     Camera,
-    CheckCircle2,
+    Check,
     Image as ImageIcon,
-    MessageCircle,
+    Link2,
     Megaphone,
-    QrCode,
-    Share2,
-    Users,
-    Zap,
+    MessageCircle,
+    Star,
+    Store,
 } from "lucide-react";
 
-const IG_IMAGE =
-    "https://www.figma.com/api/mcp/asset/f50cee2a-563d-4abd-9750-8193f7f2c178";
-const IG_SECOND_IMAGE =
-    "https://www.figma.com/api/mcp/asset/d8682951-66ed-4aee-a704-8f24899067bb";
-const QR_IMAGE =
-    "https://www.figma.com/api/mcp/asset/3ab239db-395a-4066-80e1-503ce6b42e8b";
-const WHATSAPP_SCREEN =
-    "https://www.figma.com/api/mcp/asset/b24078e2-e01d-4aa4-9e63-3a749eaf07ed";
+import { Button } from "@/components/ui/button";
+import { container } from "@/lib/container";
+import { cn } from "@/lib/utils";
+
+/** Raster exports from Figma node 594:7536 — olabisiolai--Copy- */
+const IMG_WHATSAPP = "/images/business-tips/marketing-beyond-whatsapp.jpg";
+const IMG_INSTAGRAM_1 = "/images/business-tips/marketing-beyond-instagram-1.jpg";
+const IMG_INSTAGRAM_2 = "/images/business-tips/marketing-beyond-instagram-2.jpg";
+const IMG_QR_LINKING = "/images/business-tips/marketing-beyond-qr-linking.jpg";
 
 function SafeImage({
     src,
@@ -38,10 +39,13 @@ function SafeImage({
     if (failed) {
         return (
             <div
-                className={`flex flex-col items-center justify-center gap-1.5 rounded-xl bg-gray-800 ${className ?? ""}`}
+                className={cn(
+                    "flex flex-col items-center justify-center gap-1.5 rounded-lg bg-neutral-200",
+                    className,
+                )}
             >
-                <ImageIcon className="h-6 w-6 text-gray-500" />
-                <span className="text-xs text-gray-500">{fallbackLabel}</span>
+                <ImageIcon className="h-6 w-6 text-neutral-500" aria-hidden />
+                <span className="text-xs text-neutral-500">{fallbackLabel}</span>
             </div>
         );
     }
@@ -50,276 +54,346 @@ function SafeImage({
         <img
             src={src}
             alt={alt}
-            className={`block h-full w-full object-cover ${className ?? ""}`}
+            className={cn("block h-full w-full object-cover", className)}
             onError={() => setFailed(true)}
+            decoding="async"
         />
     );
 }
 
-const ECOSYSTEM_PILLS = [
-    "Awareness - attract new audiences",
-    "Conversion - turn chats into bookings",
-    "Trust - collect social proof and reviews",
-];
+const WHATSAPP_ITEMS = [
+    {
+        title: "Catalogs:",
+        body: "List your top 10 products with high-quality images.",
+    },
+    {
+        title: "Auto-Reply:",
+        body: 'Set "Away" and "Greeting" messages for instant response.',
+    },
+    {
+        title: "Labels:",
+        body: 'Categorize chats by "New Customer" or "Pending Payment".',
+    },
+] as const;
 
-const WHATSAPP_CHECKS = [
-    "Catalog links speed up buying decisions with high quality images.",
-    "Auto-replies keep response times low.",
-    "Labels and catalogue messages for instant business.",
-];
-
-const FB_PILLS = ["Join Groups", "Post Daily", "Track Engagement"];
-
-const CALENDAR_DAYS = [
-    { day: "Monday", theme: "Behind Scenes" },
-    { day: "Tuesday", theme: "Tip Tuesday" },
-    { day: "Wednesday", theme: "Client Success" },
-    { day: "Thursday", theme: "Product Showcase" },
-    { day: "Friday", theme: "Weekend Special" },
-    { day: "Saturday", theme: "Engagement Polls" },
-    { day: "Sunday", theme: "Rest & Reflect" },
-];
+const CALENDAR_DAYS: {
+    day: string;
+    theme: string;
+    themeLines?: [string, string];
+    borderMuted?: boolean;
+    pbClass?: string;
+}[] = [
+        { day: "Monday", theme: "Behind Scenes", themeLines: ["Behind", "Scenes"] },
+        { day: "Tuesday", theme: "Tip Tuesday", borderMuted: true, pbClass: "pb-12" },
+        { day: "Wednesday", theme: "Client Success", themeLines: ["Client", "Success"] },
+        { day: "Thursday", theme: "Product Showcase", themeLines: ["Product", "Showcase"], borderMuted: true },
+        { day: "Friday", theme: "Weekend Special", themeLines: ["Weekend", "Special"] },
+        { day: "Saturday", theme: "Engagement Polls", themeLines: ["Engagement", "Polls"], borderMuted: true },
+        { day: "Sunday", theme: "Rest & Reflect", borderMuted: false, pbClass: "pb-12" },
+    ];
 
 export default function MarketingBeyondGidira() {
     return (
-        <div className="min-h-screen bg-gray-100">
-
-            {/* ── Hero ── */}
-            <section className="bg-gray-900 px-6 py-14 text-center sm:py-20">
-                <div className="flex flex-col items-center">
-                    <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20">
-                        <Megaphone className="h-6 w-6 text-emerald-400" />
+        <div className="w-full bg-white">
+            {/* Hero — Figma 594:7569 */}
+            <section className="relative overflow-hidden bg-[#191b23] py-14 text-center sm:py-20 lg:py-28">
+                <div
+                    className="pointer-events-none absolute inset-0 opacity-20"
+                    aria-hidden
+                    style={{
+                        backgroundImage:
+                            "radial-gradient(ellipse 120% 80% at 100% 100%, rgb(0 109 54) 0%, transparent 55%)",
+                    }}
+                />
+                <div className={cn(container, "relative z-10 flex flex-col items-center")}>
+                    <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#76f99e]">
+                        <Megaphone className="h-9 w-9 text-[#191c1e]" aria-hidden strokeWidth={2} />
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-50 sm:text-4xl lg:text-5xl">
+                    <h1 className="max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-6xl lg:leading-[1.1]">
                         Marketing Beyond Gidira
                     </h1>
-                    <p className="mt-3 max-w-lg text-sm leading-relaxed text-gray-400 sm:text-base">
-                        A comprehensive strategy guide for Nigerian businesses. Discover how to leverage the
-                        full digital landscape to drive traffic back to your core business hub.
+                    <p className="mt-6 max-w-3xl text-base font-medium leading-relaxed text-[#99a1af] sm:text-lg lg:text-2xl lg:leading-snug">
+                        A comprehensive strategy guide for Nigerian businesses.
+                        <br className="hidden sm:block" />
+                        Discover how to leverage the full digital landscape to drive traffic back to your core
+                        business hub.
                     </p>
                 </div>
             </section>
 
-            {/* ── Back link ── */}
-            <div className="mx-auto container px-4 py-3">
-                <Link
-                    to="/business-tips"
-                    className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-800"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to Business Tips
-                </Link>
-            </div>
-
-            {/* ── Main content ── */}
-            <div className="mx-auto flex container flex-col gap-4 px-4 pb-16">
-
-                {/* Row 1: Ecosystem (2/3) + WhatsApp (1/3) */}
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-
-                    {/* Ecosystem card */}
-                    <div className="rounded-2xl bg-gray-50 p-5 lg:col-span-2">
-                        <div className="mb-2 flex items-center gap-2">
-                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
-                                <Zap className="h-2.5 w-2.5 text-emerald-500" />
-                            </div>
-                            <span className="text-base font-bold text-gray-900">Your Marketing Ecosystem</span>
-                        </div>
-                        <p className="text-sm leading-relaxed text-gray-500">
-                            Gidira acts as a listing, in the center of your digital presence. Think of Gidira
-                            as your flagship store, while Instagram, WhatsApp, and Facebook are the tools
-                            feeding customers to your door.
-                        </p>
-                        <div className="mt-3 grid grid-cols-3 gap-2">
-                            {ECOSYSTEM_PILLS.map((text) => (
-                                <div
-                                    key={text}
-                                    className="rounded-xl bg-white px-2 py-2.5 text-center text-xs text-gray-500"
-                                >
-                                    {text}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* WhatsApp card */}
-                    <div className="rounded-2xl border border-gray-200 bg-white p-5">
-                        <div className="mb-3 flex items-center gap-2">
-                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
-                                <MessageCircle className="h-2.5 w-2.5 text-emerald-500" />
-                            </div>
-                            <span className="text-sm font-bold text-gray-900">WhatsApp Business Mastery</span>
-                        </div>
-                        <ul className="flex flex-col gap-2">
-                            {WHATSAPP_CHECKS.map((text) => (
-                                <li key={text} className="flex items-start gap-1.5">
-                                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                                    <span className="text-xs leading-relaxed text-gray-500">{text}</span>
-                                </li>
-                            ))}
-                        </ul>
-                        <div className="mt-3 h-28 overflow-hidden rounded-xl bg-gray-900 p-1.5">
-                            <SafeImage
-                                src={WHATSAPP_SCREEN}
-                                alt="WhatsApp business profile screen"
-                                className="rounded-lg"
-                                fallbackLabel="WhatsApp preview"
-                            />
-                        </div>
-                    </div>
+            {/* Breadcrumb */}
+            <section className="border-b border-neutral-100 bg-white py-4">
+                <div className={cn(container)}>
+                    <Link
+                        to="/business-tips"
+                        className="inline-flex items-center gap-2 text-base font-medium text-[#44474d] transition-colors hover:text-[#191b23]"
+                    >
+                        <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                        Back to Business Tips
+                    </Link>
                 </div>
+            </section>
 
-                {/* Row 2: Instagram + Facebook */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 h-42!">
-
-                    {/* Instagram */}
-                    <div className="rounded-2xl bg-gray-50 p-5 flex ">
-                        <div className="flex-1">
-                            <div className="mb-2 flex items-center gap-2">
-                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/10">
-                                    <Camera className="h-2.5 w-2.5 text-red-500" />
+            <section className="pb-12 pt-10 lg:pb-20 lg:pt-12">
+                <div className={cn(container, "flex flex-col gap-12 lg:gap-16")}>
+                    {/* Bento — Figma 594:8089 */}
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+                        {/* Your Marketing Ecosystem */}
+                        <div className="flex flex-col justify-between gap-8 rounded-3xl bg-[#f3f4f6] p-8 sm:p-10 lg:col-span-8 lg:min-h-[320px] lg:p-12">
+                            <div className="flex flex-col gap-4">
+                                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#76f99e]">
+                                    <Star className="size-6 text-[#191c1e]" aria-hidden strokeWidth={2} />
+                                </div>
+                                <h2 className="text-2xl font-bold leading-tight text-[#191c1e] sm:text-3xl">
+                                    Your Marketing Ecosystem
+                                </h2>
+                                <p className="max-w-2xl text-base leading-relaxed text-[#44474d] sm:text-lg">
+                                    Gidira isn&apos;t just a listing; it&apos;s the anchor of your digital presence. Think of
+                                    Gidira as your flagship store, while Instagram, WhatsApp, and Facebook are the
+                                    roads leading customers to your door.
+                                </p>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-3">
+                                <div className="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm">
+                                    <span className="text-base font-semibold text-[#006d36]">Awareness</span>
+                                    <p className="text-sm leading-snug text-[#191c1e]">
+                                        IG &amp; Facebook ads to find new customers.
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm">
+                                    <span className="text-base font-semibold text-[#006d36]">Conversion</span>
+                                    <p className="text-sm leading-snug text-[#191c1e]">
+                                        WhatsApp for direct sales and service.
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm">
+                                    <span className="text-base font-semibold text-[#006d36]">Trust</span>
+                                    <p className="text-sm leading-snug text-[#191c1e]">
+                                        Gidira profile for verified reviews and info.
+                                    </p>
                                 </div>
                             </div>
-                                <span className="text-base font-bold text-gray-900 ">Instagram for Nigerians</span>
-                            <p className="text-sm leading-relaxed text-gray-500 py-2">
-                            Visual storytelling is king. Your feed <br /> should be a curated gallery of excellence.
-                            </p>
-                            <p className="mt-2 text-xs font-semibold tracking-wide text-emerald-500">
-                                REELS &nbsp; STORIES &nbsp; HIGHLIGHTS
-                            </p>
                         </div>
-                        <div className="mt-3 grid h-28 grid-cols-2 gap-2 flex-1">
-                            <div className="overflow-hidden rounded-xl">
-                                <SafeImage src={IG_IMAGE} alt="Instagram visual 1" fallbackLabel="Instagram image" />
+
+                        {/* WhatsApp Business Mastery */}
+                        <div className="flex flex-col rounded-3xl border border-[rgba(197,198,205,0.15)] bg-white p-8 shadow-sm sm:p-9 lg:col-span-4">
+                            <div className="mb-6 flex size-12 shrink-0 items-center justify-center rounded-full bg-[#d1fae5]">
+                                <MessageCircle className="size-5 text-[#006d36]" aria-hidden strokeWidth={2} />
                             </div>
-                            <div className="overflow-hidden rounded-xl">
+                            <h3 className="text-xl font-bold leading-tight text-[#191c1e] sm:text-2xl">
+                                WhatsApp Business
+                                <br />
+                                Mastery
+                            </h3>
+                            <ul className="mt-4 flex flex-col gap-4">
+                                {WHATSAPP_ITEMS.map(({ title, body }) => (
+                                    <li key={title} className="flex gap-3">
+                                        <Check
+                                            className="mt-0.5 size-4 shrink-0 text-[#006d36]"
+                                            aria-hidden
+                                            strokeWidth={3}
+                                        />
+                                        <p className="text-sm leading-snug text-[#191c1e]">
+                                            <span className="font-semibold">{title}</span>{" "}
+                                            <span className="font-normal text-[#44474d]">{body}</span>
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className="mt-8 h-32 overflow-hidden rounded-lg bg-neutral-900 sm:h-36">
                                 <SafeImage
-                                    src={IG_SECOND_IMAGE}
-                                    alt="Instagram visual 2"
-                                    fallbackLabel="Instagram image"
+                                    src={IMG_WHATSAPP}
+                                    alt="WhatsApp Business catalog on multiple phones"
+                                    className="rounded-lg"
+                                    fallbackLabel="WhatsApp preview"
                                 />
                             </div>
                         </div>
-                    </div>
 
-                    {/* Facebook */}
-                    <div className="rounded-2xl bg-gray-50 p-5">
-                        <div className="mb-2 flex items-center gap-2">
-                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/10">
-                                <Users className="h-2.5 w-2.5 text-blue-500" />
-                            </div>
-                            <span className="text-base font-bold text-gray-900">Facebook Marketplace</span>
-                        </div>
-                        <p className="text-sm leading-relaxed text-gray-500">
-                            Local audiences discover offers fast. Use local groups and neighborhood targeting.
-                        </p>
-                        <div className="mt-3 grid grid-cols-3 gap-2">
-                            {FB_PILLS.map((pill) => (
-                                <div
-                                    key={pill}
-                                    className="rounded-xl bg-white px-2 py-2 text-center text-xs text-gray-500"
-                                >
-                                    {pill}
+                        {/* Instagram */}
+                        <div className="flex flex-col gap-6 rounded-3xl bg-[#f3f4f6] p-8 sm:flex-row sm:items-stretch sm:gap-8 sm:p-8 lg:col-span-6">
+                            <div className="flex min-w-0 flex-1 flex-col gap-4">
+                                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#fce7f3]">
+                                    <Camera className="size-5 text-pink-600" aria-hidden strokeWidth={2} />
                                 </div>
-                            ))}
-                        </div>
-                        <p className="mt-3 text-xs leading-relaxed text-gray-400">
-                            Lorem ipsum dolores sit amet, consectetur adipiscing, sed do eiusmod tempor erat
-                            sed magna aliqua.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Row 3: Word of Mouth + Linking */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-
-                    {/* Word of Mouth */}
-                    <div className="rounded-2xl bg-gray-900 p-6">
-                        <h2 className="text-xl font-bold text-gray-50">Word-of-Mouth</h2>
-                        <p className="mt-2 text-sm leading-relaxed text-gray-400">
-                            The most powerful growth channel remains trusted referrals.
-                        </p>
-                        <div className="mt-4 rounded-xl bg-white/10 p-3 text-xs leading-relaxed text-gray-400">
-                            Ask happy customers to share your profile link in family and community groups.
-                            Create 'Refer a Friend' discounts and motivate impulse business cards with QR codes.
-                        </div>
-                    </div>
-
-                    {/* Linking to Gidira */}
-                    <div className="rounded-2xl bg-gray-50 p-5">
-                        <div className="mb-2 flex items-center gap-2">
-                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
-                                <Share2 className="h-2.5 w-2.5 text-emerald-500" />
+                                <h3 className="text-xl font-bold leading-tight text-[#191c1e] sm:text-2xl">
+                                    Instagram for
+                                    <br />
+                                    Nigerians
+                                </h3>
+                                <p className="text-sm leading-relaxed text-[#44474d]">
+                                    Visual storytelling is king. Your feed should be a curated gallery of excellence.
+                                </p>
+                                <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
+                                    <span className="text-xs font-semibold uppercase tracking-tight text-[#006d36]">
+                                        Before/After Clips
+                                    </span>
+                                    <span className="h-px w-8 bg-[rgba(0,109,54,0.3)]" aria-hidden />
+                                    <span className="text-xs font-semibold uppercase tracking-tight text-[#006d36]">
+                                        Showcases
+                                    </span>
+                                </div>
                             </div>
-                            <span className="text-base font-bold text-gray-900">
-                                Linking Everything to Gidira
-                            </span>
+                            <div className="grid min-h-[160px] flex-1 grid-cols-2 gap-2 sm:max-w-[280px] sm:self-center">
+                                <div className="overflow-hidden rounded-lg">
+                                    <SafeImage
+                                        src={IMG_INSTAGRAM_1}
+                                        alt="Instagram content example"
+                                        className="min-h-[140px] object-cover sm:min-h-[160px]"
+                                        fallbackLabel="Instagram"
+                                    />
+                                </div>
+                                <div className="overflow-hidden rounded-lg">
+                                    <SafeImage
+                                        src={IMG_INSTAGRAM_2}
+                                        alt="Instagram product showcase"
+                                        className="min-h-[140px] object-cover sm:min-h-[160px]"
+                                        fallbackLabel="Instagram"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-sm leading-relaxed text-gray-500">
-                            Every external channel should send traffic back to your Gidira listing.
-                        </p>
-                        <ul className="mt-2 flex flex-col gap-1.5">
-                            {[
-                                "QR codes on receipts and packaging.",
-                                "Link-in-bio on Instagram and WhatsApp.",
-                            ].map((item) => (
-                                <li key={item} className="relative pl-3 text-xs leading-relaxed text-gray-500">
-                                    <span className="absolute left-0 text-lg leading-none text-emerald-500">·</span>
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                        <div className="mt-3 h-28 overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-1.5">
-                            <SafeImage
-                                src={QR_IMAGE}
-                                alt="QR code cards"
-                                className="rounded-lg"
-                                fallbackLabel="QR preview"
+
+                        {/* Facebook Marketplace */}
+                        <div className="relative overflow-hidden rounded-3xl border border-[rgba(197,198,205,0.15)] bg-white p-8 shadow-sm sm:p-9 lg:col-span-6">
+                            <Store
+                                className="pointer-events-none absolute -bottom-2 -right-2 size-32 text-blue-100/90 sm:size-36"
+                                aria-hidden
+                                strokeWidth={1}
                             />
+                            <div className="relative flex flex-col gap-4">
+                                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#dbeafe]">
+                                    <Briefcase className="size-5 text-blue-600" aria-hidden strokeWidth={2} />
+                                </div>
+                                <h3 className="text-xl font-bold text-[#191c1e] sm:text-2xl">Facebook Marketplace</h3>
+                                <p className="max-w-xl text-base leading-relaxed text-[#44474d]">
+                                    Local commerce happens in groups. Reach thousands of potential buyers in your
+                                    specific neighborhood.
+                                </p>
+                                <div className="flex flex-wrap gap-3 pt-1">
+                                    {["Join Community Groups", "Daily Listing Refresh", "Local Targeting Ads"].map(
+                                        (label) => (
+                                            <span
+                                                key={label}
+                                                className="rounded-full bg-[#f3f4f6] px-4 py-2 text-xs font-medium text-[#191c1e]"
+                                            >
+                                                {label}
+                                            </span>
+                                        ),
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Word-of-Mouth */}
+                        <div className="flex flex-col justify-center gap-4 rounded-3xl bg-black px-8 py-10 sm:px-10 lg:col-span-5">
+                            <h3 className="text-xl font-bold text-white sm:text-2xl">Word-of-Mouth</h3>
+                            <p className="text-sm leading-relaxed text-[#76859e]">
+                                The most powerful marketing in Nigeria is a recommendation from a friend.
+                            </p>
+                            <div className="mt-2 rounded-lg border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+                                <p className="text-xs font-normal italic text-white/90">Quick Strategy:</p>
+                                <p className="mt-2 text-sm font-medium leading-relaxed text-white">
+                                    Create &quot;Refer-a-Friend&quot; discounts and distribute physical business cards with QR
+                                    codes.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Linking Everything to Gidira */}
+                        <div className="flex flex-col gap-8 rounded-3xl bg-[#f3f4f6] p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10 lg:col-span-7">
+                            <div className="flex max-w-sm flex-col gap-4">
+                                <h3 className="text-xl font-bold leading-tight text-[#191c1e] sm:text-2xl">
+                                    Linking Everything to
+                                    <br />
+                                    Gidira
+                                </h3>
+                                <p className="text-sm leading-relaxed text-[#44474d]">
+                                    Ensure every social touchpoint leads back to your verified profile. This builds
+                                    instant credibility and captures leads.
+                                </p>
+                                <ul className="flex flex-col gap-3 pt-1">
+                                    <li className="flex items-center gap-3 text-sm font-semibold text-[#191c1e]">
+                                        <Link2 className="size-4 shrink-0 text-[#006d36]" aria-hidden />
+                                        QR Codes on Packaging
+                                    </li>
+                                    <li className="flex items-center gap-3 text-sm font-semibold text-[#191c1e]">
+                                        <Link2 className="size-4 shrink-0 text-[#006d36]" aria-hidden />
+                                        Link-in-Bio via Instagram
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="mx-auto w-full max-w-[290px] shrink-0 rounded-3xl border-4 border-[rgba(0,109,54,0.2)] bg-white p-5 shadow-lg sm:mx-0">
+                                <div className="aspect-square overflow-hidden rounded-lg">
+                                    <SafeImage
+                                        src={IMG_QR_LINKING}
+                                        alt="Business cards with QR codes linking to Gidira"
+                                        className="size-full object-cover"
+                                        fallbackLabel="QR preview"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Content Calendar */}
-                <div className="mt-2">
-                    <h2 className="text-center text-2xl font-bold text-gray-900">
-                        Creating a Content Calendar
-                    </h2>
-                    <p className="mt-1.5 text-center text-sm text-gray-500">
-                        Consistency beats intensity. Plan simple weekly themes.
-                    </p>
-                    <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-7">
-                        {CALENDAR_DAYS.map(({ day, theme }) => (
-                            <div
-                                key={day}
-                                className="rounded-xl bg-gray-50 px-2 py-2.5 text-center text-xs leading-relaxed text-gray-500"
-                            >
-                                <span className="block font-semibold text-gray-700">{day}</span>
-                                {theme}
-                            </div>
-                        ))}
+                    {/* Content calendar — Figma 594:8209 */}
+                    <div className="flex flex-col gap-8 pt-2">
+                        <div className="text-center">
+                            <h2 className="text-2xl font-extrabold text-[#191c1e] sm:text-3xl">
+                                Creating a Content Calendar
+                            </h2>
+                            <p className="mx-auto mt-3 max-w-xl text-base text-[#44474d]">
+                                Consistency beats intensity. Follow this weekly theme to keep your audience engaged.
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7 lg:gap-4">
+                            {CALENDAR_DAYS.map(
+                                ({ day, theme, themeLines, borderMuted, pbClass }) => (
+                                    <div
+                                        key={day}
+                                        className={cn(
+                                            "flex flex-col gap-2 rounded-3xl bg-[#f3f4f6] px-4 pt-7 text-center lg:px-6",
+                                            borderMuted ? "border-t-4 border-[rgba(0,109,54,0.6)]" : "border-t-4 border-[#006d36]",
+                                            pbClass ?? "pb-6",
+                                        )}
+                                    >
+                                        <span className="text-xs font-semibold uppercase tracking-wide text-[#006d36]">
+                                            {day}
+                                        </span>
+                                        {themeLines ? (
+                                            <div className="text-base font-bold text-[#191c1e]">
+                                                <span className="block leading-snug">{themeLines[0]}</span>
+                                                <span className="block leading-snug">{themeLines[1]}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-base font-bold leading-snug text-[#191c1e]">
+                                                {theme}
+                                            </span>
+                                        )}
+                                    </div>
+                                ),
+                            )}
+                        </div>
+                    </div>
+
+                    {/* CTA — Figma 594:8251 */}
+                    <div className="rounded-3xl border-2 border-[#d1fae5] bg-[#eff6ff] px-6 py-12 text-center sm:px-12 sm:py-16">
+                        <h2 className="text-2xl font-bold tracking-tight text-[#191b23] sm:text-4xl sm:leading-tight">
+                            Ready to Put These Tips Into Action?
+                        </h2>
+                        <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#44474d] sm:text-lg">
+                            Your business deserves to be seen. Apply these strategies today and watch your Gidira
+                            traffic soar.
+                        </p>
+                        <Button
+                            asChild
+                            className="mt-8 h-12 rounded-lg bg-[#158de0] px-8 text-base font-medium text-white hover:bg-[#158de0]/90"
+                        >
+                            <Link to="/login">Update My Profile</Link>
+                        </Button>
                     </div>
                 </div>
-
-                {/* CTA */}
-                <div className="rounded-3xl bg-gray-50 px-6 py-10 text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-                        Ready to Put These Tips Into Action?
-                    </h2>
-                    <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-gray-500">
-                        Your business deserves to be seen. Apply these strategies today and switch your
-                        Gidira traffic now.
-                    </p>
-                    <Link
-                        to="/login"
-                        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
-                    >
-                        <QrCode className="h-4 w-4" />
-                        Update My Profile
-                    </Link>
-                </div>
-
-            </div>
+            </section>
         </div>
     );
 }

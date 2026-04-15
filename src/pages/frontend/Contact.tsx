@@ -10,6 +10,30 @@ import { cn } from "@/lib/utils";
 const WHATSAPP_DISPLAY = "+2349047858961";
 const WHATSAPP_HREF = "https://wa.me/2349047858961";
 
+const BUSINESS_TIP_LINKS = [
+  { label: "Photos That Sell", to: "/business-tips/photos-that-sell" },
+  {
+    label: "Writing a Compelling Description",
+    to: "/business-tips/writing-a-compelling-description",
+  },
+  {
+    label: "Responding to Customer Enquiries",
+    to: "/business-tips/responding-to-customer-enquiries",
+  },
+  {
+    label: "Pricing Your Services Right",
+    to: "/business-tips/pricing-your-services-right",
+  },
+  {
+    label: "Getting More Positive Reviews",
+    to: "/business-tips/getting-more-positive-reviews",
+  },
+  {
+    label: "Marketing Beyond Gidira",
+    to: "/business-tips/marketing-beyond-gidira",
+  },
+] as const;
+
 function ContactChannelCard({
   iconWrapClassName,
   icon,
@@ -228,89 +252,28 @@ export default function Contact() {
             </div> */}
 
             <div className="rounded-2xl border border-black/10 bg-card p-6 shadow-sm">
-              <div className="mb-4 flex flex-col gap-1">
-                <h3 className="text-base font-medium text-ink-heading">
-                  Quick Help
-                </h3>
-                <p className="text-base text-ink-muted">
-                  Looking for quick answers?
-                </p>
-              </div>
               <div className="flex flex-col gap-3">
-                <div>
-                  <h4 className="mb-1 text-base font-medium text-ink-heading">
-                    For Customers
-                  </h4>
-                  <ul className="flex flex-col gap-1 text-sm leading-5 text-body-secondary">
-                    <li>
-                      <Link
-                        className="text-footer-bar hover:underline"
-                        to="/filters"
-                      >
-                        • How to find verified businesses
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        className="text-footer-bar hover:underline"
-                        to="/reviews"
-                      >
-                        • How to leave a review
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        className="text-footer-bar hover:underline"
-                        to="/faq"
-                      >
-                        • Understanding business ratings
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
                 <div>
                   <h4 className="mb-1 text-base font-medium text-ink-heading">
                     For Businesses
                   </h4>
                   <ul className="flex flex-col gap-1 text-sm leading-5 text-body-secondary">
-                    <li>
-                      <Link
-                        className="text-footer-bar hover:underline"
-                        to="/login"
-                      >
-                        • How to list your business
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        className="text-footer-bar hover:underline"
-                        to="/faq"
-                      >
-                        • Getting verified
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        className="text-footer-bar hover:underline"
-                        to="/about"
-                      >
-                        • Featured listing options
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        className="text-footer-bar hover:underline"
-                        to="/faq"
-                      >
-                        • Understanding analytics
-                      </Link>
-                    </li>
+                    {BUSINESS_TIP_LINKS.map(({ label, to }) => (
+                      <li key={to}>
+                        <Link
+                          className="text-footer-bar hover:underline"
+                          to={to}
+                        >
+                          • {label}
+                        </Link>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-black/10 bg-gradient-to-r from-surface-soft to-tint-red p-6 shadow-sm">
+            <div className="rounded-2xl border border-black/10 bg-linear-to-r from-surface-soft to-tint-red p-6 shadow-sm">
               <div className="mb-4 flex flex-col gap-2">
                 <h3 className="text-lg font-semibold leading-7 text-ink-heading">
                   24/7 WhatsApp Support

@@ -41,8 +41,8 @@ export default function Featured() {
     },
     {
       id: 3,
-      name: "PremiumElite Electrical SolutionsPlumbing Services",
-      category: "Plumbing Electrical",
+      name: "Elite Electrical Solutions",
+      category: "Electrical",
       location: "Lagos, Victoria Island",
       rating: 4.6,
       reviews: 89,
@@ -78,8 +78,8 @@ export default function Featured() {
     {
       id: 6,
       name: "Master Builders Ltd",
-      category: "PlumbingConstruction",
-      location: "Lagos, IkeAbuja, Wuseja",
+      category: "Construction",
+      location: "Abuja, Wuse",
       rating: 4.5,
       reviews: 92,
       description:

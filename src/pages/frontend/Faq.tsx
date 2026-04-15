@@ -30,13 +30,11 @@ const FAQ_ITEMS: FaqItem[] = [
       "Verification ensures trust, safety, and accountability. It helps users confidently hire businesses and gives verified providers a competitive edge.",
   },
   {
-    question: "Do What cuments are required for verification?",
+    question: "What documents are required for verification?",
     answer: (
       <div className="space-y-4 font-medium text-lg leading-7 text-foreground">
-        <p>
-          At launch, Gidira uses a lean, manual-first verification process.
-          Businesses may be asked for:
-        </p>
+        <p>At launch, Gidira uses a lean, manual-first verification process.</p>
+        <p>Businesses may be asked for:</p>
         <p>• Government-issued ID</p>
         <p>• Business registration documents (if available)</p>
         <p>• Proof of address or service location</p>
@@ -45,18 +43,18 @@ const FAQ_ITEMS: FaqItem[] = [
     ),
   },
   {
+    question: "How long does verification take?",
+    answer: "24-72 hours, depending on the completeness of your submission.",
+  },
+  {
     question: "Can I update my verification details later?",
-    answer: (
-      <p className="whitespace-pre-wrap font-medium text-lg leading-7 text-foreground">
-        Yes. Businesses can update documents or profile information at any time.
-        Verification needs to be reviewed after major changes.
-      </p>
-    ),
+    answer:
+      "Yes. Businesses can update documents or profile information at any time. Verification is reviewed after major changes.",
   },
   {
     question: "How do I create a business profile?",
     answer:
-      "Sign up, submit your business details, upload your work samples, and complete verification. Once approved, your profile becomes visible to customers.",
+      "Sign up, submit your business details, upload work samples, and complete verification. Once approved, your profile becomes visible to customers.",
   },
   {
     question: "What does a Gidira business profile include?",
@@ -70,53 +68,6 @@ const FAQ_ITEMS: FaqItem[] = [
         <p>• Verification badge</p>
       </div>
     ),
-  },  
-  {
-    question: "Can I leave a review?",
-    answer:
-      "Absolutely. Reviews help other customers make informed decisions and help businesses improve.",
-  },
-  {
-    question: "How do I contact a business?",
-    answer:
-      "Each profile includes direct contact details. You can call, message, or visit their listed location.",
-  },
-  {
-    question: "Can I deactivate my account?",
-    answer:
-      "Yes. You can deactivate or delete your account at any time from your settings.",
-  },
-  {
-    question: "Does Gidira offer advertising or boosted visibility?",
-    answer:
-      "Yes. Businesses can pay for profile boosts to appear higher in search results.",
-  },
-  {
-    question: "Is Gidira safe to use?",
-    answer:
-      "Gidira prioritizes trust, verification, and transparency. Only verified businesses are listed, and all profiles undergo quality checks.",
-  },
-  {
-    question: "How long does verification teke?",
-    answer:
-      "24—72 hours, depending on the completeness of your submission-",
-  },
-  {
-    question: "Can I update my verification details later?",
-    answer: (
-      <div className="space-y-4 whitespace-pre-wrap font-medium text-lg leading-7 text-foreground">
-        <p>
-          Yes- Businesses can update documents or profile information at any
-          time- Verification{" "}
-        </p>
-        <p>needs to be reviewed after major changes-</p>
-      </div>
-    ),
-  },
-  {
-    question: "How do I create a business profile?",
-    answer:
-      "Sign up, submit your business details, upload your work samples, and complete verification. Once approved, your profile becomes visible to customers.",
   },
   {
     question: "Is there a fee to join Gidira?",
@@ -127,21 +78,6 @@ const FAQ_ITEMS: FaqItem[] = [
     question: "How do I find a business on Gidira?",
     answer:
       "Use the search bar or browse categories to discover verified service providers across Nigeria.",
-  },
-  {
-    question: "Are all businesses on Gidira verified?",
-    answer:
-      "Yes. Only verified businesses appear publicly to ensure trust and quality.",
-  },
-  {
-    question: "Can I leave a review?",
-    answer:
-      "Absolutely. Reviews help other customers make informed decisions and help businesses improve.",
-  },
-  {
-    question: "How do I contact a business?",
-    answer:
-      "Each profile includes direct contact details. You can call, message, or visit their listed location.",
   },
   {
     question: "Does Gidira handle payments between customers and businesses?",

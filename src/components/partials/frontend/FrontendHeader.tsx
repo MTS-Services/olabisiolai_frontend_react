@@ -27,6 +27,27 @@ import { cn } from "@/lib/utils";
 
 const LOGO_HEADER = "/images/landing/gidira-logo-header.svg";
 
+function HeaderSearch({ className }: { className?: string }) {
+  return (
+    <div className={cn("w-full", className)}>
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <input
+          type="search"
+          placeholder="Search by business name, category, or location..."
+          className={cn(
+            "h-11 w-full rounded-xl border border-border-light bg-card pl-10 pr-3 text-sm text-foreground",
+            "outline-none ring-0 transition focus:border-brand/50",
+          )}
+        />
+      </div>
+    </div>
+  );
+}
+
 function HeaderToolbar({
   isLightHeader,
   showTradeNav,
@@ -214,6 +235,7 @@ export function FrontendHeader() {
     pathname === "/messages" ||
     pathname === "/reviews";
   const showTradeNav = pathname !== "/trade";
+  const showHeaderSearch = pathname !== "/";
 
   return (
     <header
@@ -242,7 +264,7 @@ export function FrontendHeader() {
             logout={logout}
           />
         </div>
-        {/* <HeaderSearch /> */}
+        {showHeaderSearch ? <HeaderSearch /> : null}
       </div>
 
       <div
@@ -263,7 +285,7 @@ export function FrontendHeader() {
         </Link>
 
         <div className="flex min-w-0 flex-1 justify-center px-2">
-          {/* <HeaderSearch className="max-w-xl lg:max-w-2xl" /> */}
+          {showHeaderSearch ? <HeaderSearch className="max-w-xl lg:max-w-2xl" /> : null}
         </div>
 
         <HeaderToolbar isLightHeader={isLightHeader} showTradeNav={showTradeNav} />

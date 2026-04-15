@@ -9,10 +9,14 @@ export default function Cart() {
       <Card>
         <CardHeader>
           <CardTitle>Cart</CardTitle>
-          <CardDescription>Cart page stub (wire to backend later)</CardDescription>
+          <CardDescription>
+            Your selected items will appear here once cart flow is connected.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">Your cart is empty.</div>
+          <div className="text-sm text-muted-foreground">
+            Your cart is currently empty. Browse businesses and add services to continue.
+          </div>
           <Button asChild type="button">
             <Link to="/">Continue shopping</Link>
           </Button>

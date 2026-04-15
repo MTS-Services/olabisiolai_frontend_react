@@ -1,20 +1,47 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
+  Check,
   CheckCircle2,
-  Clock3,
   MessageCircleReply,
   MessageSquareText,
   PhoneCall,
   Send,
+  Star,
 } from "lucide-react";
 
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-const HERO_IMAGE = "https://www.figma.com/api/mcp/asset/935f7dbd-7d39-4a49-87bb-2a4b9a48f066";
+const HERO_IMAGE = "/images/feature/1-1.jpg";
+
+const CHECKLIST = [
+  {
+    title: "Respond within 10 minutes",
+    desc: "Speed signals professionalism and keeps warm leads from going cold.",
+  },
+  {
+    title: "Personalize your greeting",
+    desc: "Use the customer's name and reference their enquiry to build trust fast.",
+  },
+  {
+    title: "Lean on simple templates",
+    desc: "Reusable snippets keep replies fast without sounding robotic.",
+  },
+  {
+    title: "Follow up at least twice",
+    desc: "If they go quiet, a gentle nudge often closes what the first reply started.",
+  },
+  {
+    title: "End with a clear call-to-action",
+    desc: "Tell them exactly what to do next—book, pay, choose a slot, or reply with a detail.",
+  },
+] as const;
 
 export default function RespondingToCustomerEnquiries() {
+  const [checklistDone, setChecklistDone] = useState<Record<string, boolean>>({});
+
   return (
     <div className="w-full bg-background">
       <section className="bg-ink py-14 text-center sm:py-20 lg:py-24">
@@ -155,22 +182,45 @@ export default function RespondingToCustomerEnquiries() {
             </div>
           </div>
 
-          <div className="mx-auto max-w-2xl rounded-3xl border border-border-gray bg-card p-6 shadow-sm">
-            <h3 className="text-xl font-bold text-ink">Key Takeaways Checklist</h3>
-            <ul className="mt-4 space-y-2 text-sm text-body-secondary">
-              {[
-                "Respond to all messages within 10 minutes.",
-                "Personalize your greeting with customer name.",
-                "Use simple templates for speed and clarity.",
-                "Follow up at least twice if they go silent.",
-                "End every response with a clear call-to-action.",
-              ].map((line) => (
-                <li key={line} className="inline-flex items-start gap-2">
-                  <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
+          {/* Key takeaways */}
+          <div className="mx-auto w-full max-w-3xl">
+            <div className="rounded-[32px] border border-black/10 bg-[#eff6ff] px-6 py-10 shadow-sm sm:px-10 sm:py-12">
+              <div className="mb-8 flex items-center gap-3">
+                <Star className="size-5 text-[#158de0]" aria-hidden />
+                <h3 className="text-2xl font-semibold text-[#191c1e]">Key Takeaways Checklist</h3>
+              </div>
+              <ul className="flex flex-col gap-6">
+                {CHECKLIST.map(({ title, desc }) => {
+                  const done = checklistDone[title] ?? false;
+                  return (
+                    <li key={title} className="flex items-start gap-4 rounded-xl p-2 sm:p-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setChecklistDone((prev) => ({ ...prev, [title]: !prev[title] }))
+                        }
+                        className={cn(
+                          "mt-1.25 inline-flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border shadow-inner transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#158de0]",
+                          done
+                            ? "border-[#158de0] bg-[#158de0] ring-1 ring-[#158de0]/25"
+                            : "border-[#b8bcc8] bg-white ring-1 ring-black/4 hover:border-[#158de0]/60",
+                        )}
+                        aria-pressed={done}
+                        aria-label={done ? `Unmark: ${title}` : `Mark done: ${title}`}
+                      >
+                        {done ? (
+                          <Check className="size-3 text-white" strokeWidth={3} aria-hidden />
+                        ) : null}
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold leading-snug text-[#191c1e]">{title}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-[#44474d]">{desc}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
 
           <div className="rounded-3xl bg-surface-soft px-4 py-10 text-center sm:px-6 lg:px-8">

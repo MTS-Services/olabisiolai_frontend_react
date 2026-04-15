@@ -15,6 +15,55 @@ import {
 import { type AuthRole } from "@/features/auth/types";
 
 const OTP_LENGTH = 6;
+const RESEND_WINDOW_MS = 5 * 60 * 1000;
+const RESEND_MAX_ATTEMPTS = 3;
+const RESEND_BAN_MS = 30 * 60 * 1000;
+const RESEND_STORAGE_PREFIX = "otp_resend_limiter";
+
+type ResendLimiterState = {
+  attempts: number;
+  windowStartedAt: number;
+  bannedUntil: number | null;
+};
+
+function getLimiterStorageKey(purpose: string | null, email: string) {
+  return `${RESEND_STORAGE_PREFIX}:${purpose ?? "unknown"}:${email.toLowerCase()}`;
+}
+
+function readLimiterState(storageKey: string): ResendLimiterState {
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) {
+      return { attempts: 0, windowStartedAt: Date.now(), bannedUntil: null };
+    }
+    const parsed = JSON.parse(raw) as Partial<ResendLimiterState>;
+    return {
+      attempts: Number.isFinite(parsed.attempts) ? Number(parsed.attempts) : 0,
+      windowStartedAt: Number.isFinite(parsed.windowStartedAt)
+        ? Number(parsed.windowStartedAt)
+        : Date.now(),
+      bannedUntil:
+        parsed.bannedUntil == null
+          ? null
+          : Number.isFinite(parsed.bannedUntil)
+            ? Number(parsed.bannedUntil)
+            : null,
+    };
+  } catch {
+    return { attempts: 0, windowStartedAt: Date.now(), bannedUntil: null };
+  }
+}
+
+function writeLimiterState(storageKey: string, value: ResendLimiterState) {
+  window.localStorage.setItem(storageKey, JSON.stringify(value));
+}
+
+function formatRemaining(ms: number) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${seconds}s`;
+}
 
 export default function OTPVerification() {
   const navigate = useNavigate();
@@ -26,12 +75,17 @@ export default function OTPVerification() {
   const [resending, setResending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [resendMessage, setResendMessage] = React.useState<string | null>(null);
+  const [banRemainingMs, setBanRemainingMs] = React.useState(0);
 
   const inputRefs = React.useRef<Array<HTMLInputElement | null>>([]);
 
   const purpose = searchParams.get("purpose");
   const email = searchParams.get("email")?.trim() ?? "";
   const role: AuthRole = resolveAuthRole(searchParams.get("role"));
+  const limiterKey = React.useMemo(() => {
+    if (!email) return null;
+    return getLimiterStorageKey(purpose, email);
+  }, [purpose, email]);
 
   // Sync the registration token from storage into React auth state so the
   // user appears logged in immediately after registration (without reload).
@@ -48,6 +102,38 @@ export default function OTPVerification() {
   React.useEffect(() => {
     saveAuthRole(role);
   }, [role]);
+
+  React.useEffect(() => {
+    if (!limiterKey) {
+      setBanRemainingMs(0);
+      return;
+    }
+
+    const syncBanRemaining = () => {
+      const limiter = readLimiterState(limiterKey);
+      if (!limiter.bannedUntil) {
+        setBanRemainingMs(0);
+        return;
+      }
+
+      const remaining = limiter.bannedUntil - Date.now();
+      if (remaining <= 0) {
+        writeLimiterState(limiterKey, {
+          attempts: 0,
+          windowStartedAt: Date.now(),
+          bannedUntil: null,
+        });
+        setBanRemainingMs(0);
+        return;
+      }
+
+      setBanRemainingMs(remaining);
+    };
+
+    syncBanRemaining();
+    const timer = window.setInterval(syncBanRemaining, 1000);
+    return () => window.clearInterval(timer);
+  }, [limiterKey]);
 
   function updateOtpAtIndex(index: number, value: string) {
     const digit = value.replace(/\D/g, "").slice(-1);
@@ -114,6 +200,38 @@ export default function OTPVerification() {
       return;
     }
 
+    if (!limiterKey) {
+      setError("Unable to process resend right now. Please refresh and try again.");
+      return;
+    }
+
+    const limiter = readLimiterState(limiterKey);
+    const now = Date.now();
+    if (limiter.bannedUntil && limiter.bannedUntil > now) {
+      setBanRemainingMs(limiter.bannedUntil - now);
+      setError(
+        `Resend is temporarily blocked. Try again in ${formatRemaining(
+          limiter.bannedUntil - now,
+        )}.`,
+      );
+      return;
+    }
+
+    const isWindowExpired = now - limiter.windowStartedAt > RESEND_WINDOW_MS;
+    if (isWindowExpired) {
+      limiter.attempts = 0;
+      limiter.windowStartedAt = now;
+      limiter.bannedUntil = null;
+    }
+
+    if (limiter.attempts >= RESEND_MAX_ATTEMPTS) {
+      limiter.bannedUntil = now + RESEND_BAN_MS;
+      writeLimiterState(limiterKey, limiter);
+      setBanRemainingMs(RESEND_BAN_MS);
+      setError("You have reached resend limit. Resend is disabled for 30 minutes.");
+      return;
+    }
+
     setResending(true);
     try {
       if (purpose === "register") {
@@ -121,6 +239,8 @@ export default function OTPVerification() {
       } else {
         await requestPasswordResetOtp({ email });
       }
+      limiter.attempts += 1;
+      writeLimiterState(limiterKey, limiter);
       setResendMessage("A new OTP has been sent.");
     } catch (err) {
       setError(getAuthErrorMessage(err, "Unable to resend OTP. Please try again."));
@@ -199,10 +319,14 @@ export default function OTPVerification() {
               <button
                 type="button"
                 onClick={onResend}
-                disabled={resending}
+                disabled={resending || banRemainingMs > 0}
                 className="text-primary hover:underline font-medium disabled:opacity-60"
               >
-                {resending ? "Resending..." : "Resend"}
+                {resending
+                  ? "Resending..."
+                  : banRemainingMs > 0
+                    ? `Resend disabled (${formatRemaining(banRemainingMs)})`
+                    : "Resend"}
               </button>
             </div>
           </div>

@@ -1,7 +1,13 @@
-import { User, Briefcase } from "lucide-react";
+import { Briefcase, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { saveAuthRole } from "@/features/auth/roleSelection";
+import { type AuthRole } from "@/features/auth/types";
 
 export default function UserType() {
+  function onSelectRole(role: AuthRole) {
+    saveAuthRole(role);
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-auth-bg p-4">
       <div className="max-w-md w-full ">
@@ -23,8 +29,12 @@ export default function UserType() {
         {/* User Type Options */}
         <div className="space-y-4">
           {/* Customer Option */}
-          <Link to="/login/google" className="block">
-            <div className="bg-card rounded-xl p-3 sm:p-6 border border-border  cursor-pointer group">
+          <Link
+            to="/login/email?role=user"
+            className="block"
+            onClick={() => onSelectRole("user")}
+          >
+            <div className="bg-card rounded-xl p-3 sm:p-6 border border-border cursor-pointer group">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-avatar-a rounded-full flex items-center justify-center">
@@ -44,8 +54,12 @@ export default function UserType() {
           </Link>
 
           {/* Business Owner Option */}
-          <Link to="/login/email" className="block">
-            <div className="bg-card rounded-xl p-3 sm:p-6 border border-border  cursor-pointer group">
+          <Link
+            to="/login/email?role=vendor"
+            className="block"
+            onClick={() => onSelectRole("vendor")}
+          >
+            <div className="bg-card rounded-xl p-3 sm:p-6 border border-border cursor-pointer group">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#F4B400] rounded-full flex items-center justify-center">

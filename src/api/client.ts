@@ -51,7 +51,9 @@ export const api: AxiosInstance = axios.create({
   headers: {
     Accept: 'application/json',
   },
-  withCredentials: true,
+  // Only cookie-session auth requires credentials. Bearer mode must avoid
+  // credentialed CORS so APIs with `Access-Control-Allow-Origin: *` keep working.
+  withCredentials: env.authStrategy === 'http_only_cookie',
 })
 
 api.interceptors.request.use((config) => {

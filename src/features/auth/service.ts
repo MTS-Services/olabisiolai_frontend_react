@@ -1,0 +1,100 @@
+import {
+  extractBearerTokenFromLoginBody,
+  extractRefreshTokenFromLoginBody,
+  extractUserFromAuthPayload,
+} from '@/api/laravelResponse'
+import { request } from '@/api/request'
+import { type AuthContextValue } from '@/auth/context'
+import { rolePolicy } from '@/auth/rolePolicy'
+import { getUserRoles } from '@/auth/roles'
+import { setRefreshToken } from '@/auth/token'
+import { type AdminLoginPayload, type AuthRole, type LoginPayload, type RegisterPayload } from '@/features/auth/types'
+
+type AuthHandlers = Pick<
+  AuthContextValue,
+  'authStrategy' | 'setToken' | 'setUser' | 'refreshSession' | 'resetAuthState'
+>
+
+function ensureRoleMatchesExpected(user: unknown, expectedRole: AuthRole) {
+  const roles = getUserRoles(extractUserFromAuthPayload(user))
+  if (!roles.includes(expectedRole)) {
+    throw new Error(
+      `This account is not registered as ${expectedRole}. Please choose the correct account type.`,
+    )
+  }
+}
+
+async function hydrateSessionFromLoginBody(
+  body: unknown,
+  handlers: AuthHandlers,
+  missingCookieMessage: string,
+  missingTokenMessage: string,
+) {
+  const loggedInUser = extractUserFromAuthPayload(body)
+
+  if (handlers.authStrategy === 'http_only_cookie') {
+    const currentUser = await handlers.refreshSession()
+    if (!currentUser) {
+      throw new Error(missingCookieMessage)
+    }
+    return currentUser
+  }
+
+  const token = extractBearerTokenFromLoginBody(body)
+  if (!token) {
+    throw new Error(missingTokenMessage)
+  }
+
+  handlers.setToken(token)
+
+  const refresh = extractRefreshTokenFromLoginBody(body)
+  if (refresh) {
+    setRefreshToken(refresh)
+  }
+
+  if (loggedInUser) {
+    handlers.setUser(loggedInUser)
+  }
+  await handlers.refreshSession()
+  return loggedInUser
+}
+
+export async function loginUserWithRole(payload: LoginPayload, handlers: AuthHandlers) {
+  try {
+    const res = await request.post<unknown>('/auth/login', payload)
+    const user = await hydrateSessionFromLoginBody(
+      res.data,
+      handlers,
+      'Unable to restore your session after login.',
+      'Login response is missing access token.',
+    )
+    ensureRoleMatchesExpected(user, payload.role)
+    return user
+  } catch (error) {
+    handlers.resetAuthState()
+    throw error
+  }
+}
+
+export async function loginAdmin(payload: AdminLoginPayload, handlers: AuthHandlers) {
+  const res = await request.post<unknown>('/auth/admin/login', payload)
+  return hydrateSessionFromLoginBody(
+    res.data,
+    handlers,
+    'Unable to restore your admin session.',
+    'Admin login response is missing access token.',
+  )
+}
+
+export async function registerUser(payload: RegisterPayload) {
+  await request.post('/auth/register', payload)
+}
+
+export function resolveDashboardPath(user: unknown, selectedRole: AuthRole) {
+  const roles = getUserRoles(extractUserFromAuthPayload(user))
+  const dashboardFromPolicy = roles
+    .map((role) => rolePolicy[role]?.dashboard)
+    .find((value): value is string => Boolean(value))
+
+  return dashboardFromPolicy ?? (selectedRole === 'vendor' ? '/vendor' : '/dashboard')
+}

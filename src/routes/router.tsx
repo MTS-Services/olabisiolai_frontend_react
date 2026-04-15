@@ -9,6 +9,7 @@ const Unauthorized = lazy(() => import("@/pages/frontend/Unauthorized"));
 const Login = lazy(() => import("@/pages/frontend/auth/Login"));
 
 const UserDashboard = lazy(() => import("@/pages/user/UserDashboard"));
+const VendorDashboard = lazy(() => import("@/pages/vendor/VendorDashboard"));
 const Account = lazy(() => import("@/pages/frontend/Account"));
 
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -23,13 +24,13 @@ import { AdminLayout } from "@/layouts/admin/AdminLayout";
 
 import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
-import UserType from "@/pages/frontend/auth/UserType";
-import LoginGoogle from "@/pages/frontend/auth/LoginGoogle";
-import LoginEmail from "@/pages/frontend/auth/LoginEmail";
-import ForgetPassword from "@/pages/frontend/auth/ForgetPassword";
-import OTPVerification from "@/pages/frontend/auth/OTPVerification";
-import ResetPassword from "@/pages/frontend/auth/ResetPassword";
-import Register from "@/pages/frontend/auth/Register";
+const UserType = lazy(() => import("@/pages/frontend/auth/UserType"));
+const LoginGoogle = lazy(() => import("@/pages/frontend/auth/LoginGoogle"));
+const LoginEmail = lazy(() => import("@/pages/frontend/auth/LoginEmail"));
+const ForgetPassword = lazy(() => import("@/pages/frontend/auth/ForgetPassword"));
+const OTPVerification = lazy(() => import("@/pages/frontend/auth/OTPVerification"));
+const ResetPassword = lazy(() => import("@/pages/frontend/auth/ResetPassword"));
+const Register = lazy(() => import("@/pages/frontend/auth/Register"));
 
 const About = lazy(() => import("@/pages/frontend/About"));
 const Contact = lazy(() => import("@/pages/frontend/Contact"));
@@ -128,13 +129,6 @@ export const router = createBrowserRouter([
           { path: '/privacy-policy', element: suspensePage(PrivacyPolicy) },
           { path: '/cookies-policy', element: suspensePage(CookiesPolicy) },
           { path: '/careers', element: suspensePage(Careers) },
-          { path: '/user-type', element: suspensePage(UserType) },
-          { path: '/login/google', element: suspensePage(LoginGoogle) },
-          { path: '/login/email', element: suspensePage(LoginEmail) },
-          { path: '/forget-password', element: suspensePage(ForgetPassword) },
-          { path: '/otp-verification', element: suspensePage(OTPVerification) },
-          { path: '/reset-password', element: suspensePage(ResetPassword) },
-          { path: '/register', element: suspensePage(Register) },
         ],
       },
       {
@@ -228,6 +222,14 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: suspensePage(UserDashboard) },
           { path: '/account', element: suspensePage(Account) },
         ],
+      },
+      {
+        element: (
+          <RoleGate allow="vendor" fallback="/unauthorized">
+            <Outlet />
+          </RoleGate>
+        ),
+        children: [{ path: '/vendor', element: suspensePage(VendorDashboard) }],
       },
       {
         element: (

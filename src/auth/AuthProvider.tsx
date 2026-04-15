@@ -65,11 +65,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccessTokenState(token)
   }, [])
 
-  const logout = React.useCallback(async () => {
+  const resetAuthState = React.useCallback(() => {
     clearAccessToken()
     setAccessTokenState(null)
     setUser(null)
     setIsUserLoading(false)
+  }, [])
+
+  const logout = React.useCallback(async () => {
+    resetAuthState()
     try {
       if (env.logoutMode === 'multi') {
         const roles = getUserRoles(user)
@@ -80,6 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       // Session may already be invalid; still clear client state
+    } finally {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        window.location.assign('/')
+      }
     }
   }, [user])
 
@@ -95,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isUserLoading,
       user,
       setToken,
+      resetAuthState,
       logout,
       setUser,
       refreshSession,
@@ -106,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       refreshSession,
       setToken,
+      resetAuthState,
       user,
     ],
   )

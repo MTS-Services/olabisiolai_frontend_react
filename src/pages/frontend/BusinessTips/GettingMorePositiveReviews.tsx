@@ -143,6 +143,7 @@ const CHECKLIST = [
 
 export default function GettingMorePositiveReviews() {
   const [copied, setCopied] = useState(false);
+  const [checklistDone, setChecklistDone] = useState<Record<string, boolean>>({});
 
   async function handleCopyTemplate() {
     try {
@@ -424,15 +425,35 @@ export default function GettingMorePositiveReviews() {
                 <h3 className="text-2xl font-semibold text-[#191c1e]">Key Takeaways Checklist</h3>
               </div>
               <ul className="flex flex-col gap-6">
-                {CHECKLIST.map(({ title, desc }) => (
-                  <li key={title} className="flex gap-4 rounded-xl p-2 sm:p-4">
-                    <div className="mt-1 size-5 shrink-0 rounded border border-[#c5c6cd] bg-white" aria-hidden />
-                    <div>
-                      <p className="font-semibold text-[#191c1e]">{title}</p>
-                      <p className="mt-1 text-sm text-[#44474d]">{desc}</p>
-                    </div>
-                  </li>
-                ))}
+                {CHECKLIST.map(({ title, desc }) => {
+                  const done = checklistDone[title] ?? false;
+                  return (
+                    <li key={title} className="flex items-start gap-4 rounded-xl p-2 sm:p-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setChecklistDone((prev) => ({ ...prev, [title]: !prev[title] }))
+                        }
+                        className={cn(
+                          "mt-1.25 inline-flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border shadow-inner transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#158de0]",
+                          done
+                            ? "border-[#158de0] bg-[#158de0] ring-1 ring-[#158de0]/25"
+                            : "border-[#b8bcc8] bg-white ring-1 ring-black/4 hover:border-[#158de0]/60",
+                        )}
+                        aria-pressed={done}
+                        aria-label={done ? `Unmark: ${title}` : `Mark done: ${title}`}
+                      >
+                        {done ? (
+                          <Check className="size-3 text-white" strokeWidth={3} aria-hidden />
+                        ) : null}
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold leading-snug text-[#191c1e]">{title}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-[#44474d]">{desc}</p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>

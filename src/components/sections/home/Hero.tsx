@@ -24,7 +24,7 @@ export function Hero() {
               <InputGroup className="max-w-2xl border-muted bg-transparent px-1 py-6">
                 <InputGroupInput
                   placeholder="Search by business name, category, or location..."
-                  className="text-text-primary placeholder:text-muted-foreground"
+                  className="text-sm text-text-primary placeholder:text-xs placeholder:text-muted-foreground sm:text-base sm:placeholder:text-sm"
                 />
                 <InputGroupAddon
                   align="inline-end"

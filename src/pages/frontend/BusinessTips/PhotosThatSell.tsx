@@ -11,10 +11,8 @@ import {
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-const HERO_IMAGE =
-  "https://www.figma.com/api/mcp/asset/9b5e60ed-9d52-4ab4-bcbe-51760c221488";
-const PRODUCT_IN_USE_IMAGE =
-  "https://www.figma.com/api/mcp/asset/f00349fc-d2cb-40eb-baa8-605f854b0b8c";
+const HERO_IMAGE = "/images/feature/1-2.jpg";
+const PRODUCT_IN_USE_IMAGE = "/images/feature/1-4.jpg";
 
 export default function PhotosThatSell() {
   return (

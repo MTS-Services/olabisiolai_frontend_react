@@ -12,7 +12,7 @@ import {
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-const HERO_IMAGE = "https://www.figma.com/api/mcp/asset/935f7dbd-7d39-4a49-87bb-2a4b9a48f066";
+const HERO_IMAGE = "/images/feature/1-1.jpg";
 
 export default function RespondingToCustomerEnquiries() {
   return (

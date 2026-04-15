@@ -23,6 +23,13 @@ import { AdminLayout } from "@/layouts/admin/AdminLayout";
 
 import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
+import UserType from "@/pages/frontend/auth/UserType";
+import LoginGoogle from "@/pages/frontend/auth/LoginGoogle";
+import LoginEmail from "@/pages/frontend/auth/LoginEmail";
+import ForgetPassword from "@/pages/frontend/auth/ForgetPassword";
+import OTPVerification from "@/pages/frontend/auth/OTPVerification";
+import ResetPassword from "@/pages/frontend/auth/ResetPassword";
+import Register from "@/pages/frontend/auth/Register";
 
 const About = lazy(() => import("@/pages/frontend/About"));
 const Contact = lazy(() => import("@/pages/frontend/Contact"));
@@ -121,16 +128,79 @@ export const router = createBrowserRouter([
           { path: '/privacy-policy', element: suspensePage(PrivacyPolicy) },
           { path: '/cookies-policy', element: suspensePage(CookiesPolicy) },
           { path: '/careers', element: suspensePage(Careers) },
+          { path: '/user-type', element: suspensePage(UserType) },
+          { path: '/login/google', element: suspensePage(LoginGoogle) },
+          { path: '/login/email', element: suspensePage(LoginEmail) },
+          { path: '/forget-password', element: suspensePage(ForgetPassword) },
+          { path: '/otp-verification', element: suspensePage(OTPVerification) },
+          { path: '/reset-password', element: suspensePage(ResetPassword) },
+          { path: '/register', element: suspensePage(Register) },
         ],
       },
       {
         element: <AuthLayout />,
         children: [
           {
+            path: '/user-type',
+            element: (
+              <GuestGate>
+                {suspensePage(UserType)}
+              </GuestGate>
+            ),
+          },
+          {
             path: '/login',
             element: (
               <GuestGate>
                 {suspensePage(Login)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/login/google',
+            element: (
+              <GuestGate>
+                {suspensePage(LoginGoogle)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/login/email',
+            element: (
+              <GuestGate>
+                {suspensePage(LoginEmail)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/forget-password',
+            element: (
+              <GuestGate>
+                {suspensePage(ForgetPassword)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/otp-verification',
+            element: (
+              <GuestGate>
+                {suspensePage(OTPVerification)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/reset-password',
+            element: (
+              <GuestGate>
+                {suspensePage(ResetPassword)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/register',
+            element: (
+              <GuestGate>
+                {suspensePage(Register)}
               </GuestGate>
             ),
           },

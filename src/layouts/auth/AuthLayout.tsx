@@ -11,9 +11,9 @@ export function AuthLayout({
   showFooter?: boolean
 }) {
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh bg-auth-bg">
       {showHeader ? <FrontendHeader /> : null}
-      <main className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-4 py-12">
+      <main className="mx-auto flex w-full container flex-1 items-center justify-center px-4 py-12 ">
         <Outlet />
       </main>
       {showFooter ? <FrontendFooter /> : null}

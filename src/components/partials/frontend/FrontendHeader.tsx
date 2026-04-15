@@ -104,7 +104,7 @@ function HeaderToolbar({
             "hover:border-brand hover:bg-brand hover:text-ice",
           )}
         >
-          <Link to="/login">Login / Sign Up</Link>
+          <Link to="/user-type">Login / Sign Up</Link>
         </Button>
       )}
     </div>
@@ -193,7 +193,7 @@ function MobileMenu({
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem asChild className="rounded-lg">
-            <Link to="/login" className="flex items-center gap-2 py-2">
+            <Link to="/user-type" className="flex items-center gap-2 py-2">
               <LogIn className="size-4" aria-hidden />
               Login / Sign Up
             </Link>

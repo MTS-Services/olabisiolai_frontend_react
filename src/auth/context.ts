@@ -13,6 +13,8 @@ export type AuthContextValue = {
   isUserLoading: boolean
   user: AuthUser | null
   setToken: (token: string) => void
+  /** Clears local auth state/tokens without calling logout API. */
+  resetAuthState: () => void
   logout: () => Promise<void>
   setUser: (user: AuthUser | null) => void
   refreshSession: () => Promise<AuthUser | null>

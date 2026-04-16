@@ -7,6 +7,7 @@ import {
   Coins,
   Gift,
   HandCoins,
+  Lamp,
   Megaphone,
   MinusCircle,
   PlusCircle,
@@ -122,15 +123,15 @@ export default function PricingYourServicesRight() {
                 },
               ].map((item) => (
                 <article key={item.title} className="rounded-2xl bg-muted p-6">
-                  <item.icon className="h-5 w-5 text-brand" />
+                  <item.icon className="h-5 w-5 text-green-700" />
                   <h3 className="mt-3 text-xl font-semibold text-ink">{item.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-body-secondary">{item.text}</p>
                 </article>
               ))}
             </div>
             <div className="rounded-2xl border border-success/20 bg-card p-5 shadow-sm">
-              <p className="flex items-center gap-2 text-base font-semibold text-ink">
-                <TrendingUp className="h-4 w-4 text-success" />
+              <p className="flex items-center gap-2 text-base font-semibold text-ink ">
+                <Lamp className="h-6 w-6 text-green-700 bg-green-200 p-1 rounded-lg" />
                 Gidira Search Tip
               </p>
               <p className="mt-2 text-sm italic text-body-secondary">

@@ -53,10 +53,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // After reload, re-fetch profile when Bearer token was restored from session/local storage
+  // After reload, re-fetch profile when Bearer token was restored from session/local storage.
+  // Skip when on the register-OTP page: the token belongs to an unverified user
+  // whose /me endpoint returns 404. The token is used for the verify-otp call instead.
   React.useEffect(() => {
     if (env.authStrategy !== 'bearer_memory') return
     if (!getAccessToken()) return
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      if (
+        url.pathname === '/otp-verification' &&
+        url.searchParams.get('purpose') === 'register'
+      ) {
+        setIsUserLoading(false)
+        return
+      }
+    }
+
     void refreshSession()
   }, [refreshSession])
 
@@ -65,11 +79,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccessTokenState(token)
   }, [])
 
-  const logout = React.useCallback(async () => {
+  const resetAuthState = React.useCallback(() => {
     clearAccessToken()
     setAccessTokenState(null)
     setUser(null)
     setIsUserLoading(false)
+  }, [])
+
+  const logout = React.useCallback(async () => {
+    resetAuthState()
     try {
       if (env.logoutMode === 'multi') {
         const roles = getUserRoles(user)
@@ -80,6 +98,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       // Session may already be invalid; still clear client state
+    } finally {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        window.location.assign('/')
+      }
     }
   }, [user])
 
@@ -90,11 +112,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated:
         env.authStrategy === 'http_only_cookie'
           ? Boolean(user)
-          : Boolean(accessTokenState),
+          : Boolean(accessTokenState) && !isUserLoading,
       isSessionLoading,
       isUserLoading,
       user,
       setToken,
+      resetAuthState,
       logout,
       setUser,
       refreshSession,
@@ -106,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       refreshSession,
       setToken,
+      resetAuthState,
       user,
     ],
   )

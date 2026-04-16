@@ -30,6 +30,16 @@ function nextParamPointsAtLoginLoop(nextRaw: string | null) {
   return s.includes('/login')
 }
 
+function isUnsafePostLoginPath(pathname: string | undefined) {
+  if (!pathname) return true
+  return (
+    pathname === '/unauthorized' ||
+    pathname === '/login' ||
+    pathname.startsWith('/login/') ||
+    pathname.startsWith('/otp-verification')
+  )
+}
+
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -57,6 +67,8 @@ export default function Login() {
       const body = res.data
       const loggedInUser = extractUserFromAuthPayload(body)
 
+      let effectiveUser = loggedInUser
+
       if (authStrategy === 'http_only_cookie') {
         const u = await refreshSession()
         if (!u) {
@@ -64,6 +76,7 @@ export default function Login() {
             'No session cookie detected. Your Laravel API returns a Bearer token in JSON, not HttpOnly cookies. Set VITE_AUTH_STRATEGY=bearer_memory in .env and restart the dev server.',
           )
         }
+        effectiveUser = u
       } else {
         const token = extractBearerTokenFromLoginBody(body)
         if (!token) {
@@ -75,17 +88,23 @@ export default function Login() {
         const refresh = extractRefreshTokenFromLoginBody(body)
         if (refresh) setRefreshToken(refresh)
         if (loggedInUser) setUser(loggedInUser)
-        await refreshSession()
+        const refreshed = await refreshSession()
+        effectiveUser = refreshed ?? loggedInUser
       }
 
       const from = (location.state as { from?: { pathname?: string } } | null)?.from
         ?.pathname
-      if (from) {
+      if (from && !isUnsafePostLoginPath(from)) {
         navigate(from, { replace: true })
         return
       }
+
+      const roles = getUserRoles(effectiveUser)
+      if (roles.length === 0) {
+        throw new Error('Login succeeded, but no valid role was found for this account.')
+      }
+
       // Role-aware post-login landing (policy-driven)
-      const roles = getUserRoles(loggedInUser)
       for (const r of roles) {
         const dash = rolePolicy[r]?.dashboard
         if (dash) {

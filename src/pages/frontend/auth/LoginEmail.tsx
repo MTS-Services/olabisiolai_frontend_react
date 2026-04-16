@@ -10,6 +10,16 @@ import { resolveAuthRole, saveAuthRole } from "@/features/auth/roleSelection";
 import { resolveDashboardPath, loginUserWithRole } from "@/features/auth/service";
 import { type AuthRole } from "@/features/auth/types";
 
+function isUnsafePostLoginPath(pathname: string | undefined) {
+  if (!pathname) return true;
+  return (
+    pathname === "/unauthorized" ||
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname.startsWith("/otp-verification")
+  );
+}
+
 
 export default function LoginEmail() {
   const navigate = useNavigate();
@@ -49,7 +59,7 @@ export default function LoginEmail() {
       );
 
       const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
-      if (from) {
+      if (!isUnsafePostLoginPath(from)) {
         navigate(from, { replace: true });
         return;
       }

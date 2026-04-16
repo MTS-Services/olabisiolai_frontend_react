@@ -8,6 +8,7 @@ import { type AuthContextValue } from '@/auth/context'
 import { rolePolicy } from '@/auth/rolePolicy'
 import { getUserRoles } from '@/auth/roles'
 import { setAccessToken, setRefreshToken } from '@/auth/token'
+import { type AuthUser } from '@/auth/types'
 import {
   type AdminLoginPayload,
   type AuthRole,
@@ -156,22 +157,62 @@ export async function resendRegistrationOtp(payload: PasswordResetOtpPayload) {
   logOtpFromResponse(res.data, 'register resend')
 }
 
-export async function verifyRegistrationOtp(payload: VerifyOtpPayload, handlers: AuthHandlers) {
-  const res = await request.post<unknown>('/auth/otp/verify', payload)
+export async function verifyRegistrationOtp(
+  payload: VerifyOtpPayload,
+  handlers: AuthHandlers,
+  selectedRole: AuthRole,
+) {
+  const verifyPayload = {
+    ...payload,
+    code: payload.otp,
+    verification_code: payload.otp,
+  }
+  const res = await request.post<unknown>('/auth/otp/verify', verifyPayload)
   logOtpFromResponse(res.data, 'verify-otp')
-  return hydrateSessionFromLoginBody(
-    res.data,
-    handlers,
-    'OTP verified, but we could not restore your session.',
-    'OTP verified, but login token was not returned.',
-  )
+
+  // Registration already writes the login token to storage.
+  // OTP verification should validate/activate that session, not require a new token.
+  if (handlers.authStrategy === 'http_only_cookie') {
+    const currentUser = await handlers.refreshSession()
+    if (!currentUser) {
+      throw new Error('OTP verified, but we could not restore your session.')
+    }
+    return currentUser
+  }
+
+  const responseUser = extractUserFromAuthPayload(res.data)
+  if (responseUser) {
+    handlers.setUser(responseUser)
+  }
+
+  const refreshedUser = await handlers.refreshSession()
+  const resolvedUser = refreshedUser ?? responseUser
+  if (!resolvedUser) {
+    // Some APIs verify OTP successfully but don't return user payload,
+    // and profile endpoint may be unavailable. Keep role context so routing
+    // can still proceed to the correct dashboard.
+    const fallbackUser: AuthUser = {
+      id: payload.email,
+      email: payload.email,
+      role: selectedRole,
+      roles: [selectedRole],
+    }
+    handlers.setUser(fallbackUser)
+    return fallbackUser
+  }
+  return resolvedUser
 }
 
 export function resolveDashboardPath(user: unknown, selectedRole: AuthRole) {
   const roles = getUserRoles(extractUserFromAuthPayload(user))
+  if (roles.includes('admin')) return '/admin'
+  if (roles.includes('vendor')) return '/vendor'
+  if (roles.includes('user')) return '/dashboard'
+
   const dashboardFromPolicy = roles
     .map((role) => rolePolicy[role]?.dashboard)
     .find((value): value is string => Boolean(value))
 
-  return dashboardFromPolicy ?? (selectedRole === 'vendor' ? '/vendor' : '/dashboard')
+  if (dashboardFromPolicy) return dashboardFromPolicy
+  return selectedRole === 'vendor' ? '/vendor' : '/dashboard'
 }

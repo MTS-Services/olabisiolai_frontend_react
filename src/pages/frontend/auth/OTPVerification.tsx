@@ -175,13 +175,16 @@ export default function OTPVerification() {
       return;
     }
 
+    const normalizedEmail = email.toLowerCase();
+
     setLoading(true);
     saveAuthRole(role);
 
     try {
       const loggedInUser = await verifyRegistrationOtp(
-        { email, otp: otpCode },
+        { email: normalizedEmail, otp: otpCode },
         { authStrategy, setToken, setUser, refreshSession, resetAuthState },
+        role,
       );
       navigate(resolveDashboardPath(loggedInUser, role), { replace: true });
     } catch (err) {
@@ -232,16 +235,20 @@ export default function OTPVerification() {
       return;
     }
 
+    const normalizedEmail = email.toLowerCase();
+
     setResending(true);
     try {
       if (purpose === "register") {
-        await resendRegistrationOtp({ email });
+        await resendRegistrationOtp({ email: normalizedEmail });
       } else {
-        await requestPasswordResetOtp({ email });
+        await requestPasswordResetOtp({ email: normalizedEmail });
       }
       limiter.attempts += 1;
       writeLimiterState(limiterKey, limiter);
       setResendMessage("A new OTP has been sent.");
+      setOtp(Array.from({ length: OTP_LENGTH }, () => ""));
+      inputRefs.current[0]?.focus();
     } catch (err) {
       setError(getAuthErrorMessage(err, "Unable to resend OTP. Please try again."));
     } finally {

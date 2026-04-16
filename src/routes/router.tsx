@@ -214,7 +214,7 @@ export const router = createBrowserRouter([
       },
       {
         element: (
-          <RoleGate allow={['user', 'buyer']} fallback="/unauthorized">
+          <RoleGate allow="user" fallback="/unauthorized">
             <Outlet />
           </RoleGate>
         ),

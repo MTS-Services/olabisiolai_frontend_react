@@ -96,7 +96,7 @@ export default function MarketingBeyondGidira() {
     return (
         <div className="w-full bg-white">
             {/* Hero — Figma 594:7569 */}
-            <section className="relative overflow-hidden bg-[#191b23] py-14 text-center sm:py-20 lg:py-28">
+            <section className="relative overflow-hidden bg-gray-900 py-14 text-center sm:py-20 lg:py-28">
                 <div
                     className="pointer-events-none absolute inset-0 opacity-20"
                     aria-hidden
@@ -106,13 +106,13 @@ export default function MarketingBeyondGidira() {
                     }}
                 />
                 <div className={cn(container, "relative z-10 flex flex-col items-center")}>
-                    <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#76f99e]">
-                        <Megaphone className="h-9 w-9 text-[#191c1e]" aria-hidden strokeWidth={2} />
+                    <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500">
+                        <Megaphone className="h-9 w-9 text-gray-900" aria-hidden strokeWidth={2} />
                     </div>
                     <h1 className="max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-6xl lg:leading-[1.1]">
                         Marketing Beyond Gidira
                     </h1>
-                    <p className="mt-6 max-w-3xl text-base font-medium leading-relaxed text-[#99a1af] sm:text-lg lg:text-2xl lg:leading-snug">
+                    <p className="mt-6 max-w-3xl text-base font-medium leading-relaxed text-gray-300 sm:text-lg lg:text-2xl lg:leading-snug">
                         A comprehensive strategy guide for Nigerian businesses.
                         <br className="hidden sm:block" />
                         Discover how to leverage the full digital landscape to drive traffic back to your core
@@ -126,7 +126,7 @@ export default function MarketingBeyondGidira() {
                 <div className={cn(container)}>
                     <Link
                         to="/business-tips"
-                        className="inline-flex items-center gap-2 text-base font-medium text-[#44474d] transition-colors hover:text-[#191b23]"
+                        className="inline-flex items-center gap-2 text-base font-medium text-gray-600 transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
                         Back to Business Tips
@@ -139,15 +139,15 @@ export default function MarketingBeyondGidira() {
                     {/* Bento — Figma 594:8089 */}
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                         {/* Your Marketing Ecosystem */}
-                        <div className="flex flex-col justify-between gap-8 rounded-3xl bg-[#f3f4f6] p-8 sm:p-10 lg:col-span-8 lg:min-h-[320px] lg:p-12">
+                        <div className="flex flex-col justify-between gap-8 rounded-3xl bg-gray-100 p-8 sm:p-10 lg:col-span-8 lg:min-h-[320px] lg:p-12">
                             <div className="flex flex-col gap-4">
                                 <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#76f99e]">
                                     <Star className="size-6 text-[#191c1e]" aria-hidden strokeWidth={2} />
                                 </div>
-                                <h2 className="text-2xl font-bold leading-tight text-[#191c1e] sm:text-3xl">
+                                <h2 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
                                     Your Marketing Ecosystem
                                 </h2>
-                                <p className="max-w-2xl text-base leading-relaxed text-[#44474d] sm:text-lg">
+                                <p className="max-w-2xl text-base leading-relaxed text-gray-500 sm:text-lg">
                                     Gidira isn&apos;t just a listing; it&apos;s the anchor of your digital presence. Think of
                                     Gidira as your flagship store, while Instagram, WhatsApp, and Facebook are the
                                     roads leading customers to your door.
@@ -155,19 +155,19 @@ export default function MarketingBeyondGidira() {
                             </div>
                             <div className="grid gap-4 sm:grid-cols-3">
                                 <div className="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm">
-                                    <span className="text-base font-semibold text-[#006d36]">Awareness</span>
-                                    <p className="text-sm leading-snug text-[#191c1e]">
+                                    <span className="text-base font-semibold text-green-700">Awareness</span>
+                                    <p className="text-sm leading-snug text-gray-900">
                                         IG &amp; Facebook ads to find new customers.
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm">
-                                    <span className="text-base font-semibold text-[#006d36]">Conversion</span>
+                                    <span className="text-base font-semibold text-green-700">Conversion</span>
                                     <p className="text-sm leading-snug text-[#191c1e]">
                                         WhatsApp for direct sales and service.
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm">
-                                    <span className="text-base font-semibold text-[#006d36]">Trust</span>
+                                    <span className="text-base font-semibold text-green-700">Trust</span>
                                     <p className="text-sm leading-snug text-[#191c1e]">
                                         Gidira profile for verified reviews and info.
                                     </p>
@@ -177,10 +177,10 @@ export default function MarketingBeyondGidira() {
 
                         {/* WhatsApp Business Mastery */}
                         <div className="flex flex-col rounded-3xl border border-[rgba(197,198,205,0.15)] bg-white p-8 shadow-sm sm:p-9 lg:col-span-4">
-                            <div className="mb-6 flex size-12 shrink-0 items-center justify-center rounded-full bg-[#d1fae5]">
-                                <MessageCircle className="size-5 text-[#006d36]" aria-hidden strokeWidth={2} />
+                            <div className="mb-6 flex size-12 shrink-0 items-center justify-center rounded-full bg-green-100">
+                                <MessageCircle className="size-5 text-green-700" aria-hidden strokeWidth={2} />
                             </div>
-                            <h3 className="text-xl font-bold leading-tight text-[#191c1e] sm:text-2xl">
+                            <h3 className="text-xl font-bold leading-tight text-gray-700 sm:text-2xl">
                                 WhatsApp Business
                                 <br />
                                 Mastery
@@ -189,13 +189,13 @@ export default function MarketingBeyondGidira() {
                                 {WHATSAPP_ITEMS.map(({ title, body }) => (
                                     <li key={title} className="flex gap-3">
                                         <Check
-                                            className="mt-0.5 size-4 shrink-0 text-[#006d36]"
+                                            className="mt-0.5 size-4 shrink-0 text-green-700"
                                             aria-hidden
                                             strokeWidth={3}
                                         />
-                                        <p className="text-sm leading-snug text-[#191c1e]">
+                                        <p className="text-sm leading-snug text-gray-500">
                                             <span className="font-semibold">{title}</span>{" "}
-                                            <span className="font-normal text-[#44474d]">{body}</span>
+                                            <span className="font-normal text-gray-500">{body}</span>
                                         </p>
                                     </li>
                                 ))}
@@ -211,9 +211,9 @@ export default function MarketingBeyondGidira() {
                         </div>
 
                         {/* Instagram */}
-                        <div className="flex flex-col gap-6 rounded-3xl bg-[#f3f4f6] p-8 sm:flex-row sm:items-stretch sm:gap-8 sm:p-8 lg:col-span-6">
+                        <div className="flex flex-col gap-6 rounded-3xl bg-gray-100 p-8 sm:flex-row sm:items-stretch sm:gap-8 sm:p-8 lg:col-span-6">
                             <div className="flex min-w-0 flex-1 flex-col gap-4">
-                                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#fce7f3]">
+                                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gray-100">
                                     <Camera className="size-5 text-pink-600" aria-hidden strokeWidth={2} />
                                 </div>
                                 <h3 className="text-xl font-bold leading-tight text-[#191c1e] sm:text-2xl">
@@ -221,15 +221,15 @@ export default function MarketingBeyondGidira() {
                                     <br />
                                     Nigerians
                                 </h3>
-                                <p className="text-sm leading-relaxed text-[#44474d]">
+                                <p className="text-sm leading-relaxed text-gray-500">
                                     Visual storytelling is king. Your feed should be a curated gallery of excellence.
                                 </p>
                                 <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
-                                    <span className="text-xs font-semibold uppercase tracking-tight text-[#006d36]">
+                                    <span className="text-xs font-semibold uppercase tracking-tight text-green-700">
                                         Before/After Clips
                                     </span>
                                     <span className="h-px w-8 bg-[rgba(0,109,54,0.3)]" aria-hidden />
-                                    <span className="text-xs font-semibold uppercase tracking-tight text-[#006d36]">
+                                    <span className="text-xs font-semibold uppercase tracking-tight text-green-700">
                                         Showcases
                                     </span>
                                 </div>
@@ -262,7 +262,7 @@ export default function MarketingBeyondGidira() {
                                 strokeWidth={1}
                             />
                             <div className="relative flex flex-col gap-4">
-                                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#dbeafe]">
+                                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gray-100">
                                     <Briefcase className="size-5 text-blue-600" aria-hidden strokeWidth={2} />
                                 </div>
                                 <h3 className="text-xl font-bold text-[#191c1e] sm:text-2xl">Facebook Marketplace</h3>
@@ -275,7 +275,7 @@ export default function MarketingBeyondGidira() {
                                         (label) => (
                                             <span
                                                 key={label}
-                                                className="rounded-full bg-[#f3f4f6] px-4 py-2 text-xs font-medium text-[#191c1e]"
+                                                className="rounded-full bg-gray-100 px-4 py-2 text-xs font-medium text-gray-700"
                                             >
                                                 {label}
                                             </span>
@@ -288,7 +288,7 @@ export default function MarketingBeyondGidira() {
                         {/* Word-of-Mouth */}
                         <div className="flex flex-col justify-center gap-4 rounded-3xl bg-black px-8 py-10 sm:px-10 lg:col-span-5">
                             <h3 className="text-xl font-bold text-white sm:text-2xl">Word-of-Mouth</h3>
-                            <p className="text-sm leading-relaxed text-[#76859e]">
+                            <p className="text-sm leading-relaxed text-gray-300">
                                 The most powerful marketing in Nigeria is a recommendation from a friend.
                             </p>
                             <div className="mt-2 rounded-lg border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
@@ -301,7 +301,7 @@ export default function MarketingBeyondGidira() {
                         </div>
 
                         {/* Linking Everything to Gidira */}
-                        <div className="flex flex-col gap-8 rounded-3xl bg-[#f3f4f6] p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10 lg:col-span-7">
+                        <div className="flex flex-col gap-8 rounded-3xl bg-gray-100 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10 lg:col-span-7">
                             <div className="flex max-w-sm flex-col gap-4">
                                 <h3 className="text-xl font-bold leading-tight text-[#191c1e] sm:text-2xl">
                                     Linking Everything to

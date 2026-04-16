@@ -1,1 +1,0 @@
-import{t as e}from"./client-_kFztRh9.js";var t={get:e.get,post:e.post,put:e.put,patch:e.patch,delete:e.delete};export{t};

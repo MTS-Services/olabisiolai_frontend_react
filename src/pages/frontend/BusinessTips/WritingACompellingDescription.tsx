@@ -2,9 +2,7 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle2,
-  CircleCheck,
   PenSquare,
-  TriangleAlert,
 } from "lucide-react";
 
 import { container } from "@/lib/container";
@@ -142,9 +140,9 @@ export default function WritingACompellingDescription() {
             </div>
           </div>
 
-           <div className=" flex items-center justify-center">
+          <div className=" flex items-center justify-center">
             <div className="flex flex-col md:flex-row gap-5 w-full container">
-              
+
               {/* Left Dark Card: What to Include */}
               <div className="flex-1 bg-gray-800 text-white rounded-2xl p-8 shadow-xl">
                 <h2 className="text-xl font-bold mb-6 tracking-tight">What to Include</h2>
@@ -204,9 +202,9 @@ export default function WritingACompellingDescription() {
             </div>
           </div>
 
-           <div className=" bg-white flex items-center justify-center ">
+          <div className=" bg-white flex items-center justify-center ">
             <div className="w-full ">
-              
+
               {/* Section Header */}
               <div className="flex items-center gap-4 mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 whitespace-nowrap">Power Words That Convert</h2>
@@ -215,7 +213,7 @@ export default function WritingACompellingDescription() {
 
               {/* Cards Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                
+
                 {/* Card 1 */}
                 <div className="border border-gray-200 rounded-2xl py-6 px-4 flex flex-col items-center justify-center text-center hover:shadow-md transition-shadow duration-200">
                   <span className="text-success font-semibold text-base mb-1">Verified</span>
@@ -245,83 +243,83 @@ export default function WritingACompellingDescription() {
           </div>
 
           <div className="bg-white flex items-center justify-center">
-          <div className="w-full bg-gray-100 rounded-2xl p-8">
-            
-            {/* Title */}
-            <h2 className="text-2xl font-bold text-gray-900 mb-7">Common Mistakes to Avoid</h2>
+            <div className="w-full bg-gray-100 rounded-2xl p-8">
 
-            {/* 2-column grid of mistakes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-7">
+              {/* Title */}
+              <h2 className="text-2xl font-bold text-gray-900 mb-7">Common Mistakes to Avoid</h2>
 
-              {/* Item 1 */}
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 mt-0.5">
-                  {/* Alert circle icon */}
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm mb-1">Too Short</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">A one or two sentence description isn't enough. Aim for at least 3–4 sentences.</p>
+              {/* 2-column grid of mistakes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-7">
+
+                {/* Item 1 */}
+                <div className="flex items-start gap-3">
+                  <span className="flex-shrink-0 mt-0.5">
+                    {/* Alert circle icon */}
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm mb-1">Too Short</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">A one or two sentence description isn't enough. Aim for at least 3–4 sentences.</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Item 2 */}
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 mt-0.5">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm mb-1">Copying Competitors</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">Never copy. This looks unprofessional and search engines may penalize your listing.</p>
+                {/* Item 2 */}
+                <div className="flex items-start gap-3">
+                  <span className="flex-shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm mb-1">Copying Competitors</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">Never copy. This looks unprofessional and search engines may penalize your listing.</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Item 3 */}
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 mt-0.5">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm mb-1">Using All Caps</p>
-                  <p className="text-sm text-gray-500 leading-relaxed uppercase tracking-wide">WRITING LIKE THIS LOOKS UNPROFESSIONAL AND AGGRESSIVE.</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">Use normal capitalization.</p>
+                {/* Item 3 */}
+                <div className="flex items-start gap-3">
+                  <span className="flex-shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm mb-1">Using All Caps</p>
+                    <p className="text-sm text-gray-500 leading-relaxed uppercase tracking-wide">WRITING LIKE THIS LOOKS UNPROFESSIONAL AND AGGRESSIVE.</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">Use normal capitalization.</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Item 4 */}
-              <div className="flex items-start gap-3">
-                <span className="flex-shrink-0 mt-0.5">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm mb-1">Being Too Vague</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">"We provide business services" is weak. Say "We provide bookkeeping and tax planning."</p>
+                {/* Item 4 */}
+                <div className="flex items-start gap-3">
+                  <span className="flex-shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm mb-1">Being Too Vague</p>
+                    <p className="text-sm text-gray-500 leading-relaxed">"We provide business services" is weak. Say "We provide bookkeeping and tax planning."</p>
+                  </div>
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
-        </div>
 
           <div className="bg-white flex items-start justify-center">
             <div className="w-full">
-              
+
               {/* Page Title */}
               <h1 className="lg:text-3xl text-2xl font-bold text-gray-900 text-center mb-10">
                 Examples by Industry

@@ -8,8 +8,6 @@ import {
   Clock,
   Layout,
   MessageCircleReply,
-  MessageSquareText,
-  PhoneCall,
   Share2,
   Star,
   TrendingUp,
@@ -148,9 +146,8 @@ function EnquiryTemplates() {
 
         {/* Toast Notification */}
         <div
-          className={`fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#166941] text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-lg transition-all duration-300 flex items-center gap-2 ${
-            showToast ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
-          }`}
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#166941] text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-lg transition-all duration-300 flex items-center gap-2 ${showToast ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+            }`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -314,10 +311,10 @@ export default function RespondingToCustomerEnquiries() {
           {/* Enquiry Templates */}
           <EnquiryTemplates />
 
-           {/* Handling Price Negotiations Section */}
+          {/* Handling Price Negotiations Section */}
           <div className="w-full rounded-[32px] bg-[#0b1926] p-8 md:p-12 lg:p-16 overflow-hidden">
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-              
+
               {/* Left Content */}
               <div className="space-y-8">
                 <div className="space-y-4">
@@ -325,7 +322,7 @@ export default function RespondingToCustomerEnquiries() {
                     Handling Price Negotiations
                   </h2>
                   <p className="text-gray-400 text-lg max-w-md leading-relaxed">
-                    Nigerian customers value a good deal, but your value shouldn't be 
+                    Nigerian customers value a good deal, but your value shouldn't be
                     compromised. Here's how to balance both.
                   </p>
                 </div>
@@ -339,7 +336,7 @@ export default function RespondingToCustomerEnquiries() {
                     <div>
                       <h3 className="text-xl font-bold text-white">When to Negotiate</h3>
                       <p className="mt-1 text-gray-400 text-sm leading-relaxed">
-                        Negotiate for bulk orders or long-term contracts. Offer a "loyalty discount" 
+                        Negotiate for bulk orders or long-term contracts. Offer a "loyalty discount"
                         instead of just lowering the price.
                       </p>
                     </div>
@@ -371,14 +368,14 @@ export default function RespondingToCustomerEnquiries() {
                   {/* Overlay graphic to mimic the futuristic circles in the image */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-center justify-center">
                     <div className="w-32 h-32 border border-white/10 rounded-full animate-pulse flex items-center justify-center">
-                        <div className="w-16 h-16 border border-white/20 rounded-full" />
+                      <div className="w-16 h-16 border border-white/20 rounded-full" />
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-8">
                   <p className="text-lg italic text-gray-300 leading-relaxed font-light">
-                    "The aim is not just to sell once, but to create a customer 
+                    "The aim is not just to sell once, but to create a customer
                     who believes in your worth."
                   </p>
                 </div>
@@ -389,7 +386,7 @@ export default function RespondingToCustomerEnquiries() {
 
           {/* Converting to Sales & Managing Volume Section */}
           <div className="grid gap-6 md:grid-cols-2">
-            
+
             {/* LEFT CARD: Converting to Sales */}
             <div className="rounded-[40px] bg-[#f3f4f6] p-8 md:p-10">
               <div className="mb-8 flex items-center gap-3">

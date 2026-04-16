@@ -4,11 +4,8 @@ import {
   BadgeDollarSign,
   BookOpenCheck,
   CircleCheck,
-  Coins,
-  Gift,
   HandCoins,
   Lamp,
-  Megaphone,
   MinusCircle,
   PlusCircle,
   Search,
@@ -18,7 +15,15 @@ import {
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-function PriceOptionCard({ title, pro, con }) {
+function PriceOptionCard({
+  title,
+  pro,
+  con,
+}: {
+  title: string;
+  pro: string;
+  con: string;
+}) {
   return (
     <div className="rounded-[32px] border border-gray-100 bg-white p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
       <h3 className="mb-6 text-xl font-bold text-gray-900">{title}</h3>
@@ -161,27 +166,27 @@ export default function PricingYourServicesRight() {
               ))}
             </div>
             {/* Profit Margin Banner */}
-              <div className="flex w-full items-center gap-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-6 shadow-sm sm:p-8">
-                {/* Icon Box */}
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-green-600 text-white shadow-md">
-                  <TrendingUp className="h-7 w-7" />
-                </div>
-
-                {/* Content */}
-                <div className="space-y-1">
-                  <h3 className="text-xl font-bold text-gray-900">
-                    05 Profit Margin
-                  </h3>
-                  <p className="text-sm leading-relaxed text-gray-600 sm:text-base">
-                    The extra amount that goes back into the business for growth.
-                  </p>
-                </div>
+            <div className="flex w-full items-center gap-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-6 shadow-sm sm:p-8">
+              {/* Icon Box */}
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-green-600 text-white shadow-md">
+                <TrendingUp className="h-7 w-7" />
               </div>
+
+              {/* Content */}
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-gray-900">
+                  05 Profit Margin
+                </h3>
+                <p className="text-sm leading-relaxed text-gray-600 sm:text-base">
+                  The extra amount that goes back into the business for growth.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Value-Based Pricing Dark Banner */} 
+          {/* Value-Based Pricing Dark Banner */}
           <div className="relative w-full overflow-hidden rounded-[40px] bg-gray-900 px-8 py-10 md:px-12 md:py-14">
-            
+
             {/* Content Layer */}
             <div className="relative z-10 max-w-2xl space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
@@ -197,10 +202,10 @@ export default function PricingYourServicesRight() {
 
             {/* Watermark Icon Layer using your Icon.svg */}
             <div className="absolute right-12 top-1/2 -translate-y-1/2 select-none pointer-events-none">
-              <img 
-                src="/images/feature/Icon.svg" 
-                alt="" 
-                className="" 
+              <img
+                src="/images/feature/Icon.svg"
+                alt=""
+                className=""
               />
             </div>
           </div>
@@ -245,7 +250,7 @@ export default function PricingYourServicesRight() {
           </div>
 
 
-        {/* Discounts & Promotions Section */}
+          {/* Discounts & Promotions Section */}
           <div className="py-12 bg-white">
             <div className=" mx-auto px-4">
               <h2 className="text-3xl font-bold text-gray-900 mb-8">
@@ -287,43 +292,43 @@ export default function PricingYourServicesRight() {
           </div>
 
           <div className="flex items-center justify-center">
-          <div className="w-full bg-gray-300 rounded-3xl p-10 md:p-16 shadow-sm border border-gray-300">
-            
-            <h2 className="text-3xl font-bold text-black mb-10">Adjusting Your Prices</h2>
+            <div className="w-full bg-gray-300 rounded-3xl p-10 md:p-16 shadow-sm border border-gray-300">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="text-green-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-clock-4 text-emerald-700"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">When to raise</h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      When your demand exceeds your capacity, or when inflation significantly impacts your material costs.
-                    </p>
+              <h2 className="text-3xl font-bold text-black mb-10">Adjusting Your Prices</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="text-green-800">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-clock-4 text-emerald-700"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">When to raise</h3>
+                      <p className="text-gray-600 leading-relaxed">
+                        When your demand exceeds your capacity, or when inflation significantly impacts your material costs.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="text-green-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-message-square text-emerald-700"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">How to communicate</h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      Be transparent. Give existing clients 30 days notice and explain the value increase (e.g., "To maintain the high quality of materials we use...").
-                    </p>
+                <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="text-green-800">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-message-square text-emerald-700"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">How to communicate</h3>
+                      <p className="text-gray-600 leading-relaxed">
+                        Be transparent. Give existing clients 30 days notice and explain the value increase (e.g., "To maintain the high quality of materials we use...").
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
-        </div>
 
           <div className="rounded-4xl bg-brand-red p-18 text-ice">
             <h2 className="text-2xl font-bold">Key Takeaways</h2>

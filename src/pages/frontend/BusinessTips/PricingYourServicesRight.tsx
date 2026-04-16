@@ -131,62 +131,118 @@ export default function PricingYourServicesRight() {
                 </div>
               ))}
             </div>
-            <div className="rounded-xl bg-success/20 p-4 text-sm font-medium text-success">
-              <span className="inline-flex items-center gap-2">
-                <CircleCheck className="h-4 w-4" />
-                Do Profit Margin
-              </span>
-              <p className="mt-2 text-success">
-                Add 20-40% on top of your costs to create a sustainable for growth.
+            {/* Profit Margin Banner */}
+              <div className="flex w-full items-center gap-5 rounded-3xl border border-emerald-100 bg-[#e8f9ee] p-6 shadow-sm sm:p-8">
+                {/* Icon Box */}
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#066a34] text-white shadow-md">
+                  <TrendingUp className="h-7 w-7" />
+                </div>
+
+                {/* Content */}
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    05 Profit Margin
+                  </h3>
+                  <p className="text-sm leading-relaxed text-gray-600 sm:text-base">
+                    The extra amount that goes back into the business for growth.
+                  </p>
+                </div>
+              </div>
+          </div>
+
+          {/* Value-Based Pricing Dark Banner */} 
+          <div className="relative w-full overflow-hidden rounded-[40px] bg-[#0b1926] px-8 py-10 md:px-12 md:py-14">
+            
+            {/* Content Layer */}
+            <div className="relative z-10 max-w-2xl space-y-4">
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+                Value-Based Pricing
+              </h2>
+              <p className="text-lg leading-relaxed text-gray-400">
+                Instead of charging for your time, charge for the{" "}
+                <span className="font-semibold text-emerald-400">result</span>. If your
+                service saves a client ₦500,000, charging ₦100,000 is a bargain, even if it
+                only took you two hours. Use your expertise and reputation as a multiplier.
               </p>
             </div>
-          </div>
 
-          <div className="rounded-3xl bg-ink p-6 sm:p-8">
-            <h2 className="text-2xl font-bold text-ice">Value-Based Pricing</h2>
-            <p className="mt-3 text-sm leading-6 text-stat-muted">
-              Instead of charging for time, charge for the result. If your service saves a client
-              NGN100,000 in a year, even if it only took you two hours, your expertise and execution
-              are valuable.
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            <h2 className="text-center text-2xl font-bold text-ink sm:text-3xl">
-              Displaying Prices on Gidira
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {[
-                {
-                  title: "Option 1: Exact Prices",
-                  items: ["NGN 5,000 haircut (wash + style)", "NGN 8,000 full makeup", "NGN 10,000 home service"],
-                },
-                {
-                  title: "Option 2: Price Ranges",
-                  items: ["NGN 7,000-15,000 all-in event makeup", "Custom rates for special requests"],
-                },
-                {
-                  title: "Option 3: Starting From",
-                  items: ["From NGN 8,000 tailoring", "From NGN 15,000 website setup"],
-                },
-                {
-                  title: "Option 4: Contact for Pricing",
-                  items: ["Best for custom jobs and large projects", "Good for scope-heavy bespoke contracts"],
-                },
-              ].map((block) => (
-                <article key={block.title} className="rounded-2xl bg-card p-5 shadow-sm">
-                  <h3 className="text-base font-semibold text-ink">{block.title}</h3>
-                  <ul className="mt-3 space-y-2 text-sm text-body-secondary">
-                    {block.items.map((line) => (
-                      <li key={line} className="rounded-md bg-surface-soft px-3 py-2">
-                        {line}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
+            {/* Watermark Icon Layer using your Icon.svg */}
+            <div className="absolute right-12 top-1/2 -translate-y-1/2 select-none pointer-events-none">
+              <img 
+                src="/images/feature/Icon.svg" 
+                alt="" 
+                className="" 
+              />
             </div>
           </div>
+
+          {/* Displaying Prices Section */}
+          <div className="py-12 bg-white">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+                Displaying Prices on Gidira
+              </h2>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-2 lg:max-w-7xl mx-auto px-4">
+              {/* Option 1 */}
+              <PriceOptionCard
+                title="Option 1: Exact Prices"
+                pro="PRO: Builds instant trust and filters out low-budget leads."
+                con="CON: Rigid; no room for custom project adjustments."
+              />
+
+              {/* Option 2 */}
+              <PriceOptionCard
+                title="Option 2: Price Ranges"
+                pro="PRO: Flexible for different project complexities."
+                con="CON: Customers often expect the lower end."
+              />
+
+              {/* Option 3 */}
+              <PriceOptionCard
+                title="Option 3: Starting From"
+                pro="PRO: Great for marketing \"entry-level\" services."
+                con="CON: Can lead to \"sticker shock\" later."
+              />
+
+              {/* Option 4 */}
+              <PriceOptionCard
+                title="Option 4: Contact for Pricing"
+                pro="PRO: Perfect for high-end, bespoke consulting."
+                con="CON: May discourage quick-buy customers."
+              />
+            </div>
+          </div>
+
+          {/* Sub-component for clean code */}
+          function PriceOptionCard({ title, pro, con }) {
+            return (
+              <div className="rounded-[32px] border border-gray-100 bg-white p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                <h3 className="mb-6 text-xl font-bold text-gray-900">{title}</h3>
+                
+                <div className="space-y-3">
+                  {/* PRO Row */}
+                  <div className="flex items-start gap-3 rounded-xl bg-[#eefaf3] p-4">
+                    <PlusCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#166941]" />
+                    <p className="text-[13px] font-bold leading-tight text-[#166941]">
+                      {pro}
+                    </p>
+                  </div>
+
+                  {/* CON Row */}
+                  <div className="flex items-start gap-3 rounded-xl bg-[#f8f9fb] p-4">
+                    <MinusCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#717e91]" />
+                    <p className="text-[13px] font-bold leading-tight text-[#4b5563]">
+                      {con}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+
 
           <div className="space-y-5">
             <h2 className="text-2xl font-bold text-ink sm:text-3xl">Discounts & Promotions</h2>

@@ -6,7 +6,7 @@ export default function UserDashboard() {
     <DashboardLayout
       title="Dashboard"
       nav={[
-        { label: 'Overview', to: '/dashboard' },
+        { label: 'Overview', to: '/user/dashboard' },
         { label: 'Account', to: '/account' },
         { label: 'Cart', to: '/cart' },
       ]}

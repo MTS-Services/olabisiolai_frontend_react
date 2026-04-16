@@ -112,7 +112,7 @@ export default function Login() {
           return
         }
       }
-      navigate('/dashboard', { replace: true })
+      navigate('/user/dashboard', { replace: true })
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Login failed. Please try again.'

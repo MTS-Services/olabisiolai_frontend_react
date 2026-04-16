@@ -7,7 +7,7 @@ import { request } from '@/api/request'
 import { type AuthContextValue } from '@/auth/context'
 import { rolePolicy } from '@/auth/rolePolicy'
 import { getUserRoles } from '@/auth/roles'
-import { setAccessToken, setRefreshToken } from '@/auth/token'
+import { setAccessToken, setRefreshToken, setStoredAuthUser } from '@/auth/token'
 import { type AuthUser } from '@/auth/types'
 import {
   type AdminLoginPayload,
@@ -138,13 +138,24 @@ export async function registerAndLoginUser(payload: RegisterPayload) {
   // AuthProvider picks up the stored token when the OTP page mounts or on reload,
   // and skips the /me call (which 404s for unverified users).
   const token = extractBearerTokenFromLoginBody(res.data)
+  const responseUser = extractUserFromAuthPayload(res.data)
+  const storedUser =
+    responseUser ??
+    ({
+      id: payload.email,
+      email: payload.email,
+      role: payload.role,
+      roles: [payload.role],
+    } satisfies AuthUser)
+
   if (token) {
     setAccessToken(token)
     const refresh = extractRefreshTokenFromLoginBody(res.data)
     if (refresh) setRefreshToken(refresh)
   }
+  setStoredAuthUser(storedUser)
 
-  return extractUserFromAuthPayload(res.data)
+  return storedUser
 }
 
 export async function requestPasswordResetOtp(payload: PasswordResetOtpPayload) {
@@ -206,13 +217,13 @@ export async function verifyRegistrationOtp(
 export function resolveDashboardPath(user: unknown, selectedRole: AuthRole) {
   const roles = getUserRoles(extractUserFromAuthPayload(user))
   if (roles.includes('admin')) return '/admin'
-  if (roles.includes('vendor')) return '/vendor'
-  if (roles.includes('user')) return '/dashboard'
+  if (roles.includes('vendor')) return '/vendor/dashboard'
+  if (roles.includes('user')) return '/user/dashboard'
 
   const dashboardFromPolicy = roles
     .map((role) => rolePolicy[role]?.dashboard)
     .find((value): value is string => Boolean(value))
 
   if (dashboardFromPolicy) return dashboardFromPolicy
-  return selectedRole === 'vendor' ? '/vendor' : '/dashboard'
+  return selectedRole === 'vendor' ? '/vendor/dashboard' : '/user/dashboard'
 }

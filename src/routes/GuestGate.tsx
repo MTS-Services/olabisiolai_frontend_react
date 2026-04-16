@@ -10,7 +10,7 @@ function pickDashboardForUserRoles(roles: string[]): string {
     const dash = rolePolicy[r]?.dashboard
     if (dash) return dash
   }
-  return '/dashboard'
+  return '/user/dashboard'
 }
 
 /**

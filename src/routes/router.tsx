@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, type ComponentType, type LazyExoticComponent } from "react";
-import { createBrowserRouter, Outlet, useLocation } from "react-router-dom";
+import { Navigate, createBrowserRouter, Outlet, useLocation } from "react-router-dom";
 
 const Home = lazy(() => import("@/pages/frontend/Home"));
 const Cart = lazy(() => import("@/pages/frontend/Cart"));
@@ -213,13 +213,21 @@ export const router = createBrowserRouter([
         element: suspensePage(Unauthorized),
       },
       {
+        path: '/dashboard',
+        element: <Navigate to="/user/dashboard" replace />,
+      },
+      {
+        path: '/vendor',
+        element: <Navigate to="/vendor/dashboard" replace />,
+      },
+      {
         element: (
           <RoleGate allow="user" fallback="/unauthorized">
             <Outlet />
           </RoleGate>
         ),
         children: [
-          { path: '/dashboard', element: suspensePage(UserDashboard) },
+          { path: '/user/dashboard', element: suspensePage(UserDashboard) },
           { path: '/account', element: suspensePage(Account) },
         ],
       },
@@ -229,7 +237,7 @@ export const router = createBrowserRouter([
             <Outlet />
           </RoleGate>
         ),
-        children: [{ path: '/vendor', element: suspensePage(VendorDashboard) }],
+        children: [{ path: '/vendor/dashboard', element: suspensePage(VendorDashboard) }],
       },
       {
         element: (

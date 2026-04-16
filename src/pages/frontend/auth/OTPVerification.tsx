@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { getAuthErrorMessage } from "@/features/auth/errorMessage";
 import { resolveAuthRole, saveAuthRole } from "@/features/auth/roleSelection";
-import { getAccessToken } from "@/auth/token";
+import { getAccessToken, getStoredAuthUser } from "@/auth/token";
 import {
   requestPasswordResetOtp,
   resendRegistrationOtp,
@@ -93,11 +93,15 @@ export default function OTPVerification() {
   React.useEffect(() => {
     if (purpose === "register") {
       const storedToken = getAccessToken();
+      const storedUser = getStoredAuthUser();
       if (storedToken) {
         setToken(storedToken);
       }
+      if (storedUser) {
+        setUser(storedUser);
+      }
     }
-  }, [purpose, setToken]);
+  }, [purpose, setToken, setUser]);
 
   React.useEffect(() => {
     saveAuthRole(role);

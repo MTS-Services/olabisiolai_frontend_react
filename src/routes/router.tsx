@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, type ComponentType, type LazyExoticComponent } from "react";
-import { createBrowserRouter, Outlet, useLocation } from "react-router-dom";
+import { Navigate, createBrowserRouter, Outlet, useLocation } from "react-router-dom";
 
 const Home = lazy(() => import("@/pages/frontend/Home"));
 const Cart = lazy(() => import("@/pages/frontend/Cart"));
@@ -9,6 +9,7 @@ const Unauthorized = lazy(() => import("@/pages/frontend/Unauthorized"));
 const Login = lazy(() => import("@/pages/frontend/auth/Login"));
 
 const UserDashboard = lazy(() => import("@/pages/user/UserDashboard"));
+const VendorDashboard = lazy(() => import("@/pages/vendor/VendorDashboard"));
 const Account = lazy(() => import("@/pages/frontend/Account"));
 
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -23,6 +24,13 @@ import { AdminLayout } from "@/layouts/admin/AdminLayout";
 
 import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
+const UserType = lazy(() => import("@/pages/frontend/auth/UserType"));
+const LoginGoogle = lazy(() => import("@/pages/frontend/auth/LoginGoogle"));
+const LoginEmail = lazy(() => import("@/pages/frontend/auth/LoginEmail"));
+const ForgetPassword = lazy(() => import("@/pages/frontend/auth/ForgetPassword"));
+const OTPVerification = lazy(() => import("@/pages/frontend/auth/OTPVerification"));
+const ResetPassword = lazy(() => import("@/pages/frontend/auth/ResetPassword"));
+const Register = lazy(() => import("@/pages/frontend/auth/Register"));
 
 const About = lazy(() => import("@/pages/frontend/About"));
 const Contact = lazy(() => import("@/pages/frontend/Contact"));
@@ -127,10 +135,66 @@ export const router = createBrowserRouter([
         element: <AuthLayout />,
         children: [
           {
+            path: '/user-type',
+            element: (
+              <GuestGate>
+                {suspensePage(UserType)}
+              </GuestGate>
+            ),
+          },
+          {
             path: '/login',
             element: (
               <GuestGate>
                 {suspensePage(Login)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/login/google',
+            element: (
+              <GuestGate>
+                {suspensePage(LoginGoogle)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/login/email',
+            element: (
+              <GuestGate>
+                {suspensePage(LoginEmail)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/forget-password',
+            element: (
+              <GuestGate>
+                {suspensePage(ForgetPassword)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/otp-verification',
+            element: (
+              <GuestGate>
+                {suspensePage(OTPVerification)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/reset-password',
+            element: (
+              <GuestGate>
+                {suspensePage(ResetPassword)}
+              </GuestGate>
+            ),
+          },
+          {
+            path: '/register',
+            element: (
+              <GuestGate>
+                {suspensePage(Register)}
               </GuestGate>
             ),
           },
@@ -149,15 +213,31 @@ export const router = createBrowserRouter([
         element: suspensePage(Unauthorized),
       },
       {
+        path: '/dashboard',
+        element: <Navigate to="/user/dashboard" replace />,
+      },
+      {
+        path: '/vendor',
+        element: <Navigate to="/vendor/dashboard" replace />,
+      },
+      {
         element: (
-          <RoleGate allow={['user', 'buyer']} fallback="/unauthorized">
+          <RoleGate allow="user" fallback="/unauthorized">
             <Outlet />
           </RoleGate>
         ),
         children: [
-          { path: '/dashboard', element: suspensePage(UserDashboard) },
+          { path: '/user/dashboard', element: suspensePage(UserDashboard) },
           { path: '/account', element: suspensePage(Account) },
         ],
+      },
+      {
+        element: (
+          <RoleGate allow="vendor" fallback="/unauthorized">
+            <Outlet />
+          </RoleGate>
+        ),
+        children: [{ path: '/vendor/dashboard', element: suspensePage(VendorDashboard) }],
       },
       {
         element: (

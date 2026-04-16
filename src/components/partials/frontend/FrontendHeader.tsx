@@ -6,7 +6,9 @@ import {
   LogIn,
   LogOut,
   Search,
+  Settings,
   TrendingUp,
+  User,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -102,19 +104,49 @@ function HeaderToolbar({
       ) : null}
 
       {isAuthenticated ? (
-        <Button
-          type="button"
-          variant={isLightHeader ? "outline" : "default"}
-          className={cn(
-            "rounded-lg px-5 font-medium",
-            isLightHeader && "border-border-gray bg-white text-ink-heading hover:bg-muted",
-          )}
-          onClick={() => {
-            void logout();
-          }}
-        >
-          Logout
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                "h-10 w-10 rounded-full p-0",
+                isLightHeader
+                  ? "border-[#2563eb] bg-white text-[#2563eb] hover:bg-muted"
+                  : "border-border-gray bg-white text-ink-heading",
+              )}
+            >
+              <CircleUserRound className="size-5" aria-hidden />
+              <span className="sr-only">Open user menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-48">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/account" className="flex items-center gap-2">
+                <User className="size-4" aria-hidden />
+                Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/user/dashboard" className="flex items-center gap-2">
+                <Settings className="size-4" aria-hidden />
+                Dashboard
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                void logout();
+              }}
+              className="text-brand-red focus:text-brand-red"
+            >
+              <LogOut className="size-4" aria-hidden />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : (
         <Button
           asChild
@@ -125,7 +157,7 @@ function HeaderToolbar({
             "hover:border-brand hover:bg-brand hover:text-ice",
           )}
         >
-          <Link to="/login">Login / Sign Up</Link>
+          <Link to="/user-type">Login / Sign Up</Link>
         </Button>
       )}
     </div>
@@ -214,7 +246,7 @@ function MobileMenu({
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem asChild className="rounded-lg">
-            <Link to="/login" className="flex items-center gap-2 py-2">
+            <Link to="/user-type" className="flex items-center gap-2 py-2">
               <LogIn className="size-4" aria-hidden />
               Login / Sign Up
             </Link>

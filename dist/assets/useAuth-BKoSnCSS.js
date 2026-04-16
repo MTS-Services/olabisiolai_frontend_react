@@ -1,0 +1,1 @@
+import{o as e,r as t}from"./jsx-runtime-DcrEApUB.js";import{t as n}from"./context-DifPib7t.js";var r=e(t(),1);function i(){let e=r.useContext(n);if(!e)throw Error(`useAuth must be used within AuthProvider`);return e}export{i as t};

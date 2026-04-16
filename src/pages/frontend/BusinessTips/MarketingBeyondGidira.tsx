@@ -104,7 +104,7 @@ export default function MarketingBeyondGidira() {
                         backgroundImage:
                             "radial-gradient(ellipse 120% 80% at 100% 100%, rgb(0 109 54) 0%, transparent 55%)",
                     }}
-                />
+                /> 
                 <div className={cn(container, "relative z-10 flex flex-col items-center")}>
                     <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500">
                         <Megaphone className="h-9 w-9 text-gray-900" aria-hidden strokeWidth={2} />

@@ -3,35 +3,56 @@ import * as React from 'react'
 import { api } from '@/api/client'
 import { AuthContext, type AuthContextValue } from '@/auth/context'
 import { fetchCurrentUser } from '@/auth/session'
-import { clearAccessToken, getAccessToken, setAccessToken } from '@/auth/token'
+import {
+  clearAccessToken,
+  getAccessToken,
+  getStoredAuthUser,
+  setAccessToken,
+  setStoredAuthUser,
+} from '@/auth/token'
 import { type AuthUser } from '@/auth/types'
 import { getRoleLogoutPath } from '@/auth/rolePolicy'
 import { getUserRoles } from '@/auth/roles'
 import { env } from '@/config/env'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const initialToken = React.useMemo(() => getAccessToken(), [])
+  const initialUser = React.useMemo(() => {
+    if (env.authStrategy !== 'bearer_memory' || !initialToken) return null
+    return getStoredAuthUser()
+  }, [initialToken])
   const [accessTokenState, setAccessTokenState] = React.useState<string | null>(
-    () => getAccessToken(),
+    () => initialToken,
   )
-  const [user, setUser] = React.useState<AuthUser | null>(null)
+  const [user, setUserState] = React.useState<AuthUser | null>(() => initialUser)
   const [isSessionLoading, setIsSessionLoading] = React.useState(
     () => env.authStrategy === 'http_only_cookie',
   )
   const [isUserLoading, setIsUserLoading] = React.useState(() => {
-    return env.authStrategy === 'bearer_memory' && Boolean(getAccessToken())
+    return env.authStrategy === 'bearer_memory' && Boolean(initialToken) && !Boolean(initialUser)
   })
 
+  const setUser = React.useCallback((nextUser: AuthUser | null) => {
+    setStoredAuthUser(nextUser)
+    setUserState(nextUser)
+  }, [])
+
   const refreshSession = React.useCallback(async (): Promise<AuthUser | null> => {
-    setIsUserLoading(true)
+    const shouldBlock = env.authStrategy === 'http_only_cookie' || !user
+    if (shouldBlock) {
+      setIsUserLoading(true)
+    }
     try {
       const u = await fetchCurrentUser()
       // Never overwrite a known user with null due to a transient /me failure.
       if (u) setUser(u)
       return u
     } finally {
-      setIsUserLoading(false)
+      if (shouldBlock) {
+        setIsUserLoading(false)
+      }
     }
-  }, [])
+  }, [user, setUser])
 
   React.useEffect(() => {
     if (env.authStrategy !== 'http_only_cookie') {
@@ -112,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated:
         env.authStrategy === 'http_only_cookie'
           ? Boolean(user)
-          : Boolean(accessTokenState) && !isUserLoading,
+          : Boolean(accessTokenState) && Boolean(user),
       isSessionLoading,
       isUserLoading,
       user,

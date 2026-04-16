@@ -522,7 +522,7 @@ export default function RespondingToCustomerEnquiries() {
 
           {/* Key takeaways */}
           <div className="mx-auto w-full max-w-3xl">
-            <div className="rounded-[32px] border  bg-white px-6 py-10 shadow-sm sm:px-10 sm:py-12">
+            <div className="rounded-[32px]   bg-white px-6 py-10 shadow-md sm:px-10 sm:py-12">
               <div className="mb-8 flex items-center gap-3">
                 <Star className="size-5 text-[#158de0]" aria-hidden />
                 <h3 className="text-2xl font-semibold text-[#191c1e]">Key Takeaways Checklist</h3>

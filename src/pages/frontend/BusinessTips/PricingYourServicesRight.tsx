@@ -8,12 +8,40 @@ import {
   Gift,
   HandCoins,
   Megaphone,
+  MinusCircle,
+  PlusCircle,
   Search,
   TrendingUp,
 } from "lucide-react";
 
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
+
+function PriceOptionCard({ title, pro, con }) {
+  return (
+    <div className="rounded-[32px] border border-gray-100 bg-white p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+      <h3 className="mb-6 text-xl font-bold text-gray-900">{title}</h3>
+
+      <div className="space-y-3">
+        {/* PRO Row */}
+        <div className="flex items-start gap-3 rounded-xl bg-[#eefaf3] p-4">
+          <PlusCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#166941]" />
+          <p className="text-[13px] font-bold leading-tight text-[#166941]">
+            {pro}
+          </p>
+        </div>
+
+        {/* CON Row */}
+        <div className="flex items-start gap-3 rounded-xl bg-[#f8f9fb] p-4">
+          <MinusCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#717e91]" />
+          <p className="text-[13px] font-bold leading-tight text-[#4b5563]">
+            {con}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PricingYourServicesRight() {
   return (
@@ -177,87 +205,83 @@ export default function PricingYourServicesRight() {
           </div>
 
           {/* Displaying Prices Section */}
-          <div className="py-12 bg-white">
+          <div className="py-0 bg-white">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
                 Displaying Prices on Gidira
               </h2>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-2 lg:max-w-7xl mx-auto px-4">
+            <div className="grid gap-8 md:grid-cols-2  mx-auto px-4">
               {/* Option 1 */}
               <PriceOptionCard
                 title="Option 1: Exact Prices"
-                pro="PRO: Builds instant trust and filters out low-budget leads."
-                con="CON: Rigid; no room for custom project adjustments."
+                pro='PRO: Builds instant trust and filters out low-budget leads.'
+                con='CON: Rigid; no room for custom project adjustments.'
               />
 
               {/* Option 2 */}
               <PriceOptionCard
                 title="Option 2: Price Ranges"
-                pro="PRO: Flexible for different project complexities."
-                con="CON: Customers often expect the lower end."
+                pro='PRO: Flexible for different project complexities.'
+                con='CON: Customers often expect the lower end.'
               />
 
               {/* Option 3 */}
               <PriceOptionCard
                 title="Option 3: Starting From"
-                pro="PRO: Great for marketing \"entry-level\" services."
-                con="CON: Can lead to \"sticker shock\" later."
+                pro='PRO: Great for marketing "entry-level" services.'
+                con='CON: Can lead to "sticker shock" later.'
               />
 
               {/* Option 4 */}
               <PriceOptionCard
                 title="Option 4: Contact for Pricing"
-                pro="PRO: Perfect for high-end, bespoke consulting."
-                con="CON: May discourage quick-buy customers."
+                pro='PRO: Perfect for high-end, bespoke consulting.'
+                con='CON: May discourage quick-buy customers.'
               />
             </div>
           </div>
 
-          {/* Sub-component for clean code */}
-          function PriceOptionCard({ title, pro, con }) {
-            return (
-              <div className="rounded-[32px] border border-gray-100 bg-white p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-                <h3 className="mb-6 text-xl font-bold text-gray-900">{title}</h3>
-                
-                <div className="space-y-3">
-                  {/* PRO Row */}
-                  <div className="flex items-start gap-3 rounded-xl bg-[#eefaf3] p-4">
-                    <PlusCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#166941]" />
-                    <p className="text-[13px] font-bold leading-tight text-[#166941]">
-                      {pro}
-                    </p>
-                  </div>
 
-                  {/* CON Row */}
-                  <div className="flex items-start gap-3 rounded-xl bg-[#f8f9fb] p-4">
-                    <MinusCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#717e91]" />
-                    <p className="text-[13px] font-bold leading-tight text-[#4b5563]">
-                      {con}
-                    </p>
-                  </div>
+        {/* Discounts & Promotions Section */}
+          <div className="py-12 bg-white">
+            <div className=" mx-auto px-4">
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                Discounts & Promotions
+              </h2>
+
+              <div className="grid gap-6 md:grid-cols-3">
+                {/* First-Time Deals */}
+                <div className="rounded-3xl bg-[#f1f3f5] overflow-hidden border-t-[5px] border-[#166941] p-8 transition-transform hover:scale-[1.02]">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    First-Time Deals
+                  </h3>
+                  <p className="text-[15px] leading-relaxed text-gray-600">
+                    Offer a small welcome discount (e.g., 10% off) to lower the barrier for new customers.
+                  </p>
+                </div>
+
+                {/* Seasonal Promos */}
+                <div className="rounded-3xl bg-[#f1f3f5] overflow-hidden border-t-[5px] border-[#166941] p-8 transition-transform hover:scale-[1.02]">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Seasonal Promos
+                  </h3>
+                  <p className="text-[15px] leading-relaxed text-gray-600">
+                    Align with holidays or "back-to-school" periods to drive volume during peaks.
+                  </p>
+                </div>
+
+                {/* Loyalty Bonuses */}
+                <div className="rounded-3xl bg-[#f1f3f5] overflow-hidden border-t-[5px] border-[#166941] p-8 transition-transform hover:scale-[1.02]">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Loyalty Bonuses
+                  </h3>
+                  <p className="text-[15px] leading-relaxed text-gray-600">
+                    Reward repeat customers with fixed rates or "buy 5, get 1 free" structures.
+                  </p>
                 </div>
               </div>
-            );
-          }
-
-
-
-          <div className="space-y-5">
-            <h2 className="text-2xl font-bold text-ink sm:text-3xl">Discounts & Promotions</h2>
-            <div className="grid gap-4 md:grid-cols-3">
-              {[
-                { title: "First-Time Deals", icon: Gift, text: "Offer a small entry incentive to gain trust." },
-                { title: "Seasonal Promos", icon: Megaphone, text: "Align discounts with festive periods and trends." },
-                { title: "Loyalty Bonuses", icon: Coins, text: "Reward repeat customers with exclusive benefits." },
-              ].map((promo) => (
-                <article key={promo.title} className="rounded-2xl bg-muted p-5">
-                  <promo.icon className="h-5 w-5 text-brand" />
-                  <h3 className="mt-3 text-base font-semibold text-ink">{promo.title}</h3>
-                  <p className="mt-1 text-sm text-body-secondary">{promo.text}</p>
-                </article>
-              ))}
             </div>
           </div>
 

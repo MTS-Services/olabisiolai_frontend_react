@@ -3,9 +3,13 @@ import {
   ArrowLeft,
   Camera,
   CheckCircle2,
+  Icon,
+  Shirt,
   Sparkles,
   Sun,
   Upload,
+  Utensils,
+  Wrench,
 } from "lucide-react";
 
 import { container } from "@/lib/container";
@@ -219,36 +223,68 @@ export default function PhotosThatSell() {
             </div>
           </div>
 
-          <div className="space-y-5">
-            <h2 className="text-center text-2xl font-bold text-ink sm:text-3xl">
-              Industry Specific Tips
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {[
-                {
-                  title: "Food & Restaurants",
-                  text: "Shoot from directly above (flat lay) or a 45-degree angle. Garnish for color.",
-                },
-                {
-                  title: "Fashion & Clothing",
-                  text: "Show texture details. Use models or high-quality mannequins.",
-                },
-                {
-                  title: "Beauty & Salon",
-                  text: "Focus on Before & After shots with consistent lighting.",
-                },
-                {
-                  title: "Tech & Repair",
-                  text: "Show the internal components and the precision of your tools.",
-                },
-              ].map((item) => (
-                <article key={item.title} className="rounded-2xl bg-card p-6 shadow-md">
-                  <h4 className="text-base font-semibold text-ink">{item.title}</h4>
-                  <p className="mt-2 text-sm leading-6 text-body-secondary">{item.text}</p>
-                </article>
-              ))}
+          {/* Industry Specific Tips Section */}
+            <div className="py-16">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+                  Industry Specific Tips
+                </h2>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Food & Restaurants */}
+                <div className="flex items-start gap-4 rounded-3xl bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-emerald-600">
+                    <Utensils className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Food & Restaurants</h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-gray-500">
+                      Shoot from directly above (flat lay) or a 45-degree angle. Garnish for color.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Fashion & Clothing */}
+                <div className="flex items-start gap-4 rounded-3xl bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-emerald-600">
+                    <Shirt className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Fashion & Clothing</h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-gray-500">
+                      Show texture details. Use models or high-quality mannequins.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Beauty & Salon */}
+                <div className="flex items-start gap-4 rounded-3xl bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-emerald-600">
+                    <Sparkles className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Beauty & Salon</h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-gray-500">
+                      Focus on "Before & After" shots with consistent lighting.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tech & Repair */}
+                <div className="flex items-start gap-4 rounded-3xl bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-emerald-600">
+                    <Wrench className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Tech & Repair</h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-gray-500">
+                      Show the internal components and the precision of your tools.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
           <div className="rounded-3xl bg-ink p-6 sm:p-8 lg:p-12">
             <h2 className="text-3xl font-bold text-ice">Uploading to Gidira</h2>

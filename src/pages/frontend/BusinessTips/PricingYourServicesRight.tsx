@@ -24,17 +24,17 @@ function PriceOptionCard({ title, pro, con }) {
 
       <div className="space-y-3">
         {/* PRO Row */}
-        <div className="flex items-start gap-3 rounded-xl bg-[#eefaf3] p-4">
-          <PlusCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#166941]" />
-          <p className="text-[13px] font-bold leading-tight text-[#166941]">
+        <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
+          <PlusCircle className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+          <p className="text-[13px] font-bold leading-tight text-success">
             {pro}
           </p>
         </div>
 
         {/* CON Row */}
-        <div className="flex items-start gap-3 rounded-xl bg-[#f8f9fb] p-4">
-          <MinusCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#717e91]" />
-          <p className="text-[13px] font-bold leading-tight text-[#4b5563]">
+        <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
+          <MinusCircle className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+          <p className="text-[13px] font-bold leading-tight text-gray-600">
             {con}
           </p>
         </div>
@@ -160,9 +160,9 @@ export default function PricingYourServicesRight() {
               ))}
             </div>
             {/* Profit Margin Banner */}
-              <div className="flex w-full items-center gap-5 rounded-3xl border border-emerald-100 bg-[#e8f9ee] p-6 shadow-sm sm:p-8">
+              <div className="flex w-full items-center gap-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-6 shadow-sm sm:p-8">
                 {/* Icon Box */}
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#066a34] text-white shadow-md">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-green-600 text-white shadow-md">
                   <TrendingUp className="h-7 w-7" />
                 </div>
 
@@ -179,7 +179,7 @@ export default function PricingYourServicesRight() {
           </div>
 
           {/* Value-Based Pricing Dark Banner */} 
-          <div className="relative w-full overflow-hidden rounded-[40px] bg-[#0b1926] px-8 py-10 md:px-12 md:py-14">
+          <div className="relative w-full overflow-hidden rounded-[40px] bg-gray-900 px-8 py-10 md:px-12 md:py-14">
             
             {/* Content Layer */}
             <div className="relative z-10 max-w-2xl space-y-4">
@@ -285,27 +285,47 @@ export default function PricingYourServicesRight() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-muted p-6 sm:p-8">
-            <h2 className="text-2xl font-bold text-ink">Adjusting Your Prices</h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl bg-card p-4">
-                <p className="font-semibold text-ink">When to raise</p>
-                <p className="mt-2 text-sm text-body-secondary">
-                  Higher demand, stronger reviews, rising costs, and increasing expertise.
-                </p>
+          <div className="flex items-center justify-center">
+          <div className="w-full bg-gray-300 rounded-3xl p-10 md:p-16 shadow-sm border border-gray-300">
+            
+            <h2 className="text-3xl font-bold text-black mb-10">Adjusting Your Prices</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="text-green-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-clock-4 text-emerald-700"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">When to raise</h3>
+                    <p className="text-gray-600 leading-relaxed">
+                      When your demand exceeds your capacity, or when inflation significantly impacts your material costs.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl bg-card p-4">
-                <p className="font-semibold text-ink">How to communicate</p>
-                <p className="mt-2 text-sm text-body-secondary">
-                  Notify customers ahead of time, explain value improvements, and keep your message
-                  clear and respectful.
-                </p>
+
+              <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="text-green-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-message-square text-emerald-700"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">How to communicate</h3>
+                    <p className="text-gray-600 leading-relaxed">
+                      Be transparent. Give existing clients 30 days notice and explain the value increase (e.g., "To maintain the high quality of materials we use...").
+                    </p>
+                  </div>
+                </div>
               </div>
+
             </div>
           </div>
+        </div>
 
-          <div className="rounded-2xl bg-brand-red p-6 text-ice">
-            <h2 className="text-xl font-bold">Key Takeaways</h2>
+          <div className="rounded-4xl bg-brand-red p-18 text-ice">
+            <h2 className="text-2xl font-bold">Key Takeaways</h2>
             <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
               {[
                 "Always cover your base costs.",
@@ -314,7 +334,7 @@ export default function PricingYourServicesRight() {
                 "Review and adjust pricing every 3-6 months.",
               ].map((tip) => (
                 <li key={tip} className="inline-flex items-start gap-2">
-                  <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                  <CircleCheck className="mt-0.5 h-6 w-6 shrink-0 text-success" />
                   <span>{tip}</span>
                 </li>
               ))}

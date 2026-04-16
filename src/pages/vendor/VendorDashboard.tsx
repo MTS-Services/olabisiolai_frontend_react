@@ -4,7 +4,7 @@ import { VendorLayout } from '@/layouts/vendor/VendorLayout'
 
 export default function VendorDashboard() {
   return (
-    <div className="p-6">
+    <div className="">
       <VendorLayout >
         <Card>
         <CardHeader>

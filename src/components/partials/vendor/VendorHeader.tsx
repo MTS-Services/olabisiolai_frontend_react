@@ -190,13 +190,10 @@ export function VendorHeader() {
 
       <div
         className={cn(
-          "hidden py-3 md:flex md:items-center md:gap-4 lg:gap-32 lg:py-4",
+          "hidden p-3 md:flex md:items-center md:gap-4 lg:gap-32 lg:py-4",
         )}
       >
-        <Link to="/" className="text-center">
-          <h2 className="text-xl font-extrabold text-vendor-header font-manrope">Gidira Vendor</h2>
-          <p className="text-sm text-vendor-header font-inter font-normal">Verified Merchant</p>
-        </Link>
+       
 
         <div className="flex min-w-0 flex-1 justify-between px-2">
           {showHeaderSearch ? <HeaderSearch className="max-w-xl lg:max-w-2xl" /> : null}

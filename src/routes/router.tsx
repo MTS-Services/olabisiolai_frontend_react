@@ -16,6 +16,7 @@ const VendorDashboard = lazy(() => import("@/pages/vendor/VendorDashboard"));
 const Account = lazy(() => import("@/pages/frontend/Account"));
 
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 
 import { FrontendLayout } from "@/layouts/frontend/FrontendLayout";
@@ -251,6 +252,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/admin', element: <Navigate to="/admin/dashboard" replace /> },
           { path: '/admin/dashboard', element: suspensePage(AdminDashboard) },
+          { path: '/admin/users', element: suspensePage(AdminUsers) },
         ],
       },
       {

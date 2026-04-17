@@ -1,71 +1,70 @@
-import { NavLink } from 'react-router-dom'
+import {
+  Bell,
+  Building2,
+  CircleDollarSign,
+  ClipboardCheck,
+  Gauge,
+  ListChecks,
+  MapPin,
+  ShieldCheck,
+  Star,
+  Tags,
+  UserRound,
+  Users,
+  Wrench,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import type { ComponentType } from "react";
+import { cn } from "@/lib/utils";
 
-import { cn } from '@/lib/utils'
-import { isActivePath } from '@/lib/nav.utils'
-import { useActiveUrl } from '@/hooks/useActiveUrl'
+type SidebarItem = {
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+};
 
-const items = [
-  { to: '/admin', label: 'Dashboard', end: true },
-  { to: '/admin/users', label: 'Users' },
-  { to: '/admin/orders', label: 'Orders' },
-  { to: '/admin/products', label: 'Products' },
-]
+const items: SidebarItem[] = [
+  { label: "Dashboard", icon: Gauge },
+  { label: "Users", icon: Users },
+  { label: "Businesses", icon: Building2 },
+  { label: "Verifications", icon: ClipboardCheck },
+  { label: "Leads", icon: ListChecks },
+  { label: "Reviews", icon: Star },
+  { label: "Payments", icon: CircleDollarSign },
+  { label: "Boost System", icon: Wrench },
+  { label: "Categories", icon: Tags },
+  { label: "Career", icon: UserRound },
+  { label: "Locations", icon: MapPin },
+  { label: "Notifications", icon: Bell },
+  { label: "Settings", icon: ShieldCheck },
+];
 
-export function AdminSidebar({
-  open,
-  onClose,
-}: {
-  open: boolean
-  onClose: () => void
-}) {
-  const { pathname } = useActiveUrl()
-
+export function AdminSidebar() {
   return (
-    <aside className="relative">
-      <div
-        className={cn(
-          'fixed inset-0 z-40 bg-black/40 transition-opacity md:hidden',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0',
-        )}
-        onClick={onClose}
-        role="presentation"
-      />
-      <div
-        className={cn(
-          'z-50 rounded-lg border bg-card p-3',
-          'md:sticky md:top-20 md:h-[calc(100dvh-7rem)] md:translate-x-0',
-          'fixed left-4 top-16 w-[min(260px,calc(100vw-2rem))] transition-transform md:static md:w-auto',
-          open ? 'translate-x-0' : '-translate-x-[120%] md:block',
-        )}
-      >
-      <div className="mb-3 flex items-center justify-between md:hidden">
-        <div className="text-sm font-medium">Admin</div>
-        <button className="text-sm text-muted-foreground" onClick={onClose} type="button">
-          Close
-        </button>
+    <aside className="sticky top-20 h-[calc(100vh-5rem)] w-64 shrink-0 overflow-y-auto border-r border-chat-border-subtle bg-card">
+      <div className="px-4 pb-6 pt-4">
+        <p className="text-lg font-semibold text-ink-heading">Dashboard</p>
+        <p className="text-xs text-chat-meta">Manage your account</p>
       </div>
 
-      <nav className="grid gap-1">
-        {items.map((i) => (
-          <NavLink
-            key={i.to}
-            to={i.to}
-            end={i.end as boolean | undefined}
-            className={() =>
-              cn(
-                'rounded-md px-3 py-2 text-sm transition-colors',
-                isActivePath(pathname, i.to, Boolean(i.end))
-                  ? 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-              )
-            }
-          >
-            {i.label}
-          </NavLink>
-        ))}
+      <nav className="space-y-1 px-2 pb-4">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.label === "Dashboard";
+          return (
+            <Link
+              key={item.label}
+              to="/admin/dashboard"
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                isActive ? "bg-surface-soft text-chat-accent" : "text-body-secondary hover:bg-muted",
+              )}
+            >
+              <Icon className="size-4" aria-hidden />
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
-      </div>
     </aside>
-  )
+  );
 }
-

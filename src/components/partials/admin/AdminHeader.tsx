@@ -1,35 +1,33 @@
-import { Link } from 'react-router-dom'
+import { UserRound } from "lucide-react";
+import { useAuth } from "@/auth/useAuth";
 
-import { Button } from '@/components/ui/button'
-import { container } from '@/lib/container'
-import { cn } from '@/lib/utils'
-import { useAuth } from '@/auth/useAuth'
-
-export function AdminHeader({ onToggleSidebar }: { onToggleSidebar: () => void }) {
-  const { logout } = useAuth()
+export function AdminHeader() {
+  const { logout, user } = useAuth();
+  const displayName = user?.name?.trim() || "Admin User";
+  const displayEmail = user?.email?.trim() || "admin@gidira.com";
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className={cn(container, 'flex items-center justify-between py-3')}>
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" onClick={onToggleSidebar}>
-            Menu
-          </Button>
-          <Link to="/admin" className="font-semibold tracking-tight">
-            Admin
-          </Link>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            void logout()
-          }}
-        >
-          Logout
-        </Button>
+    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-chat-border-subtle bg-card px-6">
+      <div>
+        <p className="text-3xl font-semibold leading-9 text-ink">Gidira</p>
+        <p className="text-sm text-chat-meta">Admin Dashboard</p>
       </div>
-    </header>
-  )
-}
 
+      <button
+        type="button"
+        onClick={() => {
+          void logout();
+        }}
+        className="inline-flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-muted"
+      >
+        <span className="inline-flex size-8 items-center justify-center rounded-full bg-ink text-ice">
+          <UserRound className="size-4" aria-hidden />
+        </span>
+        <span className="text-left">
+          <span className="block text-sm font-medium text-ink">{displayName}</span>
+          <span className="block text-xs text-chat-meta">{displayEmail}</span>
+        </span>
+      </button>
+    </header>
+  );
+}

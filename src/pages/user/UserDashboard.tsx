@@ -32,7 +32,14 @@ const footerColumns = [
   },
 ] as const
 
-const statCards = [
+type StatCard = {
+  title: string
+  subtitle: string
+  icon: typeof Heart
+  to?: string
+}
+
+const statCards: StatCard[] = [
   {
     title: 'Favorites',
     subtitle: 'ALL FAVORITES ARE HERE',
@@ -51,7 +58,7 @@ const statCards = [
     icon: Settings,
     to: '/user/settings',
   },
-] as const
+]
 
 const activities = [
   {

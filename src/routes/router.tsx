@@ -17,9 +17,6 @@ const Account = lazy(() => import("@/pages/frontend/Account"));
 
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
-const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
-const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
-const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
 
 import { FrontendLayout } from "@/layouts/frontend/FrontendLayout";
 import { AuthLayout } from "@/layouts/auth/AuthLayout";
@@ -252,10 +249,8 @@ export const router = createBrowserRouter([
           </RoleGate>
         ),
         children: [
-          { path: '/admin', element: suspensePage(AdminDashboard) },
-          { path: '/admin/users', element: suspensePage(AdminUsers) },
-          { path: '/admin/orders', element: suspensePage(AdminOrders) },
-          { path: '/admin/products', element: suspensePage(AdminProducts) },
+          { path: '/admin', element: <Navigate to="/admin/dashboard" replace /> },
+          { path: '/admin/dashboard', element: suspensePage(AdminDashboard) },
         ],
       },
       {

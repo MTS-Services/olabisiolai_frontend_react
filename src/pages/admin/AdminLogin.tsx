@@ -34,7 +34,7 @@ export default function AdminLogin() {
         { authStrategy, setToken, setUser, refreshSession, resetAuthState },
       );
 
-      navigate("/admin", { replace: true });
+      navigate("/admin/dashboard", { replace: true });
     } catch (err) {
       const errors = getAuthFieldErrors(err);
       setFieldErrors(errors);

@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 
 import { useAuth } from "@/auth/useAuth";
+import { HeaderAvatar } from "@/components/ui/HeaderAvatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,8 +28,7 @@ import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
 const LOGO_HEADER = "/images/landing/gidira-logo-header.svg";
-const DEFAULT_HEADER_AVATAR =
-  "https://www.figma.com/api/mcp/asset/fa0aaa2c-5e6f-4778-9196-3a7f6d5ea8cc";
+const DEFAULT_HEADER_AVATAR = "/images/avatar/default-header-avatar.png";
 
 function resolveUserAvatar(user: unknown): string {
   const userRecord = (user ?? {}) as Record<string, unknown>;
@@ -42,29 +42,6 @@ function resolveUserAvatar(user: unknown): string {
   }
 
   return DEFAULT_HEADER_AVATAR;
-}
-
-function HeaderAvatar({
-  src,
-  alt,
-  className,
-}: {
-  src: string;
-  alt: string;
-  className?: string;
-}) {
-  const [avatarSrc, setAvatarSrc] = useState(src);
-
-  return (
-    <img
-      src={avatarSrc}
-      alt={alt}
-      className={cn("h-full w-full object-cover", className)}
-      decoding="async"
-      loading="eager"
-      onError={() => setAvatarSrc(DEFAULT_HEADER_AVATAR)}
-    />
-  );
 }
 
 function HeaderSearch({ className }: { className?: string }) {

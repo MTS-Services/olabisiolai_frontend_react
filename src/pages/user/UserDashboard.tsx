@@ -37,11 +37,13 @@ const statCards = [
     title: 'Favorites',
     subtitle: 'ALL FAVORITES ARE HERE',
     icon: Heart,
+    to: '/user/favorites',
   },
   {
     title: 'Messages',
     subtitle: 'ALL DIRECTLY MESSAGES',
     icon: MessageSquareText,
+    to: '/user/messages',
   },
   {
     title: 'Settings',
@@ -91,11 +93,8 @@ export default function UserDashboard() {
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             {statCards.map((card) => {
               const Icon = card.icon
-              return (
-                <article
-                  key={card.title}
-                  className="rounded-xl bg-card p-6 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)]"
-                >
+              const content = (
+                <>
                   <Icon className="size-5 text-ink-muted" />
                   <h2 className="mt-2 font-heading text-[34px] font-bold leading-9">
                     {card.title}
@@ -103,7 +102,25 @@ export default function UserDashboard() {
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.6px] text-chat-meta">
                     {card.subtitle}
                   </p>
-                </article>
+                </>
+              )
+              return (
+                card.to ? (
+                  <Link
+                    key={card.title}
+                    to={card.to}
+                    className="block rounded-xl bg-card p-6 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)] transition hover:opacity-95"
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <article
+                    key={card.title}
+                    className="rounded-xl bg-card p-6 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)]"
+                  >
+                    {content}
+                  </article>
+                )
               )
             })}
           </div>

@@ -1,8 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import {
-  ChevronDown,
-  CircleUserRound,
   Home,
+  LocateFixed,
   LogIn,
   LogOut,
   Search,
@@ -28,6 +27,45 @@ import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
 const LOGO_HEADER = "/images/landing/gidira-logo-header.svg";
+const DEFAULT_HEADER_AVATAR =
+  "https://www.figma.com/api/mcp/asset/fa0aaa2c-5e6f-4778-9196-3a7f6d5ea8cc";
+
+function resolveUserAvatar(user: unknown): string {
+  const userRecord = (user ?? {}) as Record<string, unknown>;
+  const possibleKeys = ["avatar", "avatar_url", "image", "photo", "photo_url"] as const;
+
+  for (const key of possibleKeys) {
+    const value = userRecord[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  return DEFAULT_HEADER_AVATAR;
+}
+
+function HeaderAvatar({
+  src,
+  alt,
+  className,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+}) {
+  const [avatarSrc, setAvatarSrc] = useState(src);
+
+  return (
+    <img
+      src={avatarSrc}
+      alt={alt}
+      className={cn("h-full w-full object-cover", className)}
+      decoding="async"
+      loading="eager"
+      onError={() => setAvatarSrc(DEFAULT_HEADER_AVATAR)}
+    />
+  );
+}
 
 function HeaderSearch({ className }: { className?: string }) {
   return (
@@ -57,37 +95,20 @@ function HeaderToolbar({
   isLightHeader: boolean;
   showTradeNav: boolean;
 }) {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
+  const avatarSrc = resolveUserAvatar(user);
 
   const regionTrigger = cn(
-    "gap-1.5 rounded-lg border-0 bg-transparent font-medium text-ink-heading",
-    "hover:bg-muted",
+    "h-11 rounded-full border border-[#9CA3AF] bg-[#E5E7EB] px-5 text-base font-medium text-[#191B23] shadow-none",
+    "hover:bg-[#DDE1E6]",
   );
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button type="button" variant="outline" className={regionTrigger}>
-            Nigeria
-            <ChevronDown className="size-4 opacity-70" aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-48">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Region</DropdownMenuLabel>
-            <DropdownMenuItem>Nigeria</DropdownMenuItem>
-            <DropdownMenuItem disabled>More regions soon</DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Billing</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button type="button" variant="outline" className={regionTrigger}>
+        Nigeria
+        <LocateFixed className="size-4 text-blue-500" aria-hidden />
+      </Button>
 
       {showTradeNav ? (
         <Button
@@ -116,7 +137,9 @@ function HeaderToolbar({
                   : "border-border-gray bg-white text-ink-heading",
               )}
             >
-              <CircleUserRound className="size-5" aria-hidden />
+              <span className="overflow-hidden rounded-full">
+                <HeaderAvatar src={avatarSrc} alt="User profile" className="w-10 h-10" />
+              </span>
               <span className="sr-only">Open user menu</span>
             </Button>
           </DropdownMenuTrigger>
@@ -168,10 +191,12 @@ function MobileMenu({
   showTradeNav,
   isAuthenticated,
   logout,
+  avatarSrc,
 }: {
   showTradeNav: boolean;
   isAuthenticated: boolean;
   logout: () => Promise<void>;
+  avatarSrc: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -187,7 +212,9 @@ function MobileMenu({
           {open ? (
             <X className="size-5" aria-hidden />
           ) : (
-            <CircleUserRound className="size-5" aria-hidden />
+            <span className="overflow-hidden rounded-full">
+              <HeaderAvatar src={avatarSrc} alt="User profile" className="size-6" />
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -259,7 +286,7 @@ function MobileMenu({
 
 export function FrontendHeader() {
   const { pathname } = useLocation();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const isLightHeader =
     pathname === "/" ||
     pathname === "/trade" ||
@@ -268,6 +295,7 @@ export function FrontendHeader() {
     pathname === "/reviews";
   const showTradeNav = pathname !== "/trade";
   const showHeaderSearch = pathname !== "/";
+  const avatarSrc = resolveUserAvatar(user);
 
   return (
     <header
@@ -294,6 +322,7 @@ export function FrontendHeader() {
             showTradeNav={showTradeNav}
             isAuthenticated={isAuthenticated}
             logout={logout}
+            avatarSrc={avatarSrc}
           />
         </div>
         {showHeaderSearch ? <HeaderSearch /> : null}

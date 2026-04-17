@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { rolePolicy } from '@/auth/rolePolicy'
 import { getUserRoles, hasAnyRole } from '@/auth/roles'
@@ -10,7 +10,7 @@ function pickDashboardForUserRoles(roles: string[]): string {
     const dash = rolePolicy[r]?.dashboard
     if (dash) return dash
   }
-  return '/dashboard'
+  return '/user/dashboard'
 }
 
 /**
@@ -34,6 +34,7 @@ export function GuestGate({
   children: React.ReactNode
 }) {
   const { isAuthenticated, isSessionLoading, isUserLoading, user } = useAuth()
+  const location = useLocation()
 
   if (isSessionLoading || isUserLoading) {
     return (
@@ -44,6 +45,11 @@ export function GuestGate({
   }
 
   if (!isAuthenticated) return children
+
+  const isRegisterOtpPage =
+    location.pathname === '/otp-verification' &&
+    new URLSearchParams(location.search).get('purpose') === 'register'
+  if (isRegisterOtpPage) return children
 
   const roles = getUserRoles(user)
   const recommended = redirectTo ?? pickDashboardForUserRoles(roles)

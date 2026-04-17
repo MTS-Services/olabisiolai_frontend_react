@@ -6,7 +6,7 @@ export default function VendorDashboard() {
     <DashboardLayout
       title="Vendor"
       nav={[
-        { label: 'Dashboard', to: '/vendor' },
+        { label: 'Dashboard', to: '/vendor/dashboard' },
         { label: 'Account', to: '/account' },
         { label: 'Orders', to: '/vendor/orders' },
       ]}

@@ -11,6 +11,7 @@ const Login = lazy(() => import("@/pages/frontend/auth/Login"));
 const UserDashboard = lazy(() => import("@/pages/user/UserDashboard"));
 const Favorites = lazy(() => import("@/pages/user/Favorites"));
 const Messages = lazy(() => import("@/pages/user/Messages"));
+const Settings = lazy(() => import("@/pages/user/Settings"));
 const VendorDashboard = lazy(() => import("@/pages/vendor/VendorDashboard"));
 const Account = lazy(() => import("@/pages/frontend/Account"));
 
@@ -232,6 +233,7 @@ export const router = createBrowserRouter([
           { path: '/user/dashboard', element: suspensePage(UserDashboard) },
           { path: '/user/favorites', element: suspensePage(Favorites) },
           { path: '/user/messages', element: suspensePage(Messages) },
+          { path: '/user/settings', element: suspensePage(Settings) },
           { path: '/account', element: suspensePage(Account) },
         ],
       },

@@ -124,7 +124,7 @@ function HeaderToolbar({
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/account" className="flex items-center gap-2">
+              <Link to="/user/settings" className="flex items-center gap-2">
                 <User className="size-4" aria-hidden />
                 Profile
               </Link>

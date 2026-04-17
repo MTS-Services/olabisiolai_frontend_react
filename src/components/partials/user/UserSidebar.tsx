@@ -14,7 +14,7 @@ const sidebarItems: SidebarItem[] = [
   { key: "overview", label: "Overview", to: "/user/dashboard", icon: LayoutGrid },
   { key: "favorites", label: "Favorites", to: "/user/favorites", icon: Heart },
   { key: "messages", label: "Messages", to: "/user/messages", icon: MessageSquare },
-  { key: "settings", label: "Settings", to: "/account", icon: Settings },
+  { key: "settings", label: "Settings", to: "/user/settings", icon: Settings },
 ];
 
 export function UserSidebar({ active }: { active: SidebarItem["key"] }) {

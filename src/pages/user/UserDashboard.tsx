@@ -49,6 +49,7 @@ const statCards = [
     title: 'Settings',
     subtitle: 'MANAGE YOUR PROFILE',
     icon: Settings,
+    to: '/user/settings',
   },
 ] as const
 

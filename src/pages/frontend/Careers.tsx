@@ -216,7 +216,7 @@ export default function Careers() {
                   </div>
                 </div>
                 <a
-                  href={`mailto:hr@gidira.com?subject=${encodeURIComponent(`Application: ${job.title}`)}`}
+                  href="/single-application"
                   className="inline-flex shrink-0 items-center justify-center rounded bg-brand-red px-6 py-3 text-sm font-bold text-ice transition-opacity hover:opacity-90"
                 >
                   Apply Now

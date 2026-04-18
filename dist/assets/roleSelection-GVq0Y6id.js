@@ -1,1 +1,0 @@
-var e=`auth:selectedRole`;function t(e){return e===`user`||e===`vendor`}function n(){if(typeof window>`u`)return null;try{let n=localStorage.getItem(e);return t(n)?n:null}catch{return null}}function r(t){if(!(typeof window>`u`))try{localStorage.setItem(e,t)}catch{}}function i(e){return t(e)?e:n()??`user`}export{r as n,i as t};

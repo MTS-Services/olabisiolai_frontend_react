@@ -73,6 +73,7 @@
   --color-auth-bg: var(--auth-bg);
   --color-vendor-header: var(--vendor-header);
   --color-vendor-body-bg: var(--vendor-body-bg);
+  --color-activity-warning: var(--activity-warning);
 
   --background-image-landing-hero: radial-gradient(
     ellipse 120% 80% at 50% 40%,
@@ -174,6 +175,7 @@
     --auth-bg: #F4F5F7;
     --vendor-header: #1E3A8A;
     --vendor-body-bg: #F1F1F2;
+    --activity-warning: #784b00;
   }
 
   .dark {
@@ -250,6 +252,7 @@
     --chat-online-dot: #34d399;
     --chat-online-text: #6ee7b7;
     --chat-meta: #9ca3af;
+    --activity-warning: #a16207;
 
   }
 

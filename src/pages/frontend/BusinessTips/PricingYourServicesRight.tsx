@@ -4,16 +4,50 @@ import {
   BadgeDollarSign,
   BookOpenCheck,
   CircleCheck,
-  Coins,
-  Gift,
   HandCoins,
-  Megaphone,
+  Lamp,
+  MinusCircle,
+  PlusCircle,
   Search,
   TrendingUp,
 } from "lucide-react";
 
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
+
+function PriceOptionCard({
+  title,
+  pro,
+  con,
+}: {
+  title: string;
+  pro: string;
+  con: string;
+}) {
+  return (
+    <div className="rounded-[32px] border border-gray-100 bg-white p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+      <h3 className="mb-6 text-xl font-bold text-gray-900">{title}</h3>
+
+      <div className="space-y-3">
+        {/* PRO Row */}
+        <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
+          <PlusCircle className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+          <p className="text-[13px] font-bold leading-tight text-success">
+            {pro}
+          </p>
+        </div>
+
+        {/* CON Row */}
+        <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
+          <MinusCircle className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+          <p className="text-[13px] font-bold leading-tight text-gray-600">
+            {con}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PricingYourServicesRight() {
   return (
@@ -94,15 +128,15 @@ export default function PricingYourServicesRight() {
                 },
               ].map((item) => (
                 <article key={item.title} className="rounded-2xl bg-muted p-6">
-                  <item.icon className="h-5 w-5 text-brand" />
+                  <item.icon className="h-5 w-5 text-green-700" />
                   <h3 className="mt-3 text-xl font-semibold text-ink">{item.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-body-secondary">{item.text}</p>
                 </article>
               ))}
             </div>
             <div className="rounded-2xl border border-success/20 bg-card p-5 shadow-sm">
-              <p className="flex items-center gap-2 text-base font-semibold text-ink">
-                <TrendingUp className="h-4 w-4 text-success" />
+              <p className="flex items-center gap-2 text-base font-semibold text-ink ">
+                <Lamp className="h-6 w-6 text-green-700 bg-green-200 p-1 rounded-lg" />
                 Gidira Search Tip
               </p>
               <p className="mt-2 text-sm italic text-body-secondary">
@@ -131,101 +165,173 @@ export default function PricingYourServicesRight() {
                 </div>
               ))}
             </div>
-            <div className="rounded-xl bg-success/20 p-4 text-sm font-medium text-success">
-              <span className="inline-flex items-center gap-2">
-                <CircleCheck className="h-4 w-4" />
-                Do Profit Margin
-              </span>
-              <p className="mt-2 text-success">
-                Add 20-40% on top of your costs to create a sustainable for growth.
+            {/* Profit Margin Banner */}
+            <div className="flex w-full items-center gap-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-6 shadow-sm sm:p-8">
+              {/* Icon Box */}
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-green-600 text-white shadow-md">
+                <TrendingUp className="h-7 w-7" />
+              </div>
+
+              {/* Content */}
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-gray-900">
+                  05 Profit Margin
+                </h3>
+                <p className="text-sm leading-relaxed text-gray-600 sm:text-base">
+                  The extra amount that goes back into the business for growth.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Value-Based Pricing Dark Banner */}
+          <div className="relative w-full overflow-hidden rounded-[40px] bg-gray-900 px-8 py-10 md:px-12 md:py-14">
+
+            {/* Content Layer */}
+            <div className="relative z-10 max-w-2xl space-y-4">
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+                Value-Based Pricing
+              </h2>
+              <p className="text-lg leading-relaxed text-gray-400">
+                Instead of charging for your time, charge for the{" "}
+                <span className="font-semibold text-emerald-400">result</span>. If your
+                service saves a client ₦500,000, charging ₦100,000 is a bargain, even if it
+                only took you two hours. Use your expertise and reputation as a multiplier.
               </p>
             </div>
-          </div>
 
-          <div className="rounded-3xl bg-ink p-6 sm:p-8">
-            <h2 className="text-2xl font-bold text-ice">Value-Based Pricing</h2>
-            <p className="mt-3 text-sm leading-6 text-stat-muted">
-              Instead of charging for time, charge for the result. If your service saves a client
-              NGN100,000 in a year, even if it only took you two hours, your expertise and execution
-              are valuable.
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            <h2 className="text-center text-2xl font-bold text-ink sm:text-3xl">
-              Displaying Prices on Gidira
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {[
-                {
-                  title: "Option 1: Exact Prices",
-                  items: ["NGN 5,000 haircut (wash + style)", "NGN 8,000 full makeup", "NGN 10,000 home service"],
-                },
-                {
-                  title: "Option 2: Price Ranges",
-                  items: ["NGN 7,000-15,000 all-in event makeup", "Custom rates for special requests"],
-                },
-                {
-                  title: "Option 3: Starting From",
-                  items: ["From NGN 8,000 tailoring", "From NGN 15,000 website setup"],
-                },
-                {
-                  title: "Option 4: Contact for Pricing",
-                  items: ["Best for custom jobs and large projects", "Good for scope-heavy bespoke contracts"],
-                },
-              ].map((block) => (
-                <article key={block.title} className="rounded-2xl bg-card p-5 shadow-sm">
-                  <h3 className="text-base font-semibold text-ink">{block.title}</h3>
-                  <ul className="mt-3 space-y-2 text-sm text-body-secondary">
-                    {block.items.map((line) => (
-                      <li key={line} className="rounded-md bg-surface-soft px-3 py-2">
-                        {line}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
+            {/* Watermark Icon Layer using your Icon.svg */}
+            <div className="absolute right-12 top-1/2 -translate-y-1/2 select-none pointer-events-none">
+              <img
+                src="/images/feature/Icon.svg"
+                alt=""
+                className=""
+              />
             </div>
           </div>
 
-          <div className="space-y-5">
-            <h2 className="text-2xl font-bold text-ink sm:text-3xl">Discounts & Promotions</h2>
-            <div className="grid gap-4 md:grid-cols-3">
-              {[
-                { title: "First-Time Deals", icon: Gift, text: "Offer a small entry incentive to gain trust." },
-                { title: "Seasonal Promos", icon: Megaphone, text: "Align discounts with festive periods and trends." },
-                { title: "Loyalty Bonuses", icon: Coins, text: "Reward repeat customers with exclusive benefits." },
-              ].map((promo) => (
-                <article key={promo.title} className="rounded-2xl bg-muted p-5">
-                  <promo.icon className="h-5 w-5 text-brand" />
-                  <h3 className="mt-3 text-base font-semibold text-ink">{promo.title}</h3>
-                  <p className="mt-1 text-sm text-body-secondary">{promo.text}</p>
-                </article>
-              ))}
+          {/* Displaying Prices Section */}
+          <div className="py-0 bg-white">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+                Displaying Prices on Gidira
+              </h2>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-2  mx-auto px-4">
+              {/* Option 1 */}
+              <PriceOptionCard
+                title="Option 1: Exact Prices"
+                pro='PRO: Builds instant trust and filters out low-budget leads.'
+                con='CON: Rigid; no room for custom project adjustments.'
+              />
+
+              {/* Option 2 */}
+              <PriceOptionCard
+                title="Option 2: Price Ranges"
+                pro='PRO: Flexible for different project complexities.'
+                con='CON: Customers often expect the lower end.'
+              />
+
+              {/* Option 3 */}
+              <PriceOptionCard
+                title="Option 3: Starting From"
+                pro='PRO: Great for marketing "entry-level" services.'
+                con='CON: Can lead to "sticker shock" later.'
+              />
+
+              {/* Option 4 */}
+              <PriceOptionCard
+                title="Option 4: Contact for Pricing"
+                pro='PRO: Perfect for high-end, bespoke consulting.'
+                con='CON: May discourage quick-buy customers.'
+              />
             </div>
           </div>
 
-          <div className="rounded-3xl bg-muted p-6 sm:p-8">
-            <h2 className="text-2xl font-bold text-ink">Adjusting Your Prices</h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl bg-card p-4">
-                <p className="font-semibold text-ink">When to raise</p>
-                <p className="mt-2 text-sm text-body-secondary">
-                  Higher demand, stronger reviews, rising costs, and increasing expertise.
-                </p>
+
+          {/* Discounts & Promotions Section */}
+          <div className="py-12 bg-white">
+            <div className=" mx-auto px-4">
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                Discounts & Promotions
+              </h2>
+
+              <div className="grid gap-6 md:grid-cols-3">
+                {/* First-Time Deals */}
+                <div className="rounded-3xl bg-[#f1f3f5] overflow-hidden border-t-[5px] border-[#166941] p-8 transition-transform hover:scale-[1.02]">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    First-Time Deals
+                  </h3>
+                  <p className="text-[15px] leading-relaxed text-gray-600">
+                    Offer a small welcome discount (e.g., 10% off) to lower the barrier for new customers.
+                  </p>
+                </div>
+
+                {/* Seasonal Promos */}
+                <div className="rounded-3xl bg-[#f1f3f5] overflow-hidden border-t-[5px] border-[#166941] p-8 transition-transform hover:scale-[1.02]">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Seasonal Promos
+                  </h3>
+                  <p className="text-[15px] leading-relaxed text-gray-600">
+                    Align with holidays or "back-to-school" periods to drive volume during peaks.
+                  </p>
+                </div>
+
+                {/* Loyalty Bonuses */}
+                <div className="rounded-3xl bg-[#f1f3f5] overflow-hidden border-t-[5px] border-[#166941] p-8 transition-transform hover:scale-[1.02]">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Loyalty Bonuses
+                  </h3>
+                  <p className="text-[15px] leading-relaxed text-gray-600">
+                    Reward repeat customers with fixed rates or "buy 5, get 1 free" structures.
+                  </p>
+                </div>
               </div>
-              <div className="rounded-xl bg-card p-4">
-                <p className="font-semibold text-ink">How to communicate</p>
-                <p className="mt-2 text-sm text-body-secondary">
-                  Notify customers ahead of time, explain value improvements, and keep your message
-                  clear and respectful.
-                </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center">
+            <div className="w-full bg-gray-300 rounded-3xl p-10 md:p-16 shadow-sm border border-gray-300">
+
+              <h2 className="text-3xl font-bold text-black mb-10">Adjusting Your Prices</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="text-green-800">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-clock-4 text-emerald-700"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">When to raise</h3>
+                      <p className="text-gray-600 leading-relaxed">
+                        When your demand exceeds your capacity, or when inflation significantly impacts your material costs.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-8 shadow-sm flex flex-col gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="text-green-800">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-message-square text-emerald-700"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">How to communicate</h3>
+                      <p className="text-gray-600 leading-relaxed">
+                        Be transparent. Give existing clients 30 days notice and explain the value increase (e.g., "To maintain the high quality of materials we use...").
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-brand-red p-6 text-ice">
-            <h2 className="text-xl font-bold">Key Takeaways</h2>
+          <div className="rounded-4xl bg-brand-red p-18 text-ice">
+            <h2 className="text-2xl font-bold">Key Takeaways</h2>
             <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
               {[
                 "Always cover your base costs.",
@@ -234,7 +340,7 @@ export default function PricingYourServicesRight() {
                 "Review and adjust pricing every 3-6 months.",
               ].map((tip) => (
                 <li key={tip} className="inline-flex items-start gap-2">
-                  <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                  <CircleCheck className="mt-0.5 h-6 w-6 shrink-0 text-success" />
                   <span>{tip}</span>
                 </li>
               ))}

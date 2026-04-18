@@ -59,7 +59,7 @@ export default function LoginEmail() {
       );
 
       const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
-      if (!isUnsafePostLoginPath(from)) {
+      if (from && !isUnsafePostLoginPath(from)) {
         navigate(from, { replace: true });
         return;
       }

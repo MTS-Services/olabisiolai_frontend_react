@@ -199,7 +199,10 @@ export default function Careers() {
 
           <div className="flex flex-col gap-4">
             {OPEN_ROLES.map((job) => (
-              <div
+              <a key={job.title} href="/single-application">
+                <div className="#">
+                  {/* rest of your code */}
+                  <div
                 key={job.title}
                 className="flex flex-col gap-4 rounded bg-card-ice p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between"
               >
@@ -216,12 +219,14 @@ export default function Careers() {
                   </div>
                 </div>
                 <a
-                  href="/single-application"
+                  
                   className="inline-flex shrink-0 items-center justify-center rounded bg-brand-red px-6 py-3 text-sm font-bold text-ice transition-opacity hover:opacity-90"
                 >
                   Apply Now
                 </a>
               </div>
+                </div>
+              </a>
             ))}
           </div>
 

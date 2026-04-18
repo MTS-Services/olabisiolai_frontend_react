@@ -30,19 +30,19 @@ export function UserSidebar({ active, mobileOpen = false, onNavigate }: UserSide
     <aside
       id="user-sidebar-nav"
       className={cn(
-        "flex w-[min(18rem,calc(100vw-2.5rem))] flex-col bg-surface-soft p-3 sm:w-64 sm:p-4",
-        "fixed left-3 top-[4.5rem] z-50 max-h-[calc(100dvh-5.5rem)] -translate-x-[120%] overflow-y-auto rounded-2xl shadow-lg transition-transform duration-200 ease-out sm:left-4 sm:top-24 lg:top-20",
-        "lg:sticky lg:z-auto lg:max-h-[calc(100dvh-7rem)] lg:w-64 lg:translate-x-0 lg:self-start lg:rounded-none lg:shadow-none",
+        "flex w-[min(16rem,calc(100vw-2.5rem))] flex-col bg-card p-4 sm:w-64",
+        "fixed left-3 top-18 z-50 max-h-[calc(100dvh-5.5rem)] -translate-x-[120%] overflow-y-auto rounded-2xl shadow-lg transition-transform duration-200 ease-out sm:left-4 sm:top-24 lg:top-20",
+        "lg:sticky lg:z-auto lg:h-fit lg:max-h-[calc(100dvh-7rem)] lg:w-64 lg:translate-x-0 lg:self-start lg:rounded-none lg:shadow-none",
         mobileOpen && "translate-x-0",
       )}
     >
-      <div className="px-1 pb-3 sm:px-2 sm:pb-4 lg:pb-8">
-        <h2 className="text-base font-semibold leading-7 text-ink-heading sm:text-lg">Dashboard</h2>
+      <div className="px-2 pb-8">
+        <h2 className="text-lg font-semibold leading-7 text-ink-heading">Dashboard</h2>
         <p className="text-xs leading-4 text-chat-meta">Manage your account</p>
       </div>
 
-      <nav className="grid grid-cols-1 gap-1 pt-1 sm:grid-cols-2 lg:flex lg:flex-col lg:space-y-1">
-        {sidebarItems.map((item) => {
+      <nav className="flex flex-col pt-2">
+        {sidebarItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = item.key === active;
 
@@ -52,13 +52,14 @@ export function UserSidebar({ active, mobileOpen = false, onNavigate }: UserSide
               to={item.to}
               onClick={() => onNavigate?.()}
               className={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors sm:justify-center lg:justify-start lg:gap-3",
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                index > 0 && "mt-1",
                 isActive
-                  ? "bg-card text-chat-accent shadow-sm lg:bg-surface-soft"
-                  : "text-body-secondary hover:bg-muted",
+                  ? "bg-surface-soft text-chat-accent"
+                  : "text-body-secondary hover:bg-surface-soft/70",
               )}
             >
-              <Icon className="size-[18px] shrink-0" strokeWidth={1.8} aria-hidden />
+              <Icon className="size-4.5 shrink-0" strokeWidth={1.8} aria-hidden />
               <span className="truncate">{item.label}</span>
             </Link>
           );

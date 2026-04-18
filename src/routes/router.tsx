@@ -15,9 +15,9 @@ const Settings = lazy(() => import("@/pages/user/Settings"));
 const VendorDashboard = lazy(() => import("@/pages/vendor/VendorDashboard"));
 const Account = lazy(() => import("@/pages/frontend/Account"));
 
-const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
-const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
-const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
+const Dashboard = lazy(() => import("@/pages/admin/Dashboard"));
+const Users = lazy(() => import("@/pages/admin/Users"));
+const AdminLogin = lazy(() => import("@/pages/frontend/auth/AdminLogin"));
 
 import { FrontendLayout } from "@/layouts/frontend/FrontendLayout";
 import { AuthLayout } from "@/layouts/auth/AuthLayout";
@@ -251,8 +251,8 @@ export const router = createBrowserRouter([
         ),
         children: [
           { path: '/admin', element: <Navigate to="/admin/dashboard" replace /> },
-          { path: '/admin/dashboard', element: suspensePage(AdminDashboard) },
-          { path: '/admin/users', element: suspensePage(AdminUsers) },
+          { path: '/admin/dashboard', element: suspensePage(Dashboard) },
+          { path: '/admin/users', element: suspensePage(Users) },
         ],
       },
       {
@@ -297,11 +297,11 @@ export const router = createBrowserRouter([
   //   children: [
   //     {
   //       path: "/admin",
-  //       element: <AdminDashboard />,
+  //       element: <Dashboard />,
   //     },
   //     {
   //       path: "/admin/users",
-  //       element: <AdminUsers />,
+  //       element: <Users />,
   //     },
   //   ],
   // },
@@ -316,11 +316,11 @@ export const router = createBrowserRouter([
   //   children: [
   //     {
   //       path: "/admin",
-  //       element: <AdminDashboard />,
+  //       element: <Dashboard />,
   //     },
   //     {
   //       path: "/admin/users",
-  //       element: <AdminUsers />,
+  //       element: <Users />,
   //     },
   //   ],
   // }

@@ -1,6 +1,6 @@
 import { CheckCircle2, FileText, Megaphone, TrendingUp, UserRound, Store } from "lucide-react";
 
-export default function AdminDashboard() {
+export default function Dashboard() {
   const stats = [
     { label: "Total Users", value: "12,458", icon: UserRound, tint: "bg-surface-soft text-chat-accent" },
     { label: "Total Businesses", value: "3,847", icon: Store, tint: "bg-tint-red text-brand-red" },

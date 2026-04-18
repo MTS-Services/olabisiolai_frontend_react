@@ -74,7 +74,7 @@ function statusClass(status: UserRow["status"]) {
   return "bg-tint-red text-brand-red";
 }
 
-export default function AdminUsers() {
+export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);

@@ -43,7 +43,7 @@ Example (admin-only, custom fallback):
 
 ```tsx
 <RoleGate allow="admin" fallback="/admin/login">
-  <AdminDashboard />
+  <Dashboard />
 </RoleGate>
 ```
 

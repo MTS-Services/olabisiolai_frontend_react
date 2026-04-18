@@ -19,4 +19,4 @@ export function VendorLayout() {
       </div>
     </div>
   );
-}
+} 

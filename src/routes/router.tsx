@@ -10,6 +10,15 @@ const Login = lazy(() => import("@/pages/frontend/auth/Login"));
 
 const UserDashboard = lazy(() => import("@/pages/user/UserDashboard"));
 const VendorDashboard = lazy(() => import("@/pages/vendor/VendorDashboard"));
+// const VendorProfile = lazy(() => import("@/pages/vendor/VendorProfile"));
+// const VendorLeads = lazy(() => import("@/pages/vendor/VendorLeads"));
+// const VendorVerification = lazy(() => import("@/pages/vendor/VendorVerification"));
+// const VendorBoost = lazy(() => import("@/pages/vendor/VendorBoost"));
+// const VendorBoostConfigure = lazy(() => import("@/pages/vendor/VendorBoostConfigure"));
+// const VendorBoostReviewPay = lazy(() => import("@/pages/vendor/VendorBoostReviewPay"));
+// const VendorAnalytics = lazy(() => import("@/pages/vendor/VendorAnalytics"));
+// const VendorReviews = lazy(() => import("@/pages/vendor/VendorReviews"));
+// const VendorPayments = lazy(() => import("@/pages/vendor/VendorPayments"));
 const Account = lazy(() => import("@/pages/frontend/Account"));
 
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -21,9 +30,10 @@ const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
 import { FrontendLayout } from "@/layouts/frontend/FrontendLayout";
 import { AuthLayout } from "@/layouts/auth/AuthLayout";
 import { AdminLayout } from "@/layouts/admin/AdminLayout";
-
+// import { VendorLayout } from "@/layouts/vendor/VendorLayout";
 import { RoleGate } from "@/routes/RoleGate";
 import { GuestGate } from "@/routes/GuestGate";
+import { VendorLayout } from "@/layouts/vendor/VendorLayout";
 const UserType = lazy(() => import("@/pages/frontend/auth/UserType"));
 const LoginGoogle = lazy(() => import("@/pages/frontend/auth/LoginGoogle"));
 const LoginEmail = lazy(() => import("@/pages/frontend/auth/LoginEmail"));
@@ -234,10 +244,21 @@ export const router = createBrowserRouter([
       {
         element: (
           <RoleGate allow="vendor" fallback="/unauthorized">
-            <Outlet />
+            <VendorLayout  />
           </RoleGate>
         ),
-        children: [{ path: '/vendor/dashboard', element: suspensePage(VendorDashboard) }],
+        children: [
+          { path: '/vendor/dashboard', element: suspensePage(VendorDashboard) },
+          // { path: '/vendor/profile', element: suspensePage(VendorProfile) },
+          // { path: '/vendor/leads', element: suspensePage(VendorLeads) },
+          // { path: '/vendor/verification', element: suspensePage(VendorVerification) },
+          // { path: '/vendor/boost', element: suspensePage(VendorBoost) },
+          // { path: '/vendor/boost/configure', element: suspensePage(VendorBoostConfigure) },
+          // { path: '/vendor/boost/review-pay', element: suspensePage(VendorBoostReviewPay) },
+          // { path: '/vendor/analytics', element: suspensePage(VendorAnalytics) },
+          // { path: '/vendor/reviews', element: suspensePage(VendorReviews) },
+          // { path: '/vendor/payments', element: suspensePage(VendorPayments) },
+        ],
       },
       {
         element: (

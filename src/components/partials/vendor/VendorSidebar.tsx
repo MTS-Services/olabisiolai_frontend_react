@@ -1,13 +1,20 @@
 import { Link, NavLink } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
+import { isActivePath } from "@/lib/nav.utils";
+import { useActiveUrl } from "@/hooks/useActiveUrl";
 import { Button } from "@/components/ui/button";
 
 const items = [
-  { to: "/vendor", label: "Dashboard", end: true },
-  { to: "/vendor/stores", label: "Stores" },
-  { to: "/vendor/orders", label: "Orders" },
-  { to: "/vendor/products", label: "Products" },
+  { to: "/vendor/dashboard", label: "Dashboard", end: true },
+  { to: "/vendor/profile", label: "Profile" },
+  { to: "/vendor/leads", label: "Leads" },
+  { to: "/vendor/verification", label: "Verification" },
+  { to: "/vendor/boost", label: "Boost" },
+  { to: "/vendor/analytics", label: "Analytics" },
+  { to: "/vendor/reviews", label: "Reviews" },
+  { to: "/vendor/payments", label: "Payments" },
+  { to: "/vendor/settings", label: "Settings" },
 ];
 
 export function VendorSidebar({
@@ -17,6 +24,8 @@ export function VendorSidebar({
   open: boolean;
   onClose: () => void;
 }) {
+  const { pathname } = useActiveUrl();
+
   return (
     <aside className="relative">
       <div
@@ -31,12 +40,12 @@ export function VendorSidebar({
         className={cn(
           "z-50 bg-card pt-3 flex flex-col",
           "fixed left-4 top-16 w-[min(260px,calc(100vw-2rem))] h-[calc(100dvh-4rem)] transition-transform",
-          "md:sticky md:top-20 md:h-[calc(100dvh)] md:translate-x-0 md:w-auto",
+          "md:sticky md:top-0 md:h-dvh md:translate-x-0 md:w-auto",
           open ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0",
         )}
       >
         <div className="mb-3 flex items-center justify-between md:hidden">
-          <div className="text-sm font-medium">Admin</div>
+          <div className="text-sm font-medium">Vendor</div>
           <button
             className="text-sm text-muted-foreground"
             onClick={onClose}
@@ -61,10 +70,10 @@ export function VendorSidebar({
               key={i.to}
               to={i.to}
               end={i.end}
-              className={({ isActive }) =>
+              className={() =>
                 cn(
                   "rounded-md px-3 py-2 text-sm transition-colors",
-                  isActive
+                  isActivePath(pathname, i.to, Boolean(i.end))
                     ? "bg-accent text-foreground font-medium"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )

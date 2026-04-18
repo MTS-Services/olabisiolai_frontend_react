@@ -47,6 +47,7 @@ const About = lazy(() => import("@/pages/frontend/About"));
 const Contact = lazy(() => import("@/pages/frontend/Contact"));
 const Terms = lazy(() => import("@/pages/frontend/Terms"));
 const PrivacyPolicy = lazy(() => import("@/pages/frontend/PrivacyPolicy"));
+const SingleApplication = lazy(() => import("@/pages/frontend/SingleApplication"));
 const CookiesPolicy = lazy(() => import("@/pages/frontend/CookiesPolicy"));
 const Careers = lazy(() => import("@/pages/frontend/Careers"));
 const Faq = lazy(() => import("@/pages/frontend/Faq"));
@@ -138,6 +139,7 @@ export const router = createBrowserRouter([
           },
           { path: '/terms', element: suspensePage(Terms) },
           { path: '/privacy-policy', element: suspensePage(PrivacyPolicy) },
+          { path: '/single-application', element: suspensePage(SingleApplication) },
           { path: '/cookies-policy', element: suspensePage(CookiesPolicy) },
           { path: '/careers', element: suspensePage(Careers) },
         ],

@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { FrontendHeader } from "@/components/partials/frontend/FrontendHeader";
-import { UserSidebar } from "@/components/partials/user/UserSidebar";
+import { UserShell } from "@/components/partials/user/UserShell";
 import { HeaderAvatar } from "@/components/ui/HeaderAvatar";
 import { Button } from "@/components/ui/button";
 
@@ -76,7 +75,7 @@ function ToggleRow({
   icon: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-chat-border-subtle px-4 py-4 last:border-b-0">
+    <div className="flex flex-col gap-3 border-b border-chat-border-subtle px-4 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="flex items-start gap-3">
         <span className="mt-0.5 rounded-md bg-surface-soft p-1.5 text-chat-accent">{icon}</span>
         <div>
@@ -85,7 +84,7 @@ function ToggleRow({
         </div>
       </div>
       <span
-        className={`relative h-4 w-7 rounded-full ${enabled ? "bg-chat-accent" : "bg-border-gray"}`}
+        className={`relative h-4 w-7 shrink-0 self-end rounded-full sm:self-auto ${enabled ? "bg-chat-accent" : "bg-border-gray"}`}
       >
         <span
           className={`absolute top-0.5 size-3 rounded-full bg-white transition-all ${enabled ? "left-[14px]" : "left-0.5"
@@ -98,110 +97,107 @@ function ToggleRow({
 
 export default function SettingsPage() {
   return (
-    <div className="min-h-screen bg-background text-ink">
-      <FrontendHeader />
-
-      <main className="bg-auth-bg">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-col lg:flex-row">
-          <UserSidebar active="settings" />
-
-          <section className="flex-1 bg-chat-surface p-4 sm:p-8">
-            <div className="rounded-xl bg-card p-5 shadow-sm sm:p-6">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <HeaderAvatar src={null} alt="Profile avatar" className="size-16 rounded-full" />
-                  <button
-                    type="button"
-                    className="absolute -bottom-1 -right-1 rounded-full bg-chat-accent p-1 text-white"
-                    aria-label="Change profile photo"
-                  >
-                    <UserSquare2 className="size-3.5" />
-                  </button>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-ink">Julian Montgomery</h1>
-                  <p className="text-body-secondary">julian.montgomery@fluid-marketplace.com</p>
-                  <div className="mt-2 flex gap-2 text-xs">
-                    <span className="rounded-full bg-brand px-3 py-1 font-medium text-ice">
-                      Boosted service
-                    </span>
-                    <span className="rounded-full bg-muted px-3 py-1 font-medium text-chat-meta">
-                      Verified identity
-                    </span>
-                  </div>
+    <>
+      <UserShell active="settings">
+        <section className="min-h-0 flex-1 bg-chat-surface p-3 sm:p-6 lg:p-8">
+          <div className="rounded-xl bg-card p-4 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="relative shrink-0 self-start sm:self-auto">
+                <HeaderAvatar src={null} alt="Profile avatar" className="size-14 rounded-full sm:size-16" />
+                <button
+                  type="button"
+                  className="absolute -bottom-1 -right-1 rounded-full bg-chat-accent p-1 text-white"
+                  aria-label="Change profile photo"
+                >
+                  <UserSquare2 className="size-3.5" />
+                </button>
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold text-ink sm:text-3xl">Julian Montgomery</h1>
+                <p className="truncate text-sm text-body-secondary sm:text-base">
+                  julian.montgomery@fluid-marketplace.com
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full bg-brand px-3 py-1 font-medium text-ice">Boosted service</span>
+                  <span className="rounded-full bg-muted px-3 py-1 font-medium text-chat-meta">
+                    Verified identity
+                  </span>
                 </div>
               </div>
             </div>
+          </div>
 
-            <section className="mt-6">
-              <h2 className="mb-3 flex items-center gap-2 text-2xl font-semibold text-ink">
-                <UserSquare2 className="size-5 text-chat-accent" />
-                Personal Information
-              </h2>
-              <div className="rounded-xl bg-card p-5 shadow-sm sm:p-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="First Name" value="Julian" />
-                  <Field label="Last Name" value="Montgomery" />
-                </div>
-                <div className="mt-4">
-                  <Field label="Phone Number" value="+1 (555) 0123-4567" icon={<Phone className="size-4 text-chat-meta" />} />
-                </div>
+          <section className="mt-6">
+            <h2 className="mb-3 flex items-center gap-2 text-xl font-semibold text-ink sm:text-2xl">
+              <UserSquare2 className="size-5 text-chat-accent" />
+              Personal Information
+            </h2>
+            <div className="rounded-xl bg-card p-5 shadow-sm sm:p-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="First Name" value="Julian" />
+                <Field label="Last Name" value="Montgomery" />
               </div>
-            </section>
-
-            <section className="mt-6">
-              <h2 className="mb-3 flex items-center gap-2 text-2xl font-semibold text-ink">
-                <Lock className="size-5 text-chat-accent" />
-                Password & Security
-              </h2>
-              <div className="rounded-xl bg-card p-5 shadow-sm sm:p-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Current Password" value="••••••••••" />
-                  <Field label="New Password" value="Min. 12 characters" />
-                </div>
+              <div className="mt-4">
+                <Field label="Phone Number" value="+1 (555) 0123-4567" icon={<Phone className="size-4 text-chat-meta" />} />
               </div>
-            </section>
-
-            <section className="mt-6">
-              <h2 className="mb-3 flex items-center gap-2 text-2xl font-semibold text-ink">
-                <Bell className="size-5 text-chat-accent" />
-                Notification Preferences
-              </h2>
-              <div className="rounded-xl bg-card shadow-sm">
-                <ToggleRow
-                  title="Email Notifications"
-                  description="Product updates, booking confirmations, and Quote."
-                  enabled
-                  icon={<Mail className="size-4" />}
-                />
-                <ToggleRow
-                  title="Push Notifications"
-                  description="Real-time alerts for messages and activity."
-                  enabled
-                  icon={<Bell className="size-4" />}
-                />
-                <ToggleRow
-                  title="SMS Alerts"
-                  description="Crucial security alerts via text message."
-                  enabled={false}
-                  icon={<Smartphone className="size-4" />}
-                />
-              </div>
-            </section>
-
-            <div className="mt-6 flex items-center justify-between">
-              <Button className="h-11 rounded-xl bg-brand px-6 text-ice hover:bg-brand/90">
-                <Save className="size-4" />
-                Save Changes
-              </Button>
-              <button type="button" className="inline-flex items-center gap-1 text-sm text-brand-red">
-                <ShieldCheck className="size-4" />
-                Deactivate Account
-              </button>
             </div>
           </section>
-        </div>
-      </main>
+
+          <section className="mt-6">
+            <h2 className="mb-3 flex items-center gap-2 text-xl font-semibold text-ink sm:text-2xl">
+              <Lock className="size-5 text-chat-accent" />
+              Password & Security
+            </h2>
+            <div className="rounded-xl bg-card p-5 shadow-sm sm:p-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Current Password" value="••••••••••" />
+                <Field label="New Password" value="Min. 12 characters" />
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-6">
+            <h2 className="mb-3 flex items-center gap-2 text-xl font-semibold text-ink sm:text-2xl">
+              <Bell className="size-5 text-chat-accent" />
+              Notification Preferences
+            </h2>
+            <div className="rounded-xl bg-card shadow-sm">
+              <ToggleRow
+                title="Email Notifications"
+                description="Product updates, booking confirmations, and Quote."
+                enabled
+                icon={<Mail className="size-4" />}
+              />
+              <ToggleRow
+                title="Push Notifications"
+                description="Real-time alerts for messages and activity."
+                enabled
+                icon={<Bell className="size-4" />}
+              />
+              <ToggleRow
+                title="SMS Alerts"
+                description="Crucial security alerts via text message."
+                enabled={false}
+                icon={<Smartphone className="size-4" />}
+              />
+            </div>
+          </section>
+
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <Button className="h-11 w-full rounded-xl bg-brand px-6 text-ice hover:bg-brand/90 sm:w-auto">
+              <Save className="size-4" />
+              Save Changes
+            </Button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-1 text-sm text-brand-red sm:justify-start"
+            >
+              <ShieldCheck className="size-4" />
+              Deactivate Account
+            </button>
+          </div>
+        </section>
+      </UserShell>
 
       <footer className="bg-footer-bar">
         <div className="mx-auto w-full max-w-[1400px] px-4 py-14 xl:px-12">
@@ -234,6 +230,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </footer>
-    </div>
+    </>
   );
 }

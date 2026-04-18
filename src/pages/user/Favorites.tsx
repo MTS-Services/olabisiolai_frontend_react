@@ -10,8 +10,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { FrontendHeader } from "@/components/partials/frontend/FrontendHeader";
-import { UserSidebar } from "@/components/partials/user/UserSidebar";
+import { UserShell } from "@/components/partials/user/UserShell";
 import { Button } from "@/components/ui/button";
 
 const LOGO_FOOTER = "/images/landing/gidira-logo-footer.svg";
@@ -138,53 +137,47 @@ function FavoriteCard({
 
 export default function Favorites() {
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <FrontendHeader />
-
-      <main className="bg-auth-bg">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-col lg:flex-row">
-          <UserSidebar active="favorites" />
-
-          <section className="min-h-screen flex-1 bg-chat-surface p-4 sm:p-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h1 className="text-4xl font-black text-ink">Favorites</h1>
-                <p className="mt-2 text-base font-medium text-body-secondary">
-                  Manage and book your curated list of preferred service providers.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="inline-flex h-14 items-center gap-3 self-start rounded-full bg-surface-soft px-6 text-sm font-semibold leading-none text-chat-accent shadow-none"
-              >
-                <ListFilter className="size-5 text-chat-accent" strokeWidth={2.2} aria-hidden />
-                All Services
-              </button>
+    <>
+      <UserShell active="favorites">
+        <section className="min-h-0 flex-1 bg-chat-surface p-3 sm:p-6 lg:min-h-screen lg:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-black text-ink sm:text-3xl md:text-4xl">Favorites</h1>
+              <p className="mt-2 text-sm font-medium text-body-secondary sm:text-base">
+                Manage and book your curated list of preferred service providers.
+              </p>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-8 xl:grid-cols-2">
-              {favorites.map((item) => (
-                <FavoriteCard key={item.title} item={item} />
-              ))}
-            </div>
+            <button
+              type="button"
+              className="inline-flex h-12 shrink-0 items-center gap-3 self-start rounded-full bg-surface-soft px-5 text-sm font-semibold leading-none text-chat-accent shadow-none sm:h-14 sm:px-6"
+            >
+              <ListFilter className="size-5 text-chat-accent" strokeWidth={2.2} aria-hidden />
+              All Services
+            </button>
+          </div>
 
-            <section className="mt-8 flex flex-col gap-5 rounded-3xl border border-success/10 bg-brand p-8 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-3xl font-bold text-ice">Want to discover more?</h2>
-                <p className="mt-2 max-w-xl text-base font-medium leading-6 text-ice">
-                  Based on your favorites, we think you&apos;ll love these personalized recommendations
-                  in your area.
-                </p>
-              </div>
-              <Button className="h-14 rounded-full bg-brand-red px-8 text-base font-semibold text-ice hover:bg-brand-red/90">
-                Explore More Services
-                <ArrowUpRight className="size-5" aria-hidden />
-              </Button>
-            </section>
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:mt-8 sm:gap-8 xl:grid-cols-2">
+            {favorites.map((item) => (
+              <FavoriteCard key={item.title} item={item} />
+            ))}
+          </div>
+
+          <section className="mt-6 flex flex-col gap-5 rounded-2xl border border-success/10 bg-brand p-5 sm:mt-8 sm:rounded-3xl sm:p-8 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold text-ice sm:text-2xl md:text-3xl">Want to discover more?</h2>
+              <p className="mt-2 max-w-xl text-sm font-medium leading-6 text-ice sm:text-base">
+                Based on your favorites, we think you&apos;ll love these personalized recommendations in your
+                area.
+              </p>
+            </div>
+            <Button className="h-12 w-full shrink-0 rounded-full bg-brand-red px-6 text-sm font-semibold text-ice hover:bg-brand-red/90 sm:h-14 sm:w-auto sm:px-8 sm:text-base">
+              Explore More Services
+              <ArrowUpRight className="size-5" aria-hidden />
+            </Button>
           </section>
-        </div>
-      </main>
+        </section>
+      </UserShell>
 
       <footer className="bg-footer-bar">
         <div className="mx-auto w-full max-w-[1400px] px-4 py-14 xl:px-12">
@@ -219,6 +212,6 @@ export default function Favorites() {
           </div>
         </div>
       </footer>
-    </div>
+    </>
   );
 }

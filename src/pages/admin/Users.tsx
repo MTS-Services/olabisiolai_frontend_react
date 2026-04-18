@@ -100,12 +100,12 @@ export default function Users() {
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-3xl font-semibold leading-8 text-ink-heading">Users</h1>
+        <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Users</h1>
       </div>
 
-      <section className="rounded-2xl border border-border-gray bg-card p-6 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <label className="relative w-full max-w-[971px] flex-1 min-w-80">
+      <section className="rounded-2xl border border-border-gray bg-card p-3 shadow-sm sm:p-4 lg:p-6">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <label className="relative min-w-0 w-full flex-1 sm:max-w-[971px] sm:min-w-56">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-chat-meta" />
             <input
               type="text"
@@ -116,11 +116,11 @@ export default function Users() {
             />
           </label>
 
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setIsStatusMenuOpen((prev) => !prev)}
-              className="inline-flex h-10 min-w-48 items-center justify-between rounded-xl border border-border-gray bg-card px-4 text-sm text-body-secondary"
+              className="inline-flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-border-gray bg-card px-4 text-sm text-body-secondary sm:min-w-48"
             >
               <span className="capitalize">{statusLabel}</span>
               <ChevronDown className="size-4" />
@@ -150,28 +150,38 @@ export default function Users() {
           <table className="w-full min-w-[980px] border-collapse">
             <thead>
               <tr className="border-b border-border-gray">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Phone / Email</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Join Date</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-body-secondary">Actions</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold text-body-secondary sm:px-4 sm:py-3 sm:text-sm">
+                  Name
+                </th>
+                <th className="px-2 py-2 text-left text-xs font-semibold text-body-secondary sm:px-4 sm:py-3 sm:text-sm">
+                  Phone / Email
+                </th>
+                <th className="px-2 py-2 text-left text-xs font-semibold text-body-secondary sm:px-4 sm:py-3 sm:text-sm">
+                  Status
+                </th>
+                <th className="px-2 py-2 text-left text-xs font-semibold text-body-secondary sm:px-4 sm:py-3 sm:text-sm">
+                  Join Date
+                </th>
+                <th className="px-2 py-2 text-right text-xs font-semibold text-body-secondary sm:px-4 sm:py-3 sm:text-sm">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map((user, index) => (
                 <tr key={`${user.email}-${index}`} className="border-b border-border-light">
-                  <td className="px-4 py-5 text-base font-medium text-ink">{user.name}</td>
-                  <td className="px-4 py-4">
-                    <p className="text-sm leading-5 text-ink">{user.phone}</p>
-                    <p className="text-sm leading-5 text-chat-meta">{user.email}</p>
+                  <td className="px-2 py-3 text-sm font-medium text-ink sm:px-4 sm:py-5 sm:text-base">{user.name}</td>
+                  <td className="px-2 py-3 sm:px-4 sm:py-4">
+                    <p className="text-xs leading-5 text-ink sm:text-sm">{user.phone}</p>
+                    <p className="text-xs leading-5 text-chat-meta sm:text-sm">{user.email}</p>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-3 sm:px-4 sm:py-4">
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(user.status)}`}>
                       {user.status}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-sm text-body-secondary">{user.joinDate}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-3 text-xs text-body-secondary sm:px-4 sm:py-4 sm:text-sm">{user.joinDate}</td>
+                  <td className="px-2 py-3 sm:px-4 sm:py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button type="button" className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted">
                         <Eye className="size-4 text-body-secondary" />
@@ -188,7 +198,7 @@ export default function Users() {
               ))}
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-chat-meta">
+                  <td colSpan={5} className="px-2 py-8 text-center text-sm text-chat-meta sm:px-4">
                     No users found for the current search/filter.
                   </td>
                 </tr>

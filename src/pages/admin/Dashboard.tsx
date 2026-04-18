@@ -13,18 +13,20 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between">
-        <div>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wider text-chat-accent">
             Operational Overview
           </p>
-          <h1 className="text-4xl font-semibold text-ink-heading">Marketplace Intelligence</h1>
+          <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl lg:text-4xl">
+            Marketplace Intelligence
+          </h1>
         </div>
-        <div className="inline-flex overflow-hidden rounded-lg border border-chat-border-subtle bg-card">
-          <button type="button" className="px-3 py-1 text-xs text-chat-meta">
+        <div className="inline-flex shrink-0 self-start overflow-hidden rounded-lg border border-chat-border-subtle bg-card">
+          <button type="button" className="px-3 py-1.5 text-xs text-chat-meta sm:py-1">
             Weekly
           </button>
-          <button type="button" className="bg-chat-accent px-3 py-1 text-xs text-ice">
+          <button type="button" className="bg-chat-accent px-3 py-1.5 text-xs text-ice sm:py-1">
             Monthly
           </button>
         </div>

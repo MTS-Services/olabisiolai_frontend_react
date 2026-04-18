@@ -39,11 +39,24 @@ const items: SidebarItem[] = [
   { label: "Settings", to: "/admin/dashboard", icon: ShieldCheck },
 ];
 
-export function AdminSidebar() {
+type AdminSidebarProps = {
+  mobileOpen?: boolean;
+  onNavigate?: () => void;
+};
+
+export function AdminSidebar({ mobileOpen = false, onNavigate }: AdminSidebarProps) {
   return (
-    <aside className="sticky top-20 h-[calc(100vh-5rem)] w-64 shrink-0 overflow-y-auto border-r border-chat-border-subtle bg-card">
-      <div className="px-4 pb-6 pt-4">
-        <p className="text-lg font-semibold text-ink-heading">Dashboard</p>
+    <aside
+      id="admin-sidebar-nav"
+      className={cn(
+        "flex w-[min(18rem,calc(100vw-3rem))] shrink-0 flex-col overflow-y-auto border-r border-chat-border-subtle bg-card sm:w-64",
+        "fixed left-0 top-16 z-50 h-[calc(100dvh-4rem)] -translate-x-full transition-transform duration-200 ease-out sm:top-20 sm:h-[calc(100dvh-5rem)]",
+        "lg:sticky lg:top-20 lg:z-auto lg:h-[calc(100dvh-5rem)] lg:translate-x-0 lg:self-start lg:shadow-none",
+        mobileOpen && "translate-x-0 shadow-lg",
+      )}
+    >
+      <div className="px-3 pb-4 pt-3 sm:px-4 sm:pb-6 sm:pt-4">
+        <p className="text-base font-semibold text-ink-heading sm:text-lg">Dashboard</p>
         <p className="text-xs text-chat-meta">Manage your account</p>
       </div>
 
@@ -54,6 +67,7 @@ export function AdminSidebar() {
             <NavLink
               key={item.label}
               to={item.to}
+              onClick={() => onNavigate?.()}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
@@ -61,8 +75,8 @@ export function AdminSidebar() {
                 )
               }
             >
-              <Icon className="size-4" aria-hidden />
-              {item.label}
+              <Icon className="size-4 shrink-0" aria-hidden />
+              <span className="truncate">{item.label}</span>
             </NavLink>
           );
         })}

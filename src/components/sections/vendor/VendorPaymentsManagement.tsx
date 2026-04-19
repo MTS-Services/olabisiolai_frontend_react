@@ -1,17 +1,12 @@
 import { useState } from "react";
 import {
-    Banknote,
     CalendarDays,
     CheckCircle2,
     CircleAlert,
-    Copy,
     CreditCard,
-    Delete,
     Download,
     Landmark,
-    LucideDelete,
     RotateCcw,
-    ShieldCheck,
     TextAlignStart,
     Trash2,
     WalletCards,

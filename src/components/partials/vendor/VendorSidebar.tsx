@@ -4,17 +4,18 @@ import { cn } from "@/lib/utils";
 import { isActivePath } from "@/lib/nav.utils";
 import { useActiveUrl } from "@/hooks/useActiveUrl";
 import { Button } from "@/components/ui/button";
+import { BadgeCheck, Banknote, BarChart2, LayoutGrid, MessageSquare, MessageSquareCheck, Rocket, Settings, User } from "lucide-react";
 
 const items = [
-  { to: "/vendor/dashboard", label: "Dashboard", end: true },
-  { to: "/vendor/profile", label: "Profile" },
-  { to: "/vendor/leads", label: "Leads" },
-  { to: "/vendor/verification", label: "Verification" },
-  { to: "/vendor/boost", label: "Boost" },
-  { to: "/vendor/analytics", label: "Analytics" },
-  { to: "/vendor/reviews", label: "Reviews" },
-  { to: "/vendor/payments", label: "Payments" },
-  { to: "/vendor/settings", label: "Settings" },
+  { to: "/vendor/dashboard", label: "Dashboard", icon: LayoutGrid, end: true },
+  { to: "/vendor/profile", label: "Profile", icon:User, },
+  { to: "/vendor/leads", label: "Leads", icon:MessageSquare },
+  { to: "/vendor/verification", label: "Verification", icon:BadgeCheck },
+  { to: "/vendor/boost", label: "Boost", icon:Rocket },
+  { to: "/vendor/analytics", label: "Analytics", icon:BarChart2},
+  { to: "/vendor/reviews", label: "Reviews", icon:MessageSquareCheck  },
+  { to: "/vendor/payments", label: "Payments", icon:Banknote },
+  { to: "/vendor/settings", label: "Settings", icon:Settings },
 ];
 
 export function VendorSidebar({
@@ -65,23 +66,28 @@ export function VendorSidebar({
         </Link>
 
         <nav className="grid gap-1 p-4">
-          {items.map((i) => (
-            <NavLink
-              key={i.to}
-              to={i.to}
-              end={i.end}
-              className={() =>
-                cn(
-                  "rounded-md px-3 py-2 text-sm transition-colors",
-                  isActivePath(pathname, i.to, Boolean(i.end))
-                    ? "bg-accent text-foreground font-medium"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )
-              }
-            >
-              {i.label}
-            </NavLink>
-          ))}
+          {items.map((i) => {
+            const Icon = i.icon;
+
+            return (
+              <NavLink
+                key={i.to}
+                to={i.to}
+                end={i.end}
+                className={() =>
+                  cn(
+                    "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                    isActivePath(pathname, i.to, Boolean(i.end))
+                      ? "bg-accent text-foreground font-medium"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )
+                }
+              >
+                {Icon && <Icon className="w-5 h-4" />}
+                {i.label}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div className="p-4 mt-auto">

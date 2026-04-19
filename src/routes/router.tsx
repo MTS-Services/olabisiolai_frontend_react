@@ -20,6 +20,8 @@ const Users = lazy(() => import("@/pages/admin/Users"));
 const Businesses = lazy(() => import("@/pages/admin/Businesses"));
 const AdminLogin = lazy(() => import("@/pages/frontend/auth/AdminLogin"));
 const Verifications = lazy(() => import("@/pages/admin/Verifications"));
+const Leads = lazy(() => import("@/pages/admin/Leads"));
+const Reviews = lazy(() => import("@/pages/admin/Reviews"));
 
 import { FrontendLayout } from "@/layouts/frontend/FrontendLayout";
 import { AuthLayout } from "@/layouts/auth/AuthLayout";
@@ -257,8 +259,10 @@ export const router = createBrowserRouter([
           { path: '/admin', element: <Navigate to="/admin/dashboard" replace /> },
           { path: '/admin/dashboard', element: suspensePage(Dashboard) },
           { path: '/admin/users', element: suspensePage(Users) },
-          {path: '/admin/businesses', element: suspensePage(Businesses)},
-          {path: '/admin/verifications', element: suspensePage(Verifications)}
+          { path: '/admin/businesses', element: suspensePage(Businesses) },
+          { path: '/admin/verifications', element: suspensePage(Verifications) },
+          { path: '/admin/leads', element: suspensePage(Leads) },
+          { path: '/admin/reviews', element: suspensePage(Reviews) },
         ],
       },
       {

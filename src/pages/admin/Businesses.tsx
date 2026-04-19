@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Search, ChevronDown, Eye, Check, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { BusinessDetailsModal } from "@/components/BusinessDetailsModal";
 
 type Status = "pending" | "active" | "suspended";
 type Verification = "pending" | "verified" | "rejected";
@@ -66,6 +67,8 @@ export default function BusinessTable() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = 49;
+  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const filtered = DATA.filter(
     (b) =>
@@ -132,11 +135,17 @@ export default function BusinessTable() {
                   <td className="px-6 py-3.5">
                     <Badge label={b.boost} className={boostStyles[b.boost]} />
                   </td>
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center justify-end gap-3">
-                      <button className="text-gray-700 hover:text-gray-600 transition-colors">
-                        <Eye className="size-4" />
-                      </button>
+                   <td className="px-6 py-3.5">
+                     <div className="flex items-center justify-end gap-3">
+                       <button
+                         className="text-gray-700 hover:text-gray-600 transition-colors"
+                         onClick={() => {
+                           setSelectedBusiness(b);
+                           setIsModalOpen(true);
+                         }}
+                       >
+                         <Eye className="size-4" />
+                       </button>
                       <button className="hover:text-gray-700 text-green-600 transition-colors">
                         <Check className="size-4" />
                       </button>
@@ -201,6 +210,12 @@ export default function BusinessTable() {
         </div>
       </div>
     </div>
+
+    <BusinessDetailsModal
+      open={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      business={selectedBusiness}
+    />
     </>
   );
 }

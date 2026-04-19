@@ -27,7 +27,7 @@ const items: SidebarItem[] = [
   { label: "Dashboard", to: "/admin/dashboard", icon: Gauge },
   { label: "Users", to: "/admin/users", icon: Users },
   { label: "Businesses", to: "/admin/businesses", icon: Building2 },
-  { label: "Verifications", to: "/admin/dashboard", icon: ClipboardCheck },
+  { label: "Verifications", to: "/admin/verifications", icon: ClipboardCheck },
   { label: "Leads", to: "/admin/dashboard", icon: ListChecks },
   { label: "Reviews", to: "/admin/dashboard", icon: Star },
   { label: "Payments", to: "/admin/dashboard", icon: CircleDollarSign },

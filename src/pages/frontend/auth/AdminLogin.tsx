@@ -45,7 +45,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-5xl items-center justify-center px-4 py-12">
+    <div className="mx-auto flex min-h-[60vh] max-w-5xl items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Admin sign in</CardTitle>

@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { Check, X, FileText } from "lucide-react";
+
+import { RejectVerificationModal } from "@/components/RejectVerificationModal";
 
 type PaymentStatus = "confirmed" | "pending";
 type DocStatus = "verified" | "missing";
@@ -91,7 +94,13 @@ function DocRow({ label, status }: { label: string; status: DocStatus }) {
   );
 }
 
-function Card({ card }: { card: VerificationCard }) {
+function Card({
+  card,
+  onRejectClick,
+}: {
+  card: VerificationCard;
+  onRejectClick: (card: VerificationCard) => void;
+}) {
   const canApprove = card.paymentStatus === "confirmed";
 
   return (
@@ -119,15 +128,18 @@ function Card({ card }: { card: VerificationCard }) {
       <div className="flex gap-3">
         <button
           disabled={!canApprove}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-opacity ${
-            canApprove
+          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-opacity ${canApprove
               ? "bg-blue-500 text-white hover:bg-blue-600 active:opacity-80"
               : "cursor-not-allowed bg-blue-100 text-blue-300"
-          }`}
+            }`}
         >
           Approve
         </button>
-        <button className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 active:opacity-80 transition-opacity">
+        <button
+          type="button"
+          onClick={() => onRejectClick(card)}
+          className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white transition-opacity hover:bg-red-600 active:opacity-80"
+        >
           Reject
         </button>
       </div>
@@ -136,13 +148,22 @@ function Card({ card }: { card: VerificationCard }) {
 }
 
 export default function VerificationGrid() {
+  const [rejectTarget, setRejectTarget] = useState<VerificationCard | null>(null);
+
   return (
     <div className=" bg-gray-100 ">
       <div className="mx-auto grid max-w-9xl grid-cols-1 gap-5 sm:grid-cols-2">
         {DATA.map((card) => (
-          <Card key={card.id} card={card} />
+          <Card key={card.id} card={card} onRejectClick={setRejectTarget} />
         ))}
       </div>
+
+      <RejectVerificationModal
+        open={rejectTarget !== null}
+        onClose={() => setRejectTarget(null)}
+        businessName={rejectTarget?.businessName ?? ""}
+        onConfirm={() => undefined}
+      />
     </div>
   );
 }

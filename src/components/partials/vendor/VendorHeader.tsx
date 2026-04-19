@@ -6,6 +6,7 @@ import {
   LayoutGrid,
   LogIn,
   LogOut,
+  Menu,
   Search,
   Settings,
   TrendingUp,
@@ -27,7 +28,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-
 function HeaderSearch({ className }: { className?: string }) {
   return (
     <div className={cn("w-full", className)}>
@@ -40,7 +40,7 @@ function HeaderSearch({ className }: { className?: string }) {
           type="search"
           placeholder="Search by business name, category, or location..."
           className={cn(
-            "h-11 w-full rounded-xl border border-border-light bg-card pl-10 pr-3 text-sm text-foreground",
+            "h-11 w-full rounded-xl border border-border-light bg-[#F1F5F9] pl-10 pr-3 text-sm text-foreground",
             "outline-none ring-0 transition focus:border-brand/50",
           )}
         />
@@ -182,9 +182,10 @@ function MobileMenu({
   );
 }
 
-export function VendorHeader() {
+export function VendorHeader({ onMenuClick }: { onMenuClick?: () => void }) {
   const { pathname } = useLocation();
   const { isAuthenticated, logout } = useAuth();
+
   const isLightHeader =
     pathname === "/" ||
     pathname === "/trade" ||
@@ -203,33 +204,43 @@ export function VendorHeader() {
           : "border-border bg-background/90 text-foreground backdrop-blur-md",
       )}
     >
-      <div className={cn( "flex flex-col gap-3 py-3 md:hidden")}>
+      {/* Mobile */}
+      <div className="flex flex-col gap-3 px-4 py-3 md:hidden">
         <div className="flex items-center justify-between gap-3">
+          {/* Hamburger — sidebar toggle */}
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label="Open sidebar"
+          >
+            <Menu className="size-5" />
+          </button>
+
           <Link to="/" className="inline-flex shrink-0 items-center">
-           <h2 className="text-xl font-extrabold text-vendor-header">Gidira Vendor</h2>
+            <h2 className="text-xl font-extrabold text-vendor-header">
+              Gidira Vendor
+            </h2>
           </Link>
+
           <MobileMenu
             showTradeNav={showTradeNav}
             isAuthenticated={isAuthenticated}
             logout={logout}
           />
         </div>
+
         {showHeaderSearch ? <HeaderSearch /> : null}
       </div>
 
-      <div
-        className={cn(
-          "hidden p-3 md:flex md:items-center md:gap-4 lg:gap-32 lg:py-4",
-        )}
-      >
-       
-
+      {/* Desktop */}
+      <div className="hidden p-3 md:flex md:items-center md:gap-4 lg:gap-32 lg:py-4">
         <div className="flex min-w-0 flex-1 justify-between px-2">
-          {showHeaderSearch ? <HeaderSearch className="max-w-xl lg:max-w-2xl" /> : null}
+          {showHeaderSearch ? (
+            <HeaderSearch className="max-w-xl lg:max-w-2xl" />
+          ) : null}
           <HeaderToolbar />
         </div>
-
-        
       </div>
     </header>
   );

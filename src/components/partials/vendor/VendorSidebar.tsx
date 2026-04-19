@@ -14,6 +14,7 @@ import {
   Rocket,
   Settings,
   User,
+  X,
 } from "lucide-react";
 
 const items = [
@@ -38,35 +39,43 @@ export function VendorSidebar({
   const { pathname } = useActiveUrl();
 
   return (
-    <aside className="relative">
+    <>
+      {/* Mobile Overlay Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/40 transition-opacity md:hidden",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
+          "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
         )}
         onClick={onClose}
-        role="presentation"
+        aria-hidden="true"
       />
-      <div
+
+      {/* Sidebar Panel */}
+      <aside
         className={cn(
-          "z-50 bg-card pt-3 flex flex-col",
-          "fixed left-4 top-16 w-[min(260px,calc(100vw-2rem))] h-[calc(100dvh-4rem)] transition-transform",
-          "md:sticky md:top-0 md:h-dvh md:translate-x-0 md:w-auto",
-          open ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0",
+          // Mobile: fixed drawer
+          "fixed top-0 left-0 z-50 h-dvh w-[260px]",
+          "transition-transform duration-300 ease-in-out",
+          open ? "translate-x-0" : "-translate-x-full",
+          // Desktop: sticky sidebar, always visible
+          "md:static md:translate-x-0 md:h-dvh md:w-[240px] md:shrink-0",
+          "flex flex-col bg-card",
         )}
       >
-        <div className="mb-3 flex items-center justify-between md:hidden">
-          <div className="text-sm font-medium">Vendor</div>
+        {/* Mobile Close Button */}
+        <div className="flex items-center justify-between px-4 pt-4 md:hidden">
+          <span className="text-sm font-medium text-muted-foreground">Menu</span>
           <button
-            className="text-sm text-muted-foreground"
-            onClick={onClose}
             type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
           >
-            Close
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <Link to="/" className="text-center">
+        {/* Logo */}
+        <Link to="/" className="px-4 pt-6 pb-2 text-center" onClick={onClose}>
           <h2 className="text-xl font-extrabold text-vendor-header font-manrope">
             Gidira Vendor
           </h2>
@@ -75,9 +84,11 @@ export function VendorSidebar({
           </p>
         </Link>
 
-        <nav className="grid gap-1 p-4 mt-2">
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto p-4 mt-2 grid gap-1 content-start">
           {items.map((i) => {
             const Icon = i.icon;
+            const active = isActivePath(pathname, i.to, Boolean(i.end));
 
             return (
               <NavLink
@@ -93,23 +104,28 @@ export function VendorSidebar({
                   )
                 }
               >
-                {Icon && <Icon className="w-5 h-4" />}
-                {i.label}
+                {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                <span>{i.label}</span>
               </NavLink>
             );
           })}
         </nav>
 
-        <div className="p-4 mt-auto">
-          <div className="text-start bg-[#003F87] rounded-lg p-4">
-            <p className="text-start mb-1 text-text-white">Boost Your Listings</p>
-            <p className="text-xs  mb-1 text-text-white ">Increase your visibility by up to 40%.</p>
-            <Button className="w-full" variant="outline">
-              Bottom Action
+        {/* Bottom CTA */}
+        <div className="p-4">
+          <div className="rounded-lg bg-[#003F87] p-4">
+            <p className="text-sm font-medium text-white mb-1">
+              Boost Your Listings
+            </p>
+            <p className="text-xs text-white/80 mb-3">
+              Increase your visibility by up to 40%.
+            </p>
+            <Button className="w-full" variant="outline" size="sm">
+              Get Started
             </Button>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -13,8 +13,8 @@ export default function UserType() {
       <div className="max-w-md w-full ">
         {/* Logo and Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-30 h-30 rounded-3xl bg-white shadow-md overflow-hidden mx-auto">
-           <img src="logos.png" alt="" className="rounded-3xl w-30 h-30 bg-white shadow-md overflow-hidden mx-auto" />
+          <div className="inline-flex items-center justify-cente">
+           <img src="logos.png" alt="" className="rounded-3xl w-20 h-16   " />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2 font-inter">
             Join GIDIRA

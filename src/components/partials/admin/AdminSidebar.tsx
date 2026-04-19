@@ -26,7 +26,7 @@ type SidebarItem = {
 const items: SidebarItem[] = [
   { label: "Dashboard", to: "/admin/dashboard", icon: Gauge },
   { label: "Users", to: "/admin/users", icon: Users },
-  { label: "Businesses", to: "/admin/dashboard", icon: Building2 },
+  { label: "Businesses", to: "/admin/businesses", icon: Building2 },
   { label: "Verifications", to: "/admin/dashboard", icon: ClipboardCheck },
   { label: "Leads", to: "/admin/dashboard", icon: ListChecks },
   { label: "Reviews", to: "/admin/dashboard", icon: Star },

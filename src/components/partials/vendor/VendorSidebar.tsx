@@ -75,7 +75,7 @@ export function VendorSidebar({
           </p>
         </Link>
 
-        <nav className="grid gap-1 p-4">
+        <nav className="grid gap-1 p-4 mt-2">
           {items.map((i) => {
             const Icon = i.icon;
 
@@ -86,9 +86,9 @@ export function VendorSidebar({
                 end={i.end}
                 className={() =>
                   cn(
-                    "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                    "flex items-center gap-2 rounded-md px-3 py-2 text-base font-normal font-inter transition-all",
                     isActivePath(pathname, i.to, Boolean(i.end))
-                      ? "bg-accent text-foreground font-medium"
+                      ? "text-base text-vendor-header font-semibold font-inter shadow-[0px_1px_2.4px_0px_rgba(0,0,0,0.24)]"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )
                 }

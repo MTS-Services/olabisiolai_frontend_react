@@ -20,6 +20,8 @@ const VendorBoostReviewPay = lazy(() => import("@/pages/vendor/VendorBoostReview
 const VendorAnalytics = lazy(() => import("@/pages/vendor/VendorAnalytics"));
 const VendorReviews = lazy(() => import("@/pages/vendor/VendorReviews"));
 const VendorPayments = lazy(() => import("@/pages/vendor/VendorPayments"));
+const VendorSettings = lazy(() => import("@/pages/vendor/VendorSettings"));
+
 const Account = lazy(() => import("@/pages/frontend/Account"));
 
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -261,6 +263,8 @@ export const router = createBrowserRouter([
           { path: '/vendor/analytics', element: suspensePage(VendorAnalytics) },
           { path: '/vendor/reviews', element: suspensePage(VendorReviews) },
           { path: '/vendor/payments', element: suspensePage(VendorPayments) },
+          { path: '/vendor/settings', element: suspensePage(VendorSettings) },
+
         ],
       },
       {

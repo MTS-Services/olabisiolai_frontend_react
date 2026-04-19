@@ -32,23 +32,33 @@ const footerColumns = [
   },
 ] as const
 
-const statCards = [
+type StatCard = {
+  title: string
+  subtitle: string
+  icon: typeof Heart
+  to?: string
+}
+
+const statCards: StatCard[] = [
   {
     title: 'Favorites',
     subtitle: 'ALL FAVORITES ARE HERE',
     icon: Heart,
+    to: '/user/favorites',
   },
   {
     title: 'Messages',
     subtitle: 'ALL DIRECTLY MESSAGES',
     icon: MessageSquareText,
+    to: '/user/messages',
   },
   {
     title: 'Settings',
     subtitle: 'MANAGE YOUR PROFILE',
     icon: Settings,
+    to: '/user/settings',
   },
-] as const
+]
 
 const activities = [
   {
@@ -79,23 +89,20 @@ export default function UserDashboard() {
     <div className="min-h-screen bg-auth-bg text-ink">
       <FrontendHeader />
 
-      <main className="mx-auto w-full max-w-[1400px] px-4 py-7 xl:px-12">
-        <section className="rounded-2xl bg-card p-6 md:p-10">
+      <main className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-4 sm:py-7 md:px-6 xl:px-12">
+        <section className="rounded-2xl bg-card p-4 sm:p-6 md:p-10">
           <div>
-            <h1 className="text-4xl font-bold leading-tight tracking-[-0.4px] md:text-5xl md:leading-[58px]">
+            <h1 className="text-3xl font-bold leading-tight tracking-[-0.4px] sm:text-4xl md:text-5xl md:leading-[58px]">
               Welcome back, {displayName}.
             </h1>
-            <p className="mt-2 text-lg text-chat-meta">Glad you&apos;re here</p>
+            <p className="mt-2 text-base text-chat-meta sm:text-lg">Glad you&apos;re here</p>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             {statCards.map((card) => {
               const Icon = card.icon
-              return (
-                <article
-                  key={card.title}
-                  className="rounded-xl bg-card p-6 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)]"
-                >
+              const content = (
+                <>
                   <Icon className="size-5 text-ink-muted" />
                   <h2 className="mt-2 font-heading text-[34px] font-bold leading-9">
                     {card.title}
@@ -103,7 +110,25 @@ export default function UserDashboard() {
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.6px] text-chat-meta">
                     {card.subtitle}
                   </p>
-                </article>
+                </>
+              )
+              return (
+                card.to ? (
+                  <Link
+                    key={card.title}
+                    to={card.to}
+                    className="block rounded-xl bg-card p-5 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)] transition hover:opacity-95 sm:p-6"
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <article
+                    key={card.title}
+                    className="rounded-xl bg-card p-5 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)] sm:p-6"
+                  >
+                    {content}
+                  </article>
+                )
               )
             })}
           </div>
@@ -113,7 +138,7 @@ export default function UserDashboard() {
               Recent Activity
             </h3>
 
-            <div className="mt-4 rounded-2xl bg-chat-input-bg px-10 py-6">
+            <div className="mt-4 rounded-2xl bg-chat-input-bg px-4 py-5 sm:px-8 md:px-10 md:py-6">
               <div className="space-y-6">
                 {activities.map((item) => (
                   <div key={item.title} className="relative pl-5">

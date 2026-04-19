@@ -63,4 +63,3 @@ export function GuestGate({
   if (!hasAnyRole(user, roleScope)) return children
   return <Navigate to={recommended} replace />
 }
-

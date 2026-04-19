@@ -9,6 +9,8 @@ import { getAuthErrorMessage, getAuthFieldErrors } from "@/features/auth/errorMe
 import { Input } from "@/components/ui/input";
 import { loginAdmin } from "@/features/auth/service";
 
+const DEFAULT_ADMIN_ROLE = "admin" as const;
+
 export default function AdminLogin() {
   const navigate = useNavigate();
   const { setToken, setUser, refreshSession, resetAuthState, authStrategy } = useAuth();
@@ -28,11 +30,11 @@ export default function AdminLogin() {
 
     try {
       await loginAdmin(
-        { email, password },
+        { email, password, role: DEFAULT_ADMIN_ROLE },
         { authStrategy, setToken, setUser, refreshSession, resetAuthState },
       );
 
-      navigate("/admin", { replace: true });
+      navigate("/admin/dashboard", { replace: true });
     } catch (err) {
       const errors = getAuthFieldErrors(err);
       setFieldErrors(errors);
@@ -43,7 +45,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-5xl items-center justify-center px-4 py-12">
+    <div className="mx-auto flex min-h-[60vh] max-w-5xl items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Admin sign in</CardTitle>
@@ -116,4 +118,3 @@ export default function AdminLogin() {
     </div>
   );
 }
-

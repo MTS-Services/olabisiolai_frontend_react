@@ -22,6 +22,7 @@ const AdminLogin = lazy(() => import("@/pages/frontend/auth/AdminLogin"));
 const Verifications = lazy(() => import("@/pages/admin/Verifications"));
 const Leads = lazy(() => import("@/pages/admin/Leads"));
 const Reviews = lazy(() => import("@/pages/admin/Reviews"));
+const Payments = lazy(() => import("@/pages/admin/Payments"));
 
 import { FrontendLayout } from "@/layouts/frontend/FrontendLayout";
 import { AuthLayout } from "@/layouts/auth/AuthLayout";
@@ -263,6 +264,7 @@ export const router = createBrowserRouter([
           { path: '/admin/verifications', element: suspensePage(Verifications) },
           { path: '/admin/leads', element: suspensePage(Leads) },
           { path: '/admin/reviews', element: suspensePage(Reviews) },
+          { path: '/admin/payments', element: suspensePage(Payments) },
         ],
       },
       {
@@ -271,82 +273,4 @@ export const router = createBrowserRouter([
       },
     ],
   },
-
-  // Single
-  // {
-  //   path: '/',
-  //   element: <Home />,
-  // }
-
-  // Layout Grouping
-  // {
-  //   element: <FrontendLayout />,
-  //   children: [
-  //     {
-  //       path: '/',
-  //       element: <Home />,
-  //     },
-  //     {
-  //       path: '/cart',
-  //       element: <Cart />,
-  //     },
-  //     {
-  //       path: '/filters',
-  //       element: <Filters />,
-  //     },
-  //   ]
-  // }
-
-  // Protected Route Grouping
-  // {
-  //   element: (
-  //     <ProtectedRoute>
-  //       <AdminLayout />
-  //     </ProtectedRoute>
-  //   ),
-  //   children: [
-  //     {
-  //       path: "/admin",
-  //       element: <Dashboard />,
-  //     },
-  //     {
-  //       path: "/admin/users",
-  //       element: <Users />,
-  //     },
-  //   ],
-  // },
-
-  // Role Based Route Protection
-  // {
-  //   element: (
-  //     <RoleGate allow={['admin', 'seller']} fallback="/admin/login">
-  //       <AdminLayout />
-  //     </RoleGate>
-  //   ),
-  //   children: [
-  //     {
-  //       path: "/admin",
-  //       element: <Dashboard />,
-  //     },
-  //     {
-  //       path: "/admin/users",
-  //       element: <Users />,
-  //     },
-  //   ],
-  // }
-
-  // Guest Route Protection
-  // {
-  //   element: (
-  //     <GuestGate>
-  //       <AuthLayout />
-  //     </GuestGate>
-  //   ),
-  //   children: [
-  //     {
-  //       path: "/login",
-  //       element: <Login />,
-  //     },
-  //   ],
-  // },
 ]);

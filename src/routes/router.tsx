@@ -21,6 +21,8 @@ const VendorAnalytics = lazy(() => import("@/pages/vendor/VendorAnalytics"));
 const VendorReviews = lazy(() => import("@/pages/vendor/VendorReviews"));
 const VendorPayments = lazy(() => import("@/pages/vendor/VendorPayments"));
 const VendorSettings = lazy(() => import("@/pages/vendor/VendorSettings"));
+const ChooseYourVendorPlan = lazy(() => import("@/pages/vendor/ChooseYourVendorPlan"));
+const PlanForm = lazy(() => import("@/pages/vendor/PlanForm"));
 
 const Account = lazy(() => import("@/pages/frontend/Account"));
 
@@ -144,6 +146,8 @@ export const router = createBrowserRouter([
           { path: '/single-application', element: suspensePage(SingleApplication) },
           { path: '/cookies-policy', element: suspensePage(CookiesPolicy) },
           { path: '/careers', element: suspensePage(Careers) },
+          { path: '/vendor/choose-your-plan', element: suspensePage(ChooseYourVendorPlan) },
+          { path: '/vendor/plan-form', element: suspensePage(PlanForm) },
         ],
       },
       {

@@ -4,18 +4,28 @@ import { cn } from "@/lib/utils";
 import { isActivePath } from "@/lib/nav.utils";
 import { useActiveUrl } from "@/hooks/useActiveUrl";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, Banknote, BarChart2, LayoutGrid, MessageSquare, MessageSquareCheck, Rocket, Settings, User } from "lucide-react";
+import {
+  BadgeCheck,
+  Banknote,
+  BarChart2,
+  LayoutGrid,
+  MessageSquare,
+  MessageSquareCheck,
+  Rocket,
+  Settings,
+  User,
+} from "lucide-react";
 
 const items = [
   { to: "/vendor/dashboard", label: "Dashboard", icon: LayoutGrid, end: true },
-  { to: "/vendor/profile", label: "Profile", icon:User, },
-  { to: "/vendor/leads", label: "Leads", icon:MessageSquare },
-  { to: "/vendor/verification", label: "Verification", icon:BadgeCheck },
-  { to: "/vendor/boost", label: "Boost", icon:Rocket },
-  { to: "/vendor/analytics", label: "Analytics", icon:BarChart2},
-  { to: "/vendor/reviews", label: "Reviews", icon:MessageSquareCheck  },
-  { to: "/vendor/payments", label: "Payments", icon:Banknote },
-  { to: "/vendor/settings", label: "Settings", icon:Settings },
+  { to: "/vendor/profile", label: "Profile", icon: User },
+  { to: "/vendor/leads", label: "Leads", icon: MessageSquare },
+  { to: "/vendor/verification", label: "Verification", icon: BadgeCheck },
+  { to: "/vendor/boost", label: "Boost", icon: Rocket },
+  { to: "/vendor/analytics", label: "Analytics", icon: BarChart2 },
+  { to: "/vendor/reviews", label: "Reviews", icon: MessageSquareCheck },
+  { to: "/vendor/payments", label: "Payments", icon: Banknote },
+  { to: "/vendor/settings", label: "Settings", icon: Settings },
 ];
 
 export function VendorSidebar({
@@ -91,9 +101,13 @@ export function VendorSidebar({
         </nav>
 
         <div className="p-4 mt-auto">
-          <Button className="w-full" variant="outline">
-            Bottom Action
-          </Button>
+          <div className="text-start bg-[#003F87] rounded-lg p-4">
+            <p className="text-start mb-1 text-text-white">Boost Your Listings</p>
+            <p className="text-xs  mb-1 text-text-white ">Increase your visibility by up to 40%.</p>
+            <Button className="w-full" variant="outline">
+              Bottom Action
+            </Button>
+          </div>
         </div>
       </div>
     </aside>

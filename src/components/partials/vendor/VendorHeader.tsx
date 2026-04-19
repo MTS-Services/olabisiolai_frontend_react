@@ -1,13 +1,15 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Bell,
   CircleUserRound,
   Home,
+  LayoutGrid,
   LogIn,
   LogOut,
   Search,
   Settings,
   TrendingUp,
+  User,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -48,12 +50,40 @@ function HeaderSearch({ className }: { className?: string }) {
 }
 
 function HeaderToolbar() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
       <Bell className="size-6" />
       <Settings className="size-6" />
       <div className="flex items-center gap-2">
-        <CircleUserRound className="size-6" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-auto p-1">
+              <CircleUserRound className="size-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => navigate("/vendor/profile")}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/vendor/dashboard")}>
+                <LayoutGrid className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => logout()} className="text-red-600">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

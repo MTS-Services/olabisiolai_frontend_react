@@ -10,8 +10,8 @@ export function DashboardWelcomeCard() {
             Your agency performance is up this month. Keep your profile updated to attract high-intent leads.
           </p>
         </div>
-        <div className="hidden rounded-lg bg-[#B700111A] p-3 shadow-2xl sm:block">
-          <img src="/src/assets/Icon.png" alt="vendor-dashboard-avatar" />
+        <div className="hidden rounded-lg p-3 sm:block">
+          <img src="/src/assets/Container (7).png" alt="vendor-dashboard-avatar" />
         </div>
       </CardContent>
     </Card>

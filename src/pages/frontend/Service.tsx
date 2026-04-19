@@ -17,7 +17,7 @@ import {
   Star,
 } from "lucide-react";
 
-import { ServicePhotosModal } from "@/components/service/ServicePhotosModal";
+import { ServicePhotosModal } from "@/components/Modal/ServicePhotosModal";
 import { Button } from "@/components/ui/button";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";

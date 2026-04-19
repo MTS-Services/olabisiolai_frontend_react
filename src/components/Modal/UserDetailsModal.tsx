@@ -1,4 +1,4 @@
-import { BadgeCheck, MapPin, X } from "lucide-react";
+import { X } from "lucide-react";
 
 type UserRow = {
   name: string;
@@ -44,33 +44,33 @@ export function UserDetailsModal({ open, onClose, user }: UserDetailsModalProps)
           <div className="space-y-4">
             <div>
               <h1>Name</h1>
-              <h3 className="text-xs font-medium text-ink">{user.name}</h3>              
+              <h3 className="text-xs font-medium text-ink">{user.name}</h3>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                
+
                 <div>
                   <p className="text-sm font-medium text-ink">Phone</p>
                   <p className="text-sm text-body-secondary">{user.phone}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">                 
+              <div className="flex items-center gap-3">
                 <div>
                   <p className="text-sm font-medium text-ink">Email</p>
                   <p className="text-sm text-body-secondary">{user.email}</p>
                 </div>
               </div>
-             
+
               <div>
-                 <p>Status</p>
+                <p>Status</p>
                 <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(user.status)}`}>
                   {user.status}
-                </span>                 
+                </span>
               </div>
 
-              <div className="flex items-center gap-3">                 
+              <div className="flex items-center gap-3">
                 <div>
                   <p className="text-sm font-medium text-ink">Join Date</p>
                   <p className="text-sm text-body-secondary">{user.joinDate}</p>

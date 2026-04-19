@@ -1,34 +1,38 @@
 import { X } from "lucide-react";
 
-type Business = {
+type Status = "pending" | "active" | "suspended";
+type Verification = "pending" | "verified" | "rejected";
+type Boost = "none" | "active";
+
+export type BusinessDetailsModalBusiness = {
   id: number;
   name: string;
   category: string;
   location: string;
-  status: "none" | "active" | "suspended";
-  verification: "none" | "verified" | "rejected";
-  boost: "none" | "active";
+  status: Status;
+  verification: Verification;
+  boost: Boost;
 };
 
 interface BusinessDetailsModalProps {
   open: boolean;
   onClose: () => void;
-  business: Business | null;
+  business: BusinessDetailsModalBusiness | null;
 }
 
-const statusStyles: Record<Business["status"], string> = {
-  none: "bg-orange-50 text-orange-500 border border-orange-200",
+const statusStyles: Record<Status, string> = {
+  pending: "bg-orange-50 text-orange-500 border border-orange-200",
   active: "bg-green-50 text-green-600 border border-green-200",
   suspended: "bg-red-50 text-red-500 border border-red-200",
 };
 
-const verificationStyles: Record<Business["verification"], string> = {
-  none: "bg-orange-50 text-orange-500 border border-orange-200",
+const verificationStyles: Record<Verification, string> = {
+  pending: "bg-orange-50 text-orange-500 border border-orange-200",
   verified: "bg-green-50 text-green-600 border border-green-200",
   rejected: "bg-red-50 text-red-500 border border-red-200",
 };
 
-const boostStyles: Record<Business["boost"], string> = {
+const boostStyles: Record<Boost, string> = {
   none: "bg-gray-100 text-gray-500 border border-gray-200",
   active: "bg-blue-50 text-blue-500 border border-blue-200",
 };
@@ -99,7 +103,7 @@ export function BusinessDetailsModal({ open, onClose, business }: BusinessDetail
               <p className="text-sm text-gray-600">{new Date(business.id).toLocaleDateString()}</p>
             </div>
 
-            
+
           </div>
         </div>
       </div>

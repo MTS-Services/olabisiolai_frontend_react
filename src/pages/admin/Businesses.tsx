@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, ChevronDown, Eye, Check, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
-import { BusinessDetailsModal } from "@/components/BusinessDetailsModal";
+import { BusinessDetailsModal } from "@/components/Modal/BusinessDetailsModal";
 
 type Status = "pending" | "active" | "suspended";
 type Verification = "pending" | "verified" | "rejected";
@@ -81,141 +81,139 @@ export default function BusinessTable() {
 
   return (
     <>
-    
-    <div className="mb-4">
+
+      <div className="mb-4">
         <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Businesses</h1></div>
-    <div className=" bg-gray-50  font-sans">
-      <div className="mx-auto max-w-9xl rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className=" bg-gray-50  font-sans">
+        <div className="mx-auto max-w-9xl rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
 
-        {/* Toolbar */}
-        <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search businesses..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all"
-            />
+          {/* Toolbar */}
+          <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search businesses..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <SelectFilter placeholder="Select Type" />
+              <SelectFilter placeholder="Select Category" />
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <SelectFilter placeholder="Select Type" />
-            <SelectFilter placeholder="Select Category" />
-          </div>
-        </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                {["Business Name", "Category", "Location", "Status", "Verification", "Boost", "Actions"].map((h) => (
-                  <th
-                    key={h}
-                    className={`px-6 py-3 text-left text-xs font-medium text-gray-900 ${h === "Actions" ? "text-right" : ""}`}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.map((b) => (
-                <tr key={b.id} className="group hover:bg-gray-50/60 transition-colors">
-                  <td className="px-6 py-3.5 font-medium text-gray-900 whitespace-nowrap">{b.name}</td>
-                  <td className="px-6 py-3.5 text-gray-900">{b.category}</td>
-                  <td className="px-6 py-3.5 text-gray-900">{b.location}</td>
-                  <td className="px-6 py-3.5">
-                    <Badge label={b.status} className={statusStyles[b.status]} />
-                  </td>
-                  <td className="px-6 py-3.5">
-                    <Badge label={b.verification} className={verificationStyles[b.verification]} />
-                  </td>
-                  <td className="px-6 py-3.5">
-                    <Badge label={b.boost} className={boostStyles[b.boost]} />
-                  </td>
-                   <td className="px-6 py-3.5">
-                     <div className="flex items-center justify-end gap-3">
-                       <button
-                         className="text-gray-700 hover:text-gray-600 transition-colors"
-                         onClick={() => {
-                           setSelectedBusiness(b);
-                           setIsModalOpen(true);
-                         }}
-                       >
-                         <Eye className="size-4" />
-                       </button>
-                      <button className="hover:text-gray-700 text-green-600 transition-colors">
-                        <Check className="size-4" />
-                      </button>
-                      <button className="hover:text-gray-700 text-red-500 transition-colors">
-                        <Trash2 className="size-4" />
-                      </button>
-                    </div>
-                  </td>
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  {["Business Name", "Category", "Location", "Status", "Verification", "Boost", "Actions"].map((h) => (
+                    <th
+                      key={h}
+                      className={`px-6 py-3 text-left text-xs font-medium text-gray-900 ${h === "Actions" ? "text-right" : ""}`}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map((b) => (
+                  <tr key={b.id} className="group hover:bg-gray-50/60 transition-colors">
+                    <td className="px-6 py-3.5 font-medium text-gray-900 whitespace-nowrap">{b.name}</td>
+                    <td className="px-6 py-3.5 text-gray-900">{b.category}</td>
+                    <td className="px-6 py-3.5 text-gray-900">{b.location}</td>
+                    <td className="px-6 py-3.5">
+                      <Badge label={b.status} className={statusStyles[b.status]} />
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <Badge label={b.verification} className={verificationStyles[b.verification]} />
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <Badge label={b.boost} className={boostStyles[b.boost]} />
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          className="text-gray-700 hover:text-gray-600 transition-colors"
+                          onClick={() => {
+                            setSelectedBusiness(b);
+                            setIsModalOpen(true);
+                          }}
+                        >
+                          <Eye className="size-4" />
+                        </button>
+                        <button className="hover:text-gray-700 text-green-600 transition-colors">
+                          <Check className="size-4" />
+                        </button>
+                        <button className="hover:text-gray-700 text-red-500 transition-colors">
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
-          <p className="text-xs text-gray-400">Showing 1-10 of 482 transactions</p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 disabled:opacity-40 transition-colors"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-
-            {pages.map((p) => (
+          {/* Pagination */}
+          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
+            <p className="text-xs text-gray-400">Showing 1-10 of 482 transactions</p>
+            <div className="flex items-center gap-1">
               <button
-                key={p}
-                onClick={() => setCurrentPage(p)}
-                className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                  currentPage === p
-                    ? "bg-gray-900 text-white"
-                    : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                }`}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 disabled:opacity-40 transition-colors"
               >
-                {p}
+                <ChevronLeft className="size-4" />
               </button>
-            ))}
 
-            <span className="inline-flex h-8 items-center px-1 text-sm text-gray-400">...</span>
+              {pages.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
+                      ? "bg-gray-900 text-white"
+                      : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                    }`}
+                >
+                  {p}
+                </button>
+              ))}
 
-            <button
-              onClick={() => setCurrentPage(totalPages)}
-              className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
-                currentPage === totalPages
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              }`}
-            >
-              {totalPages}
-            </button>
+              <span className="inline-flex h-8 items-center px-1 text-sm text-gray-400">...</span>
 
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 disabled:opacity-40 transition-colors"
-            >
-              <ChevronRight className="size-4" />
-            </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${currentPage === totalPages
+                    ? "bg-gray-900 text-white border-gray-900"
+                    : "border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  }`}
+              >
+                {totalPages}
+              </button>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600 disabled:opacity-40 transition-colors"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <BusinessDetailsModal
-      open={isModalOpen}
-      onClose={() => setIsModalOpen(false)}
-      business={selectedBusiness}
-    />
+      <BusinessDetailsModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        business={selectedBusiness}
+      />
     </>
   );
 }

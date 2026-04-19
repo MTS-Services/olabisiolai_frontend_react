@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, X, FileText } from "lucide-react";
 
-import { RejectVerificationModal } from "@/components/RejectVerificationModal";
+import { RejectVerificationModal } from "@/components/Modal/RejectVerificationModal";
 
 type PaymentStatus = "confirmed" | "pending";
 type DocStatus = "verified" | "missing";
@@ -129,8 +129,8 @@ function Card({
         <button
           disabled={!canApprove}
           className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-opacity ${canApprove
-              ? "bg-blue-500 text-white hover:bg-blue-600 active:opacity-80"
-              : "cursor-not-allowed bg-blue-100 text-blue-300"
+            ? "bg-blue-500 text-white hover:bg-blue-600 active:opacity-80"
+            : "cursor-not-allowed bg-blue-100 text-blue-300"
             }`}
         >
           Approve

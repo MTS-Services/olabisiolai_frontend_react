@@ -1,7 +1,7 @@
 import { Ban, ChevronDown, ChevronLeft, ChevronRight, Eye, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { UserDetailsModal } from "@/components/UserDetailsModal";
+import { UserDetailsModal } from "@/components/Modal/UserDetailsModal";
 
 type UserRow = {
   name: string;
@@ -187,16 +187,16 @@ export default function Users() {
                   <td className="px-2 py-3 text-xs text-body-secondary sm:px-4 sm:py-4 sm:text-sm">{user.joinDate}</td>
                   <td className="px-2 py-3 sm:px-4 sm:py-4">
                     <div className="flex items-center justify-end gap-2">
-                       <button
-                         type="button"
-                         className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted"
-                         onClick={() => {
-                           setSelectedUser(user);
-                           setIsModalOpen(true);
-                         }}
-                       >
-                         <Eye className="size-4 text-body-secondary" />
-                       </button>
+                      <button
+                        type="button"
+                        className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        <Eye className="size-4 text-body-secondary" />
+                      </button>
                       <button type="button" className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted">
                         <Ban className="size-4 text-amber-500" />
                       </button>

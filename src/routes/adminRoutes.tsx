@@ -12,6 +12,7 @@ const Verifications = lazy(() => import("@/pages/admin/Verifications"));
 const Leads = lazy(() => import("@/pages/admin/Leads"));
 const Reviews = lazy(() => import("@/pages/admin/Reviews"));
 const Payments = lazy(() => import("@/pages/admin/Payments"));
+const BoostSystem = lazy(() => import("@/pages/admin/BoostSystem"));
 
 /** Authenticated `admin` role area (admin shell + nested admin pages). */
 export const adminRoutes: RouteObject = {
@@ -29,5 +30,6 @@ export const adminRoutes: RouteObject = {
     { path: "/admin/leads", element: suspensePage(Leads) },
     { path: "/admin/reviews", element: suspensePage(Reviews) },
     { path: "/admin/payments", element: suspensePage(Payments) },
+    { path: "/admin/boost-system", element: suspensePage(BoostSystem) },
   ],
 };

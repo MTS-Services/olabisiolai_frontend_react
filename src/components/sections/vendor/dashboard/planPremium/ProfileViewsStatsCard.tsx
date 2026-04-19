@@ -16,6 +16,12 @@ export function ProfileViewsStatsCard() {
           <p className="text-3xl font-bold tracking-tight text-foreground font-manrope">42.5k</p>
           <p className="text-sm text-muted-foreground font-inter">Profile views</p>
         </div>
+         <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full bg-emerald-100 transition-all duration-500"
+           
+          />
+        </div>
       </CardContent>
     </Card>
   );

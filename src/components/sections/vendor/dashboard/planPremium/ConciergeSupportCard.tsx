@@ -8,7 +8,7 @@ export function ConciergeSupportCard() {
     <Card className="rounded-2xl border-border-light bg-card shadow-sm">
       <CardContent className="space-y-5 p-6 md:p-8">
         <div className="flex gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sky-700">
             <Headset className="size-6" aria-hidden />
           </div>
           <div className="min-w-0 space-y-1">
@@ -19,7 +19,7 @@ export function ConciergeSupportCard() {
             </p>
           </div>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center mt-10">
           <Button className="flex-1 bg-brand-red font-inter font-semibold text-white hover:bg-brand-red/90 sm:flex-auto">
             Contact support
           </Button>

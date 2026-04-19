@@ -1,5 +1,3 @@
-import { MessageSquare, Star } from "lucide-react";
-
 export type ReviewItem = {
     id: string;
     name: string;

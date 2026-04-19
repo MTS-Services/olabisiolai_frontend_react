@@ -3,7 +3,6 @@ import { BoostConfigureHeader } from "@/components/sections/vendor/boost/boostCo
 import { BoostScheduleCard } from "@/components/sections/vendor/boost/boostConfigure/BoostScheduleCard";
 import { EstimatedReachCard } from "@/components/sections/vendor/boost/boostConfigure/EstimatedReachCard";
 import { TargetLocationCard } from "@/components/sections/vendor/boost/boostConfigure/TargetLocationCard";
-import { BusinessGalleryCard } from "@/components/sections/vendor/profile/BusinessGalleryCard";
 import VendorBoostReviewPayPage from "./VendorBoostReviewPay";
 
 type VendorPlan = "free" | "premium";

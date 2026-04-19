@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle2, CircleAlert, CreditCard, TextAlignStart, WalletCards, X } from "lucide-react";
 import { useState } from "react";
 
-type ModalStep = "none" | "email" | "verify" | "accountType";
+type ModalStep = "none" | "email" | "verify" | "accountType" | "success";
 
 export function PaymentHeader() {
         const [modalStep, setModalStep] = useState<ModalStep>("none");

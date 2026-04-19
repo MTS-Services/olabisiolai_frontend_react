@@ -1,14 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-    ArrowRight,
-    Check,
-    CircleUserRound,
-    CreditCard,
-    FileText,
-    Lock,
-    ShieldCheck,
-    Store,
-} from "lucide-react";
+import { ArrowRight, CircleUserRound, FileText, Lock, ShieldCheck, Store } from "lucide-react";
 
 export type PlanId = "individual" | "business" | "ltd";
 

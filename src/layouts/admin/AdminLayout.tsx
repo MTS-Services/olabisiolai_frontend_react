@@ -1,31 +1,33 @@
-import { Outlet } from 'react-router-dom'
-
-import { AdminFooter } from '@/components/partials/admin/AdminFooter'
-import { container } from '@/lib/container'
-import { cn } from '@/lib/utils'
-import { AdminHeader } from '@/components/partials/admin/AdminHeader'
-import { AdminSidebar } from '@/components/partials/admin/AdminSidebar'
-import { useNav } from '@/hooks/useNav'
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import { AdminHeader } from "@/components/partials/admin/AdminHeader";
+import { AdminSidebar } from "@/components/partials/admin/AdminSidebar";
 
 export function AdminLayout() {
-  const nav = useNav()
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-dvh bg-background">
-      <AdminHeader onToggleSidebar={nav.toggle} />
-      <div
-        className={cn(
-          container,
-          'grid grid-cols-1 gap-4 py-6 md:grid-cols-[260px_1fr]',
-        )}
-      >
-        <AdminSidebar open={nav.open} onClose={nav.close} />
-        <main className="min-w-0">
+    <div className="min-h-screen bg-auth-bg text-ink">
+      <AdminHeader
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((open) => !open)}
+      />
+
+      {sidebarOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
+          aria-label="Close navigation menu"
+          onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
+
+      <div className="flex min-h-[calc(100vh-5rem)]">
+        <AdminSidebar mobileOpen={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
+        <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
           <Outlet />
         </main>
       </div>
-      <AdminFooter />
     </div>
-  )
+  );
 }
-

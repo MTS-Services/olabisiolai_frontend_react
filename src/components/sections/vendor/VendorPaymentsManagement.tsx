@@ -21,7 +21,7 @@
 
 import { PaymentMethoad } from "@/pages/paymnent/PaymentMethoad";
 import { TransactionHistory } from "@/pages/paymnent/TransactionHistory";
-import { PaymentHeader } from "@/pages/paymnent/header";
+import { PaymentHeader } from "@/pages/paymnent/Header";
 
 
 

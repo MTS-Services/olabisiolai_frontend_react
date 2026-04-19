@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import {
-    Bell,
-  ChevronDown,
+  Bell,
   CircleUserRound,
   Home,
   LogIn,
@@ -197,7 +196,7 @@ export function VendorHeader() {
 
         <div className="flex min-w-0 flex-1 justify-between px-2">
           {showHeaderSearch ? <HeaderSearch className="max-w-xl lg:max-w-2xl" /> : null}
-          <HeaderToolbar isLightHeader={isLightHeader} showTradeNav={showTradeNav} />
+          <HeaderToolbar />
         </div>
 
         

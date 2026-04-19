@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 import gallery1 from "@/assets/protfolio_image/Property Image 1.png";
 import gallery2 from "@/assets/protfolio_image/Property Image 2.png";

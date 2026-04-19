@@ -1,4 +1,4 @@
-import { BadgeCheck, CircleCheck, Gem, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
+import { BadgeCheck, Gem, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 
 export type Plan = {
   id: string;

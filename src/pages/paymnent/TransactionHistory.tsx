@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Badge, CalendarDays, Download, RotateCcw, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { CalendarDays, Download, RotateCcw, Trash2 } from "lucide-react";
 
 
 const txRows = [
@@ -62,25 +61,6 @@ const txRows = [
         status: "Completed",
     },
 ];
-
-
-function StatusBadge({ status }: { status: string }) {
-    if (status === "Completed") return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Completed</Badge>;
-    if (status === "Processing") return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Processing</Badge>;
-    return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100">Failed</Badge>;
-}
-
-function TypeBadge({ type }: { type: string }) {
-    const style =
-        type === "Booking"
-            ? "bg-sky-100 text-sky-700"
-            : type === "Boost"
-                ? "bg-rose-100 text-rose-700"
-                : type === "Payout"
-                    ? "bg-indigo-100 text-indigo-700"
-                    : "bg-cyan-100 text-cyan-700";
-    return <Badge className={cn(style, "hover:opacity-90")}>{type}</Badge>;
-}
 
 export function TransactionHistory() {
     return (

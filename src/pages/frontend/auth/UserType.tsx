@@ -45,7 +45,7 @@ export default function UserType() {
                       I'm a Customer
                     </h3>
                     <p className="text-sm font-inter font-medium text-text-secondary">
-                      Find and hire verified businesses
+                      Find and connect with businesses.
                     </p>
                   </div>
                 </div>
@@ -67,10 +67,10 @@ export default function UserType() {
                   </div>
                   <div>
                     <h3 className="text-lg font-medium font-inter text-ink-heading">
-                      Business Owner
+                      I'm a Vendor
                     </h3>
                     <p className="text-sm font-inter font-medium text-text-secondary">
-                      List your services and grow your business
+                      Grow your business and reach more customers
                     </p>
                   </div>
                 </div>

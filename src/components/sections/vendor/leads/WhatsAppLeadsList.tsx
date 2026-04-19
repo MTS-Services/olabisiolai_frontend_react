@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
-import { type Lead, type ChatMessage } from "./leadsData";
+import type { Lead } from "./leadsData";
 
 export function WhatsAppLeadsList({
   leads,

@@ -205,11 +205,21 @@ export default function Register() {
               />
               <span className="text-sm text-muted-foreground">
                 I agree to the{" "}
-                <Link to="/terms" className="text-primary hover:underline">
+                <Link
+                  to="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
                   Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link to="/privacy-policy" className="text-primary hover:underline">
+                <Link
+                  to="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
                   Privacy Policy
                 </Link>
               </span>

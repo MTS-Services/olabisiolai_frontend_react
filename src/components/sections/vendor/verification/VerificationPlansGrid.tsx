@@ -12,7 +12,7 @@ export function VerificationPlansGrid({
 }) {
   return (
     <div
-      className="grid gap-4 md:gap-5 lg:grid-cols-3"
+      className="grid gap-3 sm:gap-4 md:gap-5 lg:grid-cols-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3"
       role="radiogroup"
       aria-label="Verification tier"
     >

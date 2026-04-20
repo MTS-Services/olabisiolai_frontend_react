@@ -87,7 +87,7 @@ export function VendorSidebar({
         <nav className="flex-1 overflow-y-auto p-4 mt-2 grid gap-1 content-start">
           {items.map((i) => {
             const Icon = i.icon;
-            const active = isActivePath(pathname, i.to, Boolean(i.end));
+            // const active = isActivePath(pathname, i.to, Boolean(i.end));
 
             return (
               <NavLink

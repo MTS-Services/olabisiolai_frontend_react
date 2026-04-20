@@ -34,7 +34,7 @@ const items: SidebarItem[] = [
   { label: "Boost System", to: "/admin/boost-system", icon: Wrench },
   { label: "Categories", to: "/admin/categories", icon: Tags },
   { label: "Career", to: "/admin/career", icon: UserRound },
-  { label: "Locations", to: "/admin/dashboard", icon: MapPin },
+  { label: "Locations", to: "/admin/locations", icon: MapPin },
   { label: "Notifications", to: "/admin/dashboard", icon: Bell },
   { label: "Settings", to: "/admin/dashboard", icon: ShieldCheck },
 ];

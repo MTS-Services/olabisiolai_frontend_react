@@ -4,13 +4,6 @@ import { useMemo, useState } from "react";
 
 import type { PaymentRow, PaymentStatus, PaymentStatusFilter } from "@/components/Modal/PaymentDetailsModal.types";
 
-type PayoutMethod = {
-  id: string;
-  bankName: string;
-  last4: string;
-  isPrimary: boolean;
-};
-
 const TOTAL_PAYMENTS = 482;
 
 const payments: PaymentRow[] = [
@@ -120,18 +113,9 @@ function StatusCell({ status }: { status: PaymentStatus }) {
   );
 }
 
-const initialPayoutMethods: PayoutMethod[] = [
-  { id: "1", bankName: "Zenith Bank", last4: "4590", isPrimary: true },
-  { id: "2", bankName: "Access Bank", last4: "1288", isPrimary: false },
-];
-
 export default function Payments() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>("all");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [selected, setSelected] = useState<PaymentRow | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const payoutMethods = initialPayoutMethods;
-  const [setPrimaryModalOpen, setSetPrimaryModalOpen] = useState(false);
 
 
 
@@ -280,10 +264,7 @@ export default function Payments() {
                     <div className="flex justify-end">
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelected(row);
-                          setModalOpen(true);
-                        }}
+                        onClick={() => { }}
                         className="inline-flex h-8 items-center gap-2 rounded-xl px-3 text-sm font-medium text-body-secondary hover:bg-muted"
                       >
                         <Eye className="size-4 shrink-0" strokeWidth={2} />

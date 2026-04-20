@@ -11,6 +11,8 @@ const Businesses = lazy(() => import("@/pages/admin/Businesses"));
 const Categories = lazy(() => import("@/pages/admin/Categories"));
 const Career = lazy(() => import("@/pages/admin/Career"));
 const Locations = lazy(() => import("@/pages/admin/Locations"));
+const Settings = lazy(() => import("@/pages/admin/Settings"));
+const Notifications = lazy(() => import("@/pages/admin/Notifications"));
 const Verifications = lazy(() => import("@/pages/admin/Verifications"));
 const Leads = lazy(() => import("@/pages/admin/Leads"));
 const Reviews = lazy(() => import("@/pages/admin/Reviews"));
@@ -31,7 +33,9 @@ export const adminRoutes: RouteObject = {
     { path: "/admin/businesses", element: suspensePage(Businesses) },
     { path: "/admin/categories", element: suspensePage(Categories) },
     { path: "/admin/career", element: suspensePage(Career)},
+    {path: "/admin/settings", element: suspensePage(Settings)},
     { path: "/admin/locations", element: suspensePage(Locations)},
+    { path: "/admin/notifications", element: suspensePage(Notifications)},
     { path: "/admin/verifications", element: suspensePage(Verifications) },
     { path: "/admin/leads", element: suspensePage(Leads) },
     { path: "/admin/reviews", element: suspensePage(Reviews) },

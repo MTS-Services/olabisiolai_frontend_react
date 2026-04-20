@@ -35,8 +35,8 @@ const items: SidebarItem[] = [
   { label: "Categories", to: "/admin/categories", icon: Tags },
   { label: "Career", to: "/admin/career", icon: UserRound },
   { label: "Locations", to: "/admin/locations", icon: MapPin },
-  { label: "Notifications", to: "/admin/dashboard", icon: Bell },
-  { label: "Settings", to: "/admin/dashboard", icon: ShieldCheck },
+  { label: "Notifications", to: "/admin/notifications", icon: Bell },
+  { label: "Settings", to: "/admin/settings", icon: ShieldCheck },
 ];
 
 type AdminSidebarProps = {

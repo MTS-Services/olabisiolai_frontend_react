@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 
 type Category = {
@@ -22,6 +22,22 @@ export default function CategoriesTable() {
   const [isAdding, setIsAdding] = useState(false);
   const [editName, setEditName] = useState("");
   const [editSubcategories, setEditSubcategories] = useState("");
+
+  useEffect(() => {
+    if (!showEditModal) return;
+
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+
+    // Prevent background page from scrolling while modal is open.
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [showEditModal]);
 
   const handleDelete = (id: number) => {
     setCategories((prev) => prev.filter((c) => c.id !== id));
@@ -204,10 +220,10 @@ export default function CategoriesTable() {
 
       {/* ── Edit Modal ── */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/50 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl max-h-[92dvh]">
             {/* Modal header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 pb-3 pt-4 sm:px-5 sm:pb-4 sm:pt-5">
               <h3 className="text-base font-semibold text-gray-900">{isAdding ? 'Add Category' : 'Edit Category'}</h3>
               <button
                 onClick={handleCloseModal}
@@ -219,7 +235,7 @@ export default function CategoriesTable() {
             </div>
 
             {/* Modal body */}
-            <div className="px-5 py-4 space-y-4">
+            <div className="max-h-[calc(92dvh-132px)] overflow-y-auto px-4 py-4 space-y-4 sm:px-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Category Name
@@ -246,16 +262,16 @@ export default function CategoriesTable() {
             </div>
 
             {/* Modal footer */}
-            <div className="flex justify-end gap-3 px-5 pb-5 pt-2">
+            <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white px-4 pb-4 pt-3 sm:justify-end sm:px-5 sm:pb-5 sm:pt-2">
               <button
                 onClick={handleCloseModal}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 sm:flex-none sm:py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex-1 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 sm:flex-none sm:py-2"
               >
                 {isAdding ? 'Add' : 'Save'}
               </button>

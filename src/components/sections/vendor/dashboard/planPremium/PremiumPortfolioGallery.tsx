@@ -3,11 +3,15 @@ import { Link } from "react-router-dom";
 
 import { Card, CardContent } from "@/components/ui/card";
 
+import img1 from "@/assets/protfolio_image/Property Image 1.png";
+import img2 from "@/assets/protfolio_image/Property Image 2.png";
+import img3 from "@/assets/protfolio_image/Property Image 3.png";
+
 const galleryImages: { id: string; src: string; alt: string }[] = [
-  { id: "1", src: "/src/assets/protfolio_image/Property Image 1.png", alt: "Living space" },
-  { id: "2", src: "/src/assets/protfolio_image/Property Image 2.png", alt: "Kitchen" },
-  { id: "3", src: "/src/assets/protfolio_image/Property Image 3.png", alt: "Bedroom" },
-  { id: "4", src: "/src/assets/protfolio_image/Property Image 1.png", alt: "Interior detail" },
+  { id: "1", src: img1, alt: "Living space" },
+  { id: "2", src: img2, alt: "Kitchen" },
+  { id: "3", src: img3, alt: "Bedroom" },
+  { id: "4", src: img1, alt: "Interior detail" },
 ];
 
 export function PremiumPortfolioGallery() {

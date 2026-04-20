@@ -1,5 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 
+import WelcomeImage from "@/assets/Container (7).png";
+
 export function DashboardWelcomeCard() {
   return (
     <Card className="border-border-light bg-card">
@@ -11,7 +13,7 @@ export function DashboardWelcomeCard() {
           </p>
         </div>
         <div className="hidden rounded-lg sm:block">
-          <img src="/src/assets/Container (7).png" alt="vendor-dashboard-avatar" />
+          <img src={WelcomeImage} alt="vendor-dashboard-avatar" />
         </div>
       </CardContent>
     </Card>

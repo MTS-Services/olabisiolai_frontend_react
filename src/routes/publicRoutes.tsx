@@ -32,6 +32,8 @@ const Trade = lazy(() => import("@/pages/frontend/Trade"));
 const Service = lazy(() => import("@/pages/frontend/Service"));
 const DirectMessage = lazy(() => import("@/pages/frontend/DirectMessage"));
 const GiveReview = lazy(() => import("@/pages/frontend/GiveReview"));
+const ChooseYourVendorPlan = lazy(() => import("@/pages/vendor/ChooseYourVendorPlan"));
+const PlanForm = lazy(() => import("@/pages/vendor/PlanForm"));
 
 /** Public marketing and content routes (no role gate). */
 export const publicRoutes: RouteObject = {
@@ -74,5 +76,7 @@ export const publicRoutes: RouteObject = {
     { path: "/single-application", element: suspensePage(SingleApplication) },
     { path: "/cookies-policy", element: suspensePage(CookiesPolicy) },
     { path: "/careers", element: suspensePage(Careers) },
+    { path: "/vendor/choose-your-plan", element: suspensePage(ChooseYourVendorPlan) },
+    { path: "/vendor/plan-form", element: suspensePage(PlanForm) },
   ],
 };

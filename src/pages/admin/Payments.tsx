@@ -131,14 +131,10 @@ export default function Payments() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<PaymentRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>(initialPayoutMethods);
+  const payoutMethods = initialPayoutMethods;
   const [setPrimaryModalOpen, setSetPrimaryModalOpen] = useState(false);
-  const [selectedPayoutMethod, setSelectedPayoutMethod] = useState<PayoutMethod | null>(null);
 
-  const handleSetPrimary = () => {
-    if (!selectedPayoutMethod) return;
-    setPayoutMethods(prev => prev.map(method => ({ ...method, isPrimary: method.id === selectedPayoutMethod.id })));
-  };
+
 
   const filtered = useMemo(() => {
     if (statusFilter === "all") return payments;
@@ -217,7 +213,10 @@ export default function Payments() {
   
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-slate-800">Payout Methods</h2>
-        <button className="flex items-center text-sm font-semibold text-red-600 hover:text-red-700 transition-colors">
+        <button
+          onClick={() => setSetPrimaryModalOpen(true)}
+          className="flex items-center text-sm font-semibold text-red-600 hover:text-red-700 transition-colors"
+        >
           <span className="mr-1 text-lg leading-none">+</span> Add Payout Method
         </button>
       </div>
@@ -242,12 +241,9 @@ export default function Payments() {
               </span>
             ) : (
               <div className="flex items-center space-x-3">
-                <button
+                 <button
                   className="text-sm font-semibold text-blue-600 px-4 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
-                  onClick={() => {
-                    setSelectedPayoutMethod(method);
-                    setSetPrimaryModalOpen(true);
-                  }}
+                  onClick={() => setSetPrimaryModalOpen(true)}
                 >
                   Set as primary
                 </button>
@@ -401,7 +397,7 @@ export default function Payments() {
       </section>
 
       <PaymentDetailsModal open={modalOpen} onClose={() => setModalOpen(false)} payment={selected} />
-      <SetPrimaryModal open={setPrimaryModalOpen} onClose={() => setSetPrimaryModalOpen(false)} method={selectedPayoutMethod} onConfirm={handleSetPrimary} />
+      <SetPrimaryModal open={setPrimaryModalOpen} onClose={() => setSetPrimaryModalOpen(false)} />
     </div>
   );
 }

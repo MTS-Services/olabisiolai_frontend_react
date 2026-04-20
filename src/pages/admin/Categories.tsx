@@ -19,6 +19,7 @@ export default function CategoriesTable() {
   const [categories, setCategories] = useState<Category[]>(DATA);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
   const [editName, setEditName] = useState("");
   const [editSubcategories, setEditSubcategories] = useState("");
 
@@ -27,14 +28,21 @@ export default function CategoriesTable() {
   };
 
   const handleEdit = (category: Category) => {
+    setIsAdding(false);
     setEditingCategory(category);
     setEditName(category.name);
     setEditSubcategories(category.subcategories.join(", "));
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = () => {
-    if (editingCategory) {
+  const handleSave = () => {
+    if (isAdding) {
+      const newId = Math.max(...categories.map(c => c.id), 0) + 1;
+      setCategories((prev) => [
+        ...prev,
+        { id: newId, name: editName, subcategories: editSubcategories.split(",").map((s) => s.trim()).filter(Boolean) }
+      ]);
+    } else if (editingCategory) {
       setCategories((prev) =>
         prev.map((c) =>
           c.id === editingCategory.id
@@ -45,11 +53,13 @@ export default function CategoriesTable() {
     }
     setShowEditModal(false);
     setEditingCategory(null);
+    setIsAdding(false);
   };
 
   const handleCloseModal = () => {
     setShowEditModal(false);
     setEditingCategory(null);
+    setIsAdding(false);
   };
 
   const EditIcon = () => (
@@ -87,7 +97,15 @@ export default function CategoriesTable() {
       {/* Header */}
       <h1 className="text-2xl font-bold text-gray-800">Categories</h1>
       <div className="mb-5 flex items-center justify-end">
-        <button className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 sm:px-5 text-sm font-medium text-white shadow-sm hover:bg-blue-600 active:scale-95 transition-all">
+        <button
+          onClick={() => {
+            setIsAdding(true);
+            setEditName("");
+            setEditSubcategories("");
+            setShowEditModal(true);
+          }}
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 sm:px-5 text-sm font-medium text-white shadow-sm hover:bg-blue-600 active:scale-95 transition-all"
+        >
           <Plus className="size-4" />
           Add Category
         </button>
@@ -190,7 +208,7 @@ export default function CategoriesTable() {
           <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
             {/* Modal header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
-              <h3 className="text-base font-semibold text-gray-900">Edit Category</h3>
+              <h3 className="text-base font-semibold text-gray-900">{isAdding ? 'Add Category' : 'Edit Category'}</h3>
               <button
                 onClick={handleCloseModal}
                 className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-colors"
@@ -236,10 +254,10 @@ export default function CategoriesTable() {
                 Cancel
               </button>
               <button
-                onClick={handleSaveEdit}
+                onClick={handleSave}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
               >
-                Save
+                {isAdding ? 'Add' : 'Save'}
               </button>
             </div>
           </div>

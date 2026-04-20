@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, MapPin, Briefcase, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Briefcase } from "lucide-react";
+import { router } from "@/routes/router";
 
 type JobType = "Full-Time" | "Part-Time" | "Contract" | "Remote";
 
@@ -67,44 +68,8 @@ export default function DesignationsTable() {
   const [rows, setRows] = useState<Designation[]>(DATA);
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingDesignation, setEditingDesignation] = useState<Designation | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editCategory, setEditCategory] = useState("");
-  const [editLocation, setEditLocation] = useState("");
-  const [editSalary, setEditSalary] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editType, setEditType] = useState<JobType>("Full-Time");
 
   const handleDelete = (id: number) => setRows((prev) => prev.filter((r) => r.id !== id));
-
-  const handleEdit = (designation: Designation) => {
-    setEditingDesignation(designation);
-    setEditTitle(designation.title);
-    setEditCategory(designation.category);
-    setEditLocation(designation.location);
-    setEditSalary(designation.salary);
-    setEditDescription(designation.description);
-    setEditType(designation.type);
-    setShowEditModal(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (editingDesignation) {
-      setRows((prev) =>
-        prev.map((r) =>
-          r.id === editingDesignation.id ? { ...r, title: editTitle, category: editCategory, location: editLocation, salary: editSalary, description: editDescription, type: editType } : r
-        )
-      );
-    }
-    setShowEditModal(false);
-    setEditingDesignation(null);
-  };
-
-  const handleCloseModal = () => {
-    setShowEditModal(false);
-    setEditingDesignation(null);
-  };
 
   const pageNumbers = [1, 2, 3];
 
@@ -171,7 +136,7 @@ export default function DesignationsTable() {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => handleEdit(row)}
+                        onClick={() => router.navigate(`/admin/career/edit/${row.id}`, { state: { designation: row } })}
                         className="rounded-lg p-2 text-slate-700 transition-all hover:bg-blue-50 hover:text-blue-600 active:scale-95"
                         aria-label={`Edit ${row.title}`}
                       >
@@ -219,7 +184,7 @@ export default function DesignationsTable() {
                    </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => handleEdit(row)} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 active:scale-95 transition-all">
+                   <button onClick={() => router.navigate(`/admin/career/edit/${row.id}`, { state: { designation: row } })} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 active:scale-95 transition-all">
                     <EditIcon />
                   </button>
                   <button
@@ -294,13 +259,6 @@ export default function DesignationsTable() {
           </div>
         </div>
       </div>
-
-      {/* Edit Modal */}
-      {showEditModal && (
-        <div>
-            
-        </div>
-      )}
     </div>
   );
 }

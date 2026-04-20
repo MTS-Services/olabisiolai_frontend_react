@@ -36,6 +36,7 @@ export default function LocationHierarchy() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newStateName, setNewStateName] = useState("");
   const [newLgaName, setNewLgaName] = useState("");
+  const [newAreaName, setNewAreaName] = useState("");
   const [openStates, setOpenStates] = useState<Set<string>>(new Set(initialData.map((s) => s.id)));
   const [openLgas, setOpenLgas] = useState<Set<string>>(
     new Set(initialData.flatMap((s) => s.lgas.map((l) => l.id)))
@@ -56,7 +57,7 @@ export default function LocationHierarchy() {
       const lgas = newLgaName.trim() ? [{
         id: newLgaName.toLowerCase().replace(/\s+/g, "-"),
         name: newLgaName.trim(),
-        areas: [],
+        areas: newAreaName.trim() ? newAreaName.split(',').map(a => a.trim()).filter(a => a) : [],
       }] : [];
       const newState: StateEntry = {
         id: newStateName.toLowerCase().replace(/\s+/g, "-"),
@@ -70,6 +71,7 @@ export default function LocationHierarchy() {
       }
       setNewStateName("");
       setNewLgaName("");
+      setNewAreaName("");
       setShowAddModal(false);
     }
   };
@@ -192,6 +194,21 @@ export default function LocationHierarchy() {
                 placeholder="Enter city name"
               />
             </div>
+
+            <div className="mb-4">
+              <label htmlFor="areaName" className="block text-sm font-medium text-gray-700 mb-1">
+                Area Name
+              </label>
+              <input
+                id="areaName"
+                type="text"
+                value={newAreaName}
+                onChange={(e) => setNewAreaName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter area name"
+              />
+            </div>
+
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowAddModal(false)}
@@ -203,7 +220,7 @@ export default function LocationHierarchy() {
                 onClick={addLocation}
                 className="px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600"
               >
-                Add Location
+                Save
               </button>
             </div>
           </div>

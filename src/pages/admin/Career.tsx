@@ -15,7 +15,7 @@ type Designation = {
 };
 
 const DATA: Designation[] = [
-  
+
   { id: 2, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$20,000 - $30,000", description: "Lagos, Nigeria (Hybrid).", type: "Part-Time" },
   { id: 3, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$20,000 - $30,000", description: "Lagos, Nigeria (Hybrid).", type: "Part-Time" },
   { id: 4, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$30,000 - $40,000", description: "Lagos, Nigeria (Hybrid).", type: "Full-Time" },
@@ -28,10 +28,10 @@ const PER_PAGE = 10;
 const TOTAL_PAGES = Math.ceil(TOTAL / PER_PAGE);
 
 const TYPE_STYLES: Record<JobType, { pill: string; dot: string }> = {
-  "Full-Time":  { pill: "bg-teal-50 text-teal-700 border border-teal-100",  dot: "bg-teal-400" },
-  "Part-Time":  { pill: "bg-amber-50 text-amber-700 border border-amber-100", dot: "bg-amber-400" },
-  "Contract":   { pill: "bg-violet-50 text-violet-700 border border-violet-100", dot: "bg-violet-400" },
-  "Remote":     { pill: "bg-sky-50 text-sky-700 border border-sky-100",     dot: "bg-sky-400" },
+  "Full-Time": { pill: "bg-teal-50 text-teal-700 border border-teal-100", dot: "bg-teal-400" },
+  "Part-Time": { pill: "bg-amber-50 text-amber-700 border border-amber-100", dot: "bg-amber-400" },
+  "Contract": { pill: "bg-violet-50 text-violet-700 border border-violet-100", dot: "bg-violet-400" },
+  "Remote": { pill: "bg-sky-50 text-sky-700 border border-sky-100", dot: "bg-sky-400" },
 };
 
 function TypeBadge({ type }: { type: JobType }) {
@@ -81,7 +81,10 @@ export default function DesignationsTable() {
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">Career</h1>
           {/* <p className="text-sm text-slate-400 mt-0.5">{TOTAL} posts total</p> */}
         </div>
-        <button className="group inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all duration-150">
+        <button
+          onClick={() => router.navigate("/admin/career/add")}
+          className="group inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all duration-150"
+        >
           <span className="flex size-4 items-center justify-center rounded-full bg-white/20 text-white font-bold leading-none text-base">+</span>
           Add Post
         </button>
@@ -97,10 +100,10 @@ export default function DesignationsTable() {
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
                   Designation Name
-                </th> 
+                </th>
                 <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
                   Location
-                </th>  
+                </th>
                 <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
                   Type
                 </th>
@@ -115,18 +118,17 @@ export default function DesignationsTable() {
                   key={row.id}
                   onMouseEnter={() => setHoveredRow(row.id)}
                   onMouseLeave={() => setHoveredRow(null)}
-                  className={`border-b border-slate-100 last:border-0 transition-colors duration-100 ${
-                    hoveredRow === row.id ? "bg-blue-50/40" : "bg-white"
-                  }`}
+                  className={`border-b border-slate-100 last:border-0 transition-colors duration-100 ${hoveredRow === row.id ? "bg-blue-50/40" : "bg-white"
+                    }`}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
 
                       <span className="font-semibold text-slate-800">{row.title}</span>
                     </div>
-                  </td> 
-                  
-                   
+                  </td>
+
+
                   <td className="px-6 py-4">
                     <span className="text-slate-500">{row.description}</span>
                   </td>
@@ -137,14 +139,14 @@ export default function DesignationsTable() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => router.navigate(`/admin/career/edit/${row.id}`, { state: { designation: row } })}
-                        className="rounded-lg p-2 text-slate-700 transition-all hover:bg-blue-50 hover:text-blue-600 active:scale-95"
+                        className="rounded-lg hover:cursor-pointer p-2 text-slate-700 transition-all hover:bg-blue-50 hover:text-blue-600 active:scale-95"
                         aria-label={`Edit ${row.title}`}
                       >
                         <EditIcon />
                       </button>
                       <button
                         onClick={() => handleDelete(row.id)}
-                        className="rounded-lg p-2 hover:text-slate-400 transition-all hover:bg-red-50 text-red-500 active:scale-95"
+                        className="rounded-lg hover:cursor-pointer p-2 hover:text-slate-400 transition-all hover:bg-red-50 text-red-500 active:scale-95"
                         aria-label={`Delete ${row.title}`}
                       >
                         <DeleteIcon />
@@ -166,25 +168,25 @@ export default function DesignationsTable() {
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
                     <Briefcase className="size-4" />
                   </div>
-                   <div className="min-w-0">
-                     <p className="font-semibold text-slate-800 text-sm truncate">{row.title}</p>
-                     <div className="flex items-center gap-1 mt-0.5 text-xs text-slate-400">
-                       <MapPin className="size-3 shrink-0" />
-                       <span>{row.location}</span>
-                     </div>
-                     <div className="mt-0.5 text-xs text-slate-400">
-                       {row.category}
-                     </div>
-                     <div className="mt-0.5 text-xs text-slate-400">
-                       {row.salary}
-                     </div>
-                     <div className="mt-0.5 text-xs text-slate-400">
-                       {row.description}
-                     </div>
-                   </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 text-sm truncate">{row.title}</p>
+                    <div className="flex items-center gap-1 mt-0.5 text-xs text-slate-400">
+                      <MapPin className="size-3 shrink-0" />
+                      <span>{row.location}</span>
+                    </div>
+                    <div className="mt-0.5 text-xs text-slate-400">
+                      {row.category}
+                    </div>
+                    <div className="mt-0.5 text-xs text-slate-400">
+                      {row.salary}
+                    </div>
+                    <div className="mt-0.5 text-xs text-slate-400">
+                      {row.description}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                   <button onClick={() => router.navigate(`/admin/career/edit/${row.id}`, { state: { designation: row } })} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 active:scale-95 transition-all">
+                  <button onClick={() => router.navigate(`/admin/career/edit/${row.id}`, { state: { designation: row } })} className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 active:scale-95 transition-all">
                     <EditIcon />
                   </button>
                   <button
@@ -223,11 +225,10 @@ export default function DesignationsTable() {
               <button
                 key={n}
                 onClick={() => setCurrentPage(n)}
-                className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all ${
-                  currentPage === n
+                className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all ${currentPage === n
                     ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
                     : "text-slate-500 hover:bg-slate-100"
-                }`}
+                  }`}
               >
                 {n}
               </button>
@@ -239,11 +240,10 @@ export default function DesignationsTable() {
 
             <button
               onClick={() => setCurrentPage(TOTAL_PAGES)}
-              className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all ${
-                currentPage === TOTAL_PAGES
+              className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all ${currentPage === TOTAL_PAGES
                   ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
                   : "text-slate-500 hover:bg-slate-100"
-              }`}
+                }`}
             >
               {TOTAL_PAGES}
             </button>

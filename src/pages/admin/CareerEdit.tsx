@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
@@ -7,7 +7,6 @@ import {
   MapPin,
   Banknote,
   FileText,
-  Send,
   Clock,
 } from "lucide-react";
 
@@ -29,6 +28,7 @@ export default function CareerEdit() {
   const navigate = useNavigate();
   const location = useLocation();
   const designation = location.state?.designation as Designation | undefined;
+  const isEditMode = Boolean(designation);
 
   const [title, setTitle] = useState(designation?.title || "");
   const [category, setCategory] = useState(designation?.category || "");
@@ -36,12 +36,6 @@ export default function CareerEdit() {
   const [salary, setSalary] = useState(designation?.salary || "");
   const [description, setDescription] = useState(designation?.description || "");
   const [type, setType] = useState<JobType>(designation?.type || "Full-Time");
-
-  useEffect(() => {
-    if (!designation) {
-      navigate("/admin/career");
-    }
-  }, [designation, navigate]);
 
   const handleSave = () => {
     // Here, you would typically call an API to save the changes
@@ -52,10 +46,6 @@ export default function CareerEdit() {
   const handleCancel = () => {
     navigate("/admin/career");
   };
-
-  if (!designation) {
-    return null;
-  }
 
   return (
     <div className=" bg-slate-100/70 font-sans">
@@ -70,8 +60,14 @@ export default function CareerEdit() {
             <ChevronLeft className="size-4 text-slate-600" />
           </button>
           <div>
-            <h1 className="text-[17px] font-bold tracking-tight text-slate-900">Edit Post</h1>
-            <p className="mt-0.5 text-xs text-slate-400">Edit the details of the job listing</p>
+            <h1 className="text-[17px] font-bold tracking-tight text-slate-900">
+              {isEditMode ? "Edit Post" : "Add Post"}
+            </h1>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {isEditMode
+                ? "Edit the details of the job listing"
+                : "Fill in the details to create a new job listing"}
+            </p>
           </div>
         </div>
 
@@ -177,9 +173,8 @@ export default function CareerEdit() {
             </div>
             <div className="flex justify-end">
               <span
-                className={`text-[11.5px] font-medium ${
-                  description.length > 900 ? "text-red-400" : "text-slate-400"
-                }`}
+                className={`text-[11.5px] font-medium ${description.length > 900 ? "text-red-400" : "text-slate-400"
+                  }`}
               >
                 {description.length} / {MAX_DESC}
               </span>
@@ -195,7 +190,7 @@ export default function CareerEdit() {
             className="inline-flex items-center gap-2 rounded-xl bg-[#158DE0] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-all hover:bg-indigo-700 hover:-translate-y-px active:scale-97"
           >
             {/* <Send className="size-3.5" /> */}
-            Publish
+            {isEditMode ? "Update" : "Publish"}
           </button>
           <button
             type="button"

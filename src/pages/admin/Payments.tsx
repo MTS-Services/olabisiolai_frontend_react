@@ -1,8 +1,7 @@
 import { Banknote, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Eye } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { PaymentDetailsModal } from "@/components/Modal/PaymentDetailsModal";
-import SetPrimaryModal from "@/components/Modal/SetPrimaryModal";
+
 import type { PaymentRow, PaymentStatus, PaymentStatusFilter } from "@/components/Modal/PaymentDetailsModal.types";
 
 type PayoutMethod = {

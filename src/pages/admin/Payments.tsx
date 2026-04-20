@@ -2,7 +2,15 @@ import { Banknote, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clo
 import { useMemo, useState } from "react";
 
 import { PaymentDetailsModal } from "@/components/Modal/PaymentDetailsModal";
+import { SetPrimaryModal } from "@/components/Modal/SetPrimaryModal";
 import type { PaymentRow, PaymentStatus, PaymentStatusFilter } from "@/components/Modal/PaymentDetailsModal.types";
+
+type PayoutMethod = {
+  id: string;
+  bankName: string;
+  last4: string;
+  isPrimary: boolean;
+};
 
 const TOTAL_PAYMENTS = 482;
 
@@ -113,11 +121,24 @@ function StatusCell({ status }: { status: PaymentStatus }) {
   );
 }
 
+const initialPayoutMethods: PayoutMethod[] = [
+  { id: "1", bankName: "Zenith Bank", last4: "4590", isPrimary: true },
+  { id: "2", bankName: "Access Bank", last4: "1288", isPrimary: false },
+];
+
 export default function Payments() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<PaymentRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>(initialPayoutMethods);
+  const [setPrimaryModalOpen, setSetPrimaryModalOpen] = useState(false);
+  const [selectedPayoutMethod, setSelectedPayoutMethod] = useState<PayoutMethod | null>(null);
+
+  const handleSetPrimary = () => {
+    if (!selectedPayoutMethod) return;
+    setPayoutMethods(prev => prev.map(method => ({ ...method, isPrimary: method.id === selectedPayoutMethod.id })));
+  };
 
   const filtered = useMemo(() => {
     if (statusFilter === "all") return payments;
@@ -202,49 +223,43 @@ export default function Payments() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10zm3 3h2v5H7v-5zm5 0h2v5h-2v-5zm5 0h2v5h-2v-5z" />
-              </svg>
+        {payoutMethods.map((method) => (
+          <div key={method.id} className={`bg-white p-5 rounded-xl border shadow-sm flex items-center justify-between group transition-all ${method.isPrimary ? 'border-blue-200' : 'border-gray-100 hover:border-gray-200'}`}>
+            <div className="flex items-center space-x-4">
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${method.isPrimary ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10zm3 3h2v5H7v-5zm5 0h2v5h-2v-5zm5 0h2v5h-2v-5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800">{method.bankName}</h3>
+                <p className="text-sm text-gray-500 font-mono">**** {method.last4}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-slate-800">Zenith Bank</h3>
-              <p className="text-sm text-gray-500 font-mono">**** 4590</p>
-            </div>
+            {method.isPrimary ? (
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full border border-blue-100">
+                Primary
+              </span>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <button
+                  className="text-sm font-semibold text-blue-600 px-4 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                  onClick={() => {
+                    setSelectedPayoutMethod(method);
+                    setSetPrimaryModalOpen(true);
+                  }}
+                >
+                  Set as primary
+                </button>
+                <button className="text-gray-400 hover:text-red-500 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
-          <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full border border-blue-100">
-            Primary
-          </span>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-gray-200 transition-all">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10zm3 3h2v5H7v-5zm5 0h2v5h-2v-5zm5 0h2v5h-2v-5z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-800">Access Bank</h3>
-              <p className="text-sm text-gray-500 font-mono">**** 1288</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button className="text-sm font-semibold text-blue-600 px-4 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors">
-              Set as primary
-            </button>
-            <button className="text-gray-400 hover:text-red-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
+        ))}
       </div>
     </div>
 
@@ -386,6 +401,7 @@ export default function Payments() {
       </section>
 
       <PaymentDetailsModal open={modalOpen} onClose={() => setModalOpen(false)} payment={selected} />
+      <SetPrimaryModal open={setPrimaryModalOpen} onClose={() => setSetPrimaryModalOpen(false)} method={selectedPayoutMethod} onConfirm={handleSetPrimary} />
     </div>
   );
 }

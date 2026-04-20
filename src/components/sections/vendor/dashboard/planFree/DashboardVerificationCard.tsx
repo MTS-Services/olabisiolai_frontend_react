@@ -16,7 +16,7 @@ export function DashboardVerificationCard() {
             <BadgeCheck className="mr-1 size-3.5" />
             In Review
           </Badge>
-          <div className="w-xl">
+          <div className="max-w-xl">
             <p>
               Our curation team is currently reviewing your licensing and identity documents. This typically takes
               24-48 hours.

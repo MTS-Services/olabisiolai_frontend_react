@@ -7,70 +7,70 @@ type PayoutMethod = {
   isPrimary: boolean;
 };
 
-type SetPrimaryModalProps = {
-  open: boolean;
-  onClose: () => void;
-  method: PayoutMethod | null;
-  onConfirm: () => void;
-};
-
-export function SetPrimaryModal({ open, onClose, method, onConfirm }: SetPrimaryModalProps) {
+export default function SetPrimaryModal({ open, onClose, method, onConfirm }: {
+  open?: boolean;
+  onClose?: () => void;
+  method?: PayoutMethod | null;
+  onConfirm?: () => void;
+}) {
   if (!open || !method) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        className="relative w-full max-w-md overflow-hidden rounded-2xl bg-card shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="set-primary-title"
-      >
-        <div className="flex h-[61px] items-center justify-between border-b border-border-gray px-6">
-          <h2 id="set-primary-title" className="text-lg font-semibold leading-7 text-ink-heading">
-            Set Primary Payout Method
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex size-5 items-center justify-center text-body-secondary hover:text-ink"
-            aria-label="Close"
-          >
-            <X className="size-5" strokeWidth={2} />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-200/80 p-6 font-sans">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-300/60">
 
-        <div className="flex flex-col gap-4 px-6 pb-6 pt-6">
-          <p className="text-base text-ink">
-            Are you sure you want to set <strong>{method.bankName} **** {method.last4}</strong> as your primary payout method?
-          </p>
-          <p className="text-sm text-body-secondary">
-            This will replace your current primary payout method.
-          </p>
-        </div>
+        {/* Close */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition-all hover:bg-slate-50 hover:text-slate-600 active:scale-95"
+        >
+          <X className="size-3.5" strokeWidth={2.5} />
+        </button>
 
-        <div className="flex justify-end gap-3 border-t border-border-gray px-6 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-body-secondary hover:bg-muted"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
+        <div className="px-6 pb-6 pt-7">
+          {/* Title */}
+          <h2 className="mb-4 text-center text-[22px] font-extrabold tracking-tight text-slate-900">
             Set as Primary
-          </button>
+          </h2>
+
+          {/* Method info */}
+          <div className="mb-6 rounded-2xl bg-slate-50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-12 items-center justify-center rounded-lg bg-blue-50">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10zm3 3h2v5H7v-5zm5 0h2v5h-2v-5zm5 0h2v5h-2v-5z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">{method.bankName}</p>
+                <p className="text-sm text-slate-500 font-mono">**** {method.last4}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Confirmation message */}
+          <p className="mb-6 text-center text-sm text-slate-600">
+            Are you sure you want to set this payout method as your primary payment method?
+          </p>
+
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-2xl border border-slate-200 bg-white py-3 text-[15px] font-semibold text-slate-600 transition-all hover:bg-slate-50 active:scale-98"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="flex-1 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 py-3 text-[15px] font-bold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-px hover:shadow-xl hover:shadow-blue-200 active:scale-98"
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { Banknote, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clo
 import { useMemo, useState } from "react";
 
 import { PaymentDetailsModal } from "@/components/Modal/PaymentDetailsModal";
-import { SetPrimaryModal } from "@/components/Modal/SetPrimaryModal";
+import SetPrimaryModal from "@/components/Modal/SetPrimaryModal";
 import type { PaymentRow, PaymentStatus, PaymentStatusFilter } from "@/components/Modal/PaymentDetailsModal.types";
 
 type PayoutMethod = {

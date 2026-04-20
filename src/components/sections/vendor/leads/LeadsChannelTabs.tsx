@@ -19,6 +19,23 @@ export function LeadsTabs({
   return (
     <div className="border-b border-neutral-200">
       <div className="flex gap-8">
+         <button
+          type="button"
+          onClick={() => onChange("whatsapp")}
+          className={cn(
+            tabBase,
+            channelFilter === "whatsapp" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <MessageCircle className="size-4 shrink-0" aria-hidden />
+          Direct Messages ({whatsappCount})
+          <span
+            className={cn(
+              "absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full transition-colors",
+              channelFilter === "whatsapp" ? "bg-foreground" : "bg-transparent",
+            )}
+          />
+        </button>
         <button
           type="button"
           onClick={() => onChange("direct")}
@@ -28,7 +45,7 @@ export function LeadsTabs({
           )}
         >
           <FileText className="size-4 shrink-0" aria-hidden />
-          Direct Messages ({directCount})
+           WhatsApp({directCount})
           <span
             className={cn(
               "absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full transition-colors",
@@ -36,23 +53,7 @@ export function LeadsTabs({
             )}
           />
         </button>
-        <button
-          type="button"
-          onClick={() => onChange("whatsapp")}
-          className={cn(
-            tabBase,
-            channelFilter === "whatsapp" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <MessageCircle className="size-4 shrink-0" aria-hidden />
-          WhatsApp ({whatsappCount})
-          <span
-            className={cn(
-              "absolute bottom-0 left-0 right-0 h-[3px] rounded-t-full transition-colors",
-              channelFilter === "whatsapp" ? "bg-foreground" : "bg-transparent",
-            )}
-          />
-        </button>
+       
       </div>
     </div>
   );

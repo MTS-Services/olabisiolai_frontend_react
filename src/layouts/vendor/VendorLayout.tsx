@@ -8,16 +8,16 @@ export function VendorLayout() {
   const nav = useNav();
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-vendor-body-bg">
-      <VendorSidebar open={nav.open} onClose={nav.close} />
+   <div className="flex h-dvh overflow-hidden bg-vendor-body-bg">
+  <VendorSidebar open={nav.open} onClose={nav.close} />
 
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-      
-        <main className="flex-1 overflow-y-auto">
-        <VendorHeader onMenuClick={() => nav.toggle()} />
-          <Outlet />
-        </main>
-      </div>
-    </div>
+  <div className="flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden">
+    <VendorHeader onMenuClick={() => nav.toggle()} />
+
+    <main className="flex-1 min-h-0 overflow-y-auto">
+      <Outlet />
+    </main>
+  </div>
+</div>
   );
 }

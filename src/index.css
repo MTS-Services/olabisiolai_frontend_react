@@ -262,6 +262,9 @@
 
   html {
     color-scheme: light;
+    height: 100%;     
+    overflow: hidden;  
+
   }
 
   html.dark {
@@ -271,5 +274,11 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     margin: 0;
+    height: 100%;       
+    overflow: hidden;
+  }
+  #root {            
+    height: 100%;
+    overflow: hidden;
   }
 }

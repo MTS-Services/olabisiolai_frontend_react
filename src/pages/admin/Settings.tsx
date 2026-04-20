@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 const UserIcon = () => (
@@ -24,7 +25,7 @@ const RocketIcon = () => (
     <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
   </svg>
 );
-const EyeIcon = ({ open }) =>
+const EyeIcon = ({ open }: { open: boolean }) =>
   open ? (
     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" />
@@ -59,11 +60,13 @@ const DoneIcon = () => (
 );
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function SectionCard({ icon, iconBg, iconColor, title, badge, description, children }) {
+function SectionCard({ icon, iconBg, iconColor, title, badge, description, children }: { icon: React.ReactNode; iconBg: string; iconColor: string; title: string; badge?: string; description?: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
       <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-         
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} ${iconColor}`}>
+          {icon}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-slate-900 text-[15px] tracking-tight">{title}</span>
@@ -81,7 +84,7 @@ function SectionCard({ icon, iconBg, iconColor, title, badge, description, child
   );
 }
 
-function Label({ children }) {
+function Label({ children }: { children: React.ReactNode }) {
   return (
     <label className="block text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">
       {children}
@@ -89,7 +92,7 @@ function Label({ children }) {
   );
 }
 
-function Input({ className = "", ...props }) {
+function Input({ className = "", ...props }: { className?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       className={`w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/60 text-slate-800 text-[13.5px] placeholder:text-slate-300 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all duration-150 ${className}`}
@@ -98,7 +101,7 @@ function Input({ className = "", ...props }) {
   );
 }
 
-function KeyField({ label, id, value, onChange }) {
+function KeyField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   const [visible, setVisible] = useState(false);
   return (
     <div>
@@ -148,7 +151,7 @@ export default function PlatformSettings() {
   // Save state
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved
 
-  const toggleDoc = (i) => setDocs((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
+  const toggleDoc = (i: number) => setDocs((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
 
   const handleSave = () => {
     setSaveState("saving");
@@ -164,7 +167,7 @@ export default function PlatformSettings() {
 
         {/* Page header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Setting</h1> 
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Settings</h1> 
         </div>
 
         {/* ── General Settings ── */}
@@ -180,7 +183,7 @@ export default function PlatformSettings() {
               <Label>Platform Name</Label>
               <Input
                 value={general.name}
-                onChange={(e) => setGeneral((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeneral((p) => ({ ...p, name: e.target.value }))}
                 placeholder="Your platform name"
               />
             </div>
@@ -190,7 +193,7 @@ export default function PlatformSettings() {
                 <Input
                   type="email"
                   value={general.email}
-                  onChange={(e) => setGeneral((p) => ({ ...p, email: e.target.value }))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeneral((p) => ({ ...p, email: e.target.value }))}
                   placeholder="admin@example.com"
                 />
               </div>
@@ -199,7 +202,7 @@ export default function PlatformSettings() {
                 <Input
                   type="tel"
                   value={general.phone}
-                  onChange={(e) => setGeneral((p) => ({ ...p, phone: e.target.value }))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeneral((p) => ({ ...p, phone: e.target.value }))}
                   placeholder="+234 800 000 0000"
                 />
               </div>
@@ -219,15 +222,13 @@ export default function PlatformSettings() {
           <div className="space-y-4">
             <KeyField
               label="Public Key"
-              id="pk"
               value={payment.pk}
-              onChange={(v) => setPayment((p) => ({ ...p, pk: v }))}
+              onChange={(v: string) => setPayment((p) => ({ ...p, pk: v }))}
             />
             <KeyField
               label="Secret Key"
-              id="sk"
               value={payment.sk}
-              onChange={(v) => setPayment((p) => ({ ...p, sk: v }))}
+              onChange={(v: string) => setPayment((p) => ({ ...p, sk: v }))}
             />
           </div>
         </SectionCard>
@@ -255,9 +256,9 @@ export default function PlatformSettings() {
                   }`}
                 >
                   <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 border transition-all duration-150 ${
-                    docs[i] 
+                    docs[i] ? "bg-violet-500 border-violet-500" : "border-slate-300"
                   }`}>
-                     
+                    {docs[i] && <CheckIcon />}
                   </div>
                   {doc}
                 </button>
@@ -273,7 +274,7 @@ export default function PlatformSettings() {
                     type="number"
                     className="pl-7"
                     value={fee}
-                    onChange={(e) => setFee(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFee(e.target.value)}
                     placeholder="0"
                   />
                 </div>
@@ -288,7 +289,7 @@ export default function PlatformSettings() {
           iconBg="bg-pink-50"
           iconColor="text-pink-500"
           title="Boost Pricing"
-        //   description="Set rates for listing promotion packages"
+          description="Set rates for listing promotion packages"
         >
           <div className="grid grid-cols-3 gap-3">
             {BOOST_TIERS.map(({ key, label, badge, badgeCls, featured }) => (
@@ -308,8 +309,8 @@ export default function PlatformSettings() {
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[12px] pointer-events-none">₦</span>
                   <input
                     type="number"
-                    value={boost[key]}
-                    onChange={(e) => setBoost((p) => ({ ...p, [key]: e.target.value }))}
+                    value={boost[key as keyof typeof boost]}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBoost((p) => ({ ...p, [key as keyof typeof boost]: e.target.value }))}
                     className="w-full h-9 pl-6 pr-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 text-[13px] font-semibold outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
                   />
                 </div>

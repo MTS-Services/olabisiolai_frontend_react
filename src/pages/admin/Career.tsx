@@ -14,12 +14,12 @@ type Designation = {
 };
 
 const DATA: Designation[] = [
-  { id: 1, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$30,000 - $40,000", description: "Provide excellent customer support and resolve inquiries.", type: "Full-Time" },
-  { id: 2, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$20,000 - $30,000", description: "Assist customers with product questions and issues.", type: "Part-Time" },
-  { id: 3, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$20,000 - $30,000", description: "Handle customer service requests and feedback.", type: "Part-Time" },
-  { id: 4, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$30,000 - $40,000", description: "Deliver high-quality support to our clients.", type: "Full-Time" },
-  { id: 5, title: "Product Designer", category: "Technology", location: "Abuja, Nigeria", salary: "$50,000 - $70,000", description: "Design user-friendly products and interfaces.", type: "Remote" },
-  { id: 6, title: "Backend Engineer", category: "Technology", location: "Lagos, Nigeria", salary: "$60,000 - $80,000", description: "Develop and maintain server-side applications.", type: "Contract" },
+  
+  { id: 2, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$20,000 - $30,000", description: "Lagos, Nigeria (Hybrid).", type: "Part-Time" },
+  { id: 3, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$20,000 - $30,000", description: "Lagos, Nigeria (Hybrid).", type: "Part-Time" },
+  { id: 4, title: "Customer Support Specialist", category: "Professional Services", location: "Lagos, Nigeria", salary: "$30,000 - $40,000", description: "Lagos, Nigeria (Hybrid).", type: "Full-Time" },
+  { id: 5, title: "Product Designer", category: "Technology", location: "Abuja, Nigeria", salary: "$50,000 - $70,000", description: "Lagos, Nigeria (Hybrid).", type: "Remote" },
+  { id: 6, title: "Backend Engineer", category: "Technology", location: "Lagos, Nigeria", salary: "$60,000 - $80,000", description: "Lagos, Nigeria (Hybrid).", type: "Contract" },
 ];
 
 const TOTAL = 482;
@@ -132,19 +132,10 @@ export default function DesignationsTable() {
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
                   Designation Name
-                </th>
-                <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
-                  Category
-                </th>
+                </th> 
                 <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
                   Location
-                </th>
-                <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
-                  Salary
-                </th>
-                <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
-                  Description
-                </th>
+                </th>  
                 <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-slate-700">
                   Type
                 </th>
@@ -168,18 +159,9 @@ export default function DesignationsTable() {
 
                       <span className="font-semibold text-slate-800">{row.title}</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-slate-500">{row.category}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5 text-slate-500">
-                      <span>{row.location}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-slate-500">{row.salary}</span>
-                  </td>
+                  </td> 
+                  
+                   
                   <td className="px-6 py-4">
                     <span className="text-slate-500">{row.description}</span>
                   </td>
@@ -315,102 +297,8 @@ export default function DesignationsTable() {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">New Post</h3>
-              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
-                <X className="size-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Designations Name
-                </label>
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <input 
-                  type="text"
-                  value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={editLocation}
-                  onChange={(e) => setEditLocation(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type
-                </label>
-                <select
-                  value={editType}
-                  onChange={(e) => setEditType(e.target.value as JobType)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Full-Time">Full-Time</option>
-                  <option value="Part-Time">Part-Time</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Remote">Remote</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Salary
-                </label>
-                <select
-                  value={editSalary}
-                  onChange={(e) => setEditSalary(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                > 
-                </select>                 
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <select 
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}                
-                className="w-full px-3 py-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                ></select>                
-              </div>
-
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={handleCloseModal}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600"
-              >
-                Save
-              </button>
-            </div>
-          </div>
+        <div>
+            
         </div>
       )}
     </div>

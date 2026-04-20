@@ -197,7 +197,7 @@ export default function LocationHierarchy() {
 
             <div className="mb-4">
               <label htmlFor="areaName" className="block text-sm font-medium text-gray-700 mb-1">
-                Area Name
+               Sub City (comma separated)
               </label>
               <input
                 id="areaName"

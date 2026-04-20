@@ -54,17 +54,16 @@ export function VendorSidebar({
       <aside
         className={cn(
           // Mobile: fixed drawer
-          "fixed top-0 left-0 z-50 h-dvh w-[260px]",
+          "fixed top-0 left-0 z-50 h-dvh w-65",
           "transition-transform duration-300 ease-in-out",
           open ? "translate-x-0" : "-translate-x-full",
           // Desktop: sticky sidebar, always visible
-          "md:static md:translate-x-0 md:h-dvh md:w-[240px] md:shrink-0",
+          "md:static md:translate-x-0 md:h-dvh md:w-60 md:shrink-0",
           "flex flex-col bg-card",
         )}
       >
         {/* Mobile Close Button */}
-        <div className="flex items-center justify-between px-4 pt-4 md:hidden">
-          <span className="text-sm font-medium text-muted-foreground">Menu</span>
+        <div className="flex items-center justify-end px-4 pt-4 md:hidden">
           <button
             type="button"
             onClick={onClose}
@@ -75,7 +74,7 @@ export function VendorSidebar({
         </div>
 
         {/* Logo */}
-        <Link to="/" className="px-4 pt-6 pb-2 text-center" onClick={onClose}>
+        <Link to="/" className="px-4 pt-2 pb-2 text-center" onClick={onClose}>
           <h2 className="text-xl font-extrabold text-vendor-header font-manrope">
             Gidira Vendor
           </h2>

@@ -19,7 +19,7 @@ export function ConciergeSupportCard() {
             </p>
           </div>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center mt-10">
+        <div className="flex gap-2 items-center mt-10">
           <Button className="flex-1 bg-brand-red font-inter font-semibold text-white hover:bg-brand-red/90 sm:flex-auto">
             Contact support
           </Button>

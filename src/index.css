@@ -262,8 +262,8 @@
 
   html {
     color-scheme: light;
-    height: 100%;     
-    overflow: hidden;  
+    /* height: 100%;     
+    overflow: hidden;   */
 
   }
 
@@ -274,11 +274,11 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     margin: 0;
-    height: 100%;       
-    overflow: hidden;
+    /* height: 100%;       
+    overflow: hidden; */
   }
-  #root {            
+  /* #root {            
     height: 100%;
     overflow: hidden;
-  }
+  } */
 }

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ import {
   Banknote,
   BarChart2,
   LayoutGrid,
+  Lock,
   MessageSquare,
   MessageSquareCheck,
   Rocket,
@@ -29,6 +31,59 @@ const items = [
   { to: "/vendor/settings", label: "Settings", icon: Settings },
 ];
 
+type VendorPlan = "free" | "premium";
+
+function SidebarCTA({ plan }: { plan: VendorPlan }) {
+  if (plan === "premium") {
+    return (
+      <div className="rounded-lg bg-[#003F87] p-4">
+        <div className="flex gap-2">
+          <Rocket className="text-text-white" />
+          <p className="text-sm font-medium text-text-white mb-1">
+            Boost Your Listings
+          </p>
+        </div>
+        <p className="text-xs text-text-white/80 mb-3">
+          Increase your visibility by up to 40%.
+        </p>
+        <Button className="w-full" variant="outline" size="sm">
+          Get Started
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative rounded-xl bg-[#003F87] overflow-hidden p-4">
+      {/* Blurred ghost text in background */}
+      <div className="absolute inset-0 p-3 select-none pointer-events-none">
+        <p className="text-text-white/20 text-sm font-bold blur-[2px] leading-tight">
+          Boost Plan
+        </p>
+        <p className="text-text-white/15 text-xs blur-[2px] mt-1 leading-snug">
+          Reach 5× more customers today with a featured listing.
+        </p>
+      </div>
+
+      {/* Foreground content */}
+      <div className="relative z-10 flex flex-col items-center gap-3 pt-2">
+        {/* Red lock badge */}
+        <div className="w-11 h-11 rounded-full bg-red-500 flex items-center justify-center shadow-lg ring-4 ring-red-500/20">
+          <Lock className="w-5 h-5 text-text-white" />
+        </div>
+
+        {/* Get Premium Access button */}
+        <button
+          onClick={() => (window.location.href = "/vendor/choose-your-plan")}
+          className="w-full rounded-lg bg-red-500 hover:bg-red-600 active:scale-[0.98] transition-all px-3 py-2.5 text-sm font-semibold text-text-white shadow-md"
+        >
+          Get Premium Access
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function VendorSidebar({
   open,
   onClose,
@@ -38,13 +93,30 @@ export function VendorSidebar({
 }) {
   const { pathname } = useActiveUrl();
 
+  const [plan, setPlan] = useState<VendorPlan>(() => {
+    const saved = localStorage.getItem("vendorPlan");
+    return saved === "premium" ? "premium" : "free";
+  });
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "vendorPlan") {
+        setPlan(e.newValue === "premium" ? "premium" : "free");
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   return (
     <>
       {/* Mobile Overlay Backdrop */}
       <div
         className={cn(
           "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden",
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+          open
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none",
         )}
         onClick={onClose}
         aria-hidden="true"
@@ -53,11 +125,9 @@ export function VendorSidebar({
       {/* Sidebar Panel */}
       <aside
         className={cn(
-          // Mobile: fixed drawer
           "fixed top-0 left-0 z-50 h-dvh w-65",
           "transition-transform duration-300 ease-in-out",
           open ? "translate-x-0" : "-translate-x-full",
-          // Desktop: sticky sidebar, always visible
           "md:static md:translate-x-0 md:h-dvh md:w-60 md:shrink-0",
           "flex flex-col bg-card",
         )}
@@ -87,7 +157,6 @@ export function VendorSidebar({
         <nav className="flex-1 overflow-y-auto p-4 mt-2 grid gap-1 content-start">
           {items.map((i) => {
             const Icon = i.icon;
-            // const active = isActivePath(pathname, i.to, Boolean(i.end));
 
             return (
               <NavLink
@@ -110,19 +179,9 @@ export function VendorSidebar({
           })}
         </nav>
 
-        {/* Bottom CTA */}
+        {/* Bottom CTA — plan-aware */}
         <div className="p-4">
-          <div className="rounded-lg bg-[#003F87] p-4">
-            <p className="text-sm font-medium text-white mb-1">
-              Boost Your Listings
-            </p>
-            <p className="text-xs text-white/80 mb-3">
-              Increase your visibility by up to 40%.
-            </p>
-            <Button className="w-full" variant="outline" size="sm">
-              Get Started
-            </Button>
-          </div>
+          <SidebarCTA plan={plan} />
         </div>
       </aside>
     </>

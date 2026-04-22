@@ -1,5 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, MapPin, Star, CheckCircle, Phone, MessageCircle } from "lucide-react";
+import { Heart, MapPin, Star, CheckCircle, MessageCircle } from "lucide-react";
+
+import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 
 interface ServiceCardProps {
   name: string;
@@ -84,14 +86,10 @@ export default function ServiceCard({
           {description}
         </p>
 
-        <button
-          type="button"
-          onClick={(event) => event.stopPropagation()}
-          className="bg-destructive text-destructive-foreground lg:w-50 w-full lg:p-3 p-1 rounded-lg flex items-center justify-center font-semibold hover:bg-destructive/90 transition-colors text-sm mb-3"
-        >
-          <Phone className="w-4 h-4 mr-1.5" aria-hidden />
-          Show phone number
-        </button>
+        <ShowPhoneNumberReveal
+          className="mb-3 flex w-full items-center justify-center rounded-lg bg-destructive p-1 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 lg:w-50 lg:p-3"
+          iconClassName="size-4 shrink-0"
+        />
 
         <Link
           to="/messages"

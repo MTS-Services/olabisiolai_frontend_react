@@ -5,11 +5,11 @@ import {
   ListFilter,
   MapPin,
   MessageCircle,
-  Phone,
   Star,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 import { UserShell } from "@/components/partials/user/UserShell";
 import { Button } from "@/components/ui/button";
 
@@ -118,10 +118,12 @@ function FavoriteCard({
         <p className="line-clamp-2 text-sm leading-5 text-body-secondary">{item.description}</p>
 
         <div className="space-y-2 pt-1">
-          <Button className="h-11 w-full rounded-xl bg-brand-red text-base font-medium text-ice hover:bg-brand-red/90">
-            <Phone className="size-4" aria-hidden />
-            Show phone number
-          </Button>
+          <ShowPhoneNumberReveal
+            useShadcnButton
+            isolateFromParentClicks={false}
+            className="h-11 w-full rounded-xl bg-brand-red text-base font-medium text-ice hover:bg-brand-red/90"
+            iconClassName="size-4 shrink-0"
+          />
           <Button
             variant="outline"
             className="h-11 w-full rounded-xl border-brand bg-surface-soft text-base font-medium text-brand hover:bg-surface-wash"

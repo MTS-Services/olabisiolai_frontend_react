@@ -10,7 +10,6 @@ import {
   Leaf,
   MapPin,
   MessageCircle,
-  Phone,
   Share2,
   Shield,
   Sparkles,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { ServicePhotosModal } from "@/components/Modal/ServicePhotosModal";
+import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 import { Button } from "@/components/ui/button";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
@@ -213,13 +213,12 @@ export default function Service() {
               <aside className="w-full shrink-0 space-y-6 lg:max-w-md lg:pt-24">
                 <div className="relative rounded-3xl border border-border-light bg-card p-8 shadow-xl">
                   <div className="flex flex-col gap-6">
-                    <Button
-                      type="button"
-                      className="h-14 rounded-xl bg-brand-red text-base font-medium text-ice hover:bg-brand-red/90"
-                    >
-                      <Phone className="size-5" aria-hidden />
-                      Show phone number
-                    </Button>
+                    <ShowPhoneNumberReveal
+                      useShadcnButton
+                      isolateFromParentClicks={false}
+                      className="h-14 w-full rounded-xl bg-brand-red text-base font-medium text-ice hover:bg-brand-red/90"
+                      iconClassName="size-5 shrink-0"
+                    />
                     <Button
                       asChild
                       className="h-14 rounded-xl border border-ice bg-brand text-base font-medium text-ice hover:bg-brand/90"

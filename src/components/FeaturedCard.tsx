@@ -2,11 +2,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Heart,
   MessageCircle,
-  Phone,
   Star,
   MapPin,
   CheckCircle,
 } from "lucide-react";
+
+import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 
 interface FeaturedCardProps {
   name: string;
@@ -92,13 +93,10 @@ export function FeaturedCard({
         <p className="font-normal font-inter text-sm text-text-secondary mb-6">
           {description}
         </p>
-        <button
-          type="button"
-          onClick={(event) => event.stopPropagation()}
-          className="w-full bg-destructive text-destructive-foreground py-2 rounded-lg flex items-center justify-center font-semibold mb-3 hover:bg-destructive/90 transition-colors"
-        >
-          <Phone className="w-5 h-5 mr-2" /> Show phone number
-        </button>
+        <ShowPhoneNumberReveal
+          className="mb-3 flex w-full items-center justify-center rounded-lg bg-destructive py-2 font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90"
+          iconClassName="size-5 shrink-0"
+        />
         <Link
           to="/messages"
           state={{ from: pathname }}

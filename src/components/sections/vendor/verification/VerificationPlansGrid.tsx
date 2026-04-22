@@ -40,7 +40,7 @@ export function VerificationPlansGrid({
               </div>
               <div className="flex flex-1 items-start justify-end gap-3">
                 <p className="text-2xl font-bold leading-none tracking-tight text-slate-900 md:text-[26px]">
-                  ${plan.amount}
+                  ₦{plan.amount}
                 </p>
                 <TierRadio selected={selected} />
               </div>

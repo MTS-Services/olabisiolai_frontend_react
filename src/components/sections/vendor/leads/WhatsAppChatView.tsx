@@ -26,7 +26,9 @@ export function WhatsAppChatInterface({
             <div>
               <p className="text-sm font-bold text-foreground">
                 {selectedLead.name}
-                {selectedLead.chatSubtitle ? ` - ${selectedLead.chatSubtitle}` : ""}
+                {selectedLead.chatSubtitle
+                  ? ` - ${selectedLead.chatSubtitle}`
+                  : ""}
               </p>
               <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
                 <span className="inline-flex size-2 rounded-full bg-emerald-500" />
@@ -35,14 +37,17 @@ export function WhatsAppChatInterface({
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No conversation selected</p>
+          <p className="text-sm text-muted-foreground">
+            No conversation selected
+          </p>
         )}
       </div>
 
       <div className="flex flex-1 flex-col gap-0 overflow-y-auto px-4 py-5 md:px-6">
         {selectedConversation.map((message, idx) => (
           <Fragment key={message.id}>
-            {idx === newMessagesDividerAfterIndex + 1 && newMessagesDividerAfterIndex >= 0 ? (
+            {idx === newMessagesDividerAfterIndex + 1 &&
+            newMessagesDividerAfterIndex >= 0 ? (
               <div className="relative py-6">
                 <div className="absolute inset-x-0 top-1/2 border-t border-neutral-200" />
                 <p className="relative mx-auto w-fit bg-[#f5f6fa] px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -59,7 +64,9 @@ export function WhatsAppChatInterface({
                   <div className="rounded-2xl rounded-bl-md bg-[#e8e6f4] px-3.5 py-2.5 text-sm leading-relaxed text-foreground shadow-sm">
                     {message.text}
                   </div>
-                  <p className="mt-1 pl-1 text-[11px] text-muted-foreground">{message.time}</p>
+                  <p className="mt-1 pl-1 text-[11px] text-muted-foreground">
+                    {message.time}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -69,9 +76,14 @@ export function WhatsAppChatInterface({
                     {message.text}
                   </div>
                   <div className="mt-1 flex items-center justify-end gap-1 pr-0.5">
-                    <span className="text-[11px] text-muted-foreground">{message.time}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {message.time}
+                    </span>
                     {idx === lastVendorMessageIndex ? (
-                      <CheckCheck className="size-3.5 text-sky-600" aria-label="Read" />
+                      <CheckCheck
+                        className="size-3.5 text-sky-600"
+                        aria-label="Read"
+                      />
                     ) : null}
                   </div>
                 </div>
@@ -83,13 +95,27 @@ export function WhatsAppChatInterface({
 
       <div className="border-t border-neutral-200 bg-white p-4">
         <div className="flex items-center gap-2">
-          <button
+          {/* <button
             type="button"
             className="flex size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-neutral-100 hover:text-foreground"
             aria-label="Attach file"
           >
             <Paperclip className="size-5" />
-          </button>
+          </button> */}
+          <label className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-neutral-100 hover:text-foreground">
+            <Paperclip className="size-5" />
+
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  console.log(file); 
+                }
+              }}
+            />
+          </label>
           <div className="relative min-w-0 flex-1">
             <Input
               className="h-11 rounded-xl border border-neutral-200 bg-neutral-100/80 pr-11 text-sm shadow-inner placeholder:text-muted-foreground focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-sky-500/25"

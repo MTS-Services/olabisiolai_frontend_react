@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/vendor/logo.jpeg";
 
 function HeaderSearch({ className }: { className?: string }) {
   return (
@@ -218,9 +219,9 @@ export function VendorHeader({ onMenuClick }: { onMenuClick?: () => void }) {
           </button>
 
           <Link to="/" className="inline-flex shrink-0 items-center">
-            <h2 className="text-xl font-extrabold text-vendor-header">
-              Gidira Vendor
-            </h2>
+            <div className="h-20 w-full">
+              <img src={logo} alt="Gidira Vendor" className="h-full w-auto" />
+            </div>
           </Link>
 
           <MobileMenu

@@ -32,7 +32,7 @@ export function BoostPlanCard({ plan }: { plan: Plan }) {
         </div>
 
         <p className="text-5xl font-bold leading-none tracking-tight">
-          ${plan.price}
+          ₦{plan.price}
           <span className="ml-1 text-sm font-medium text-muted-foreground">/ {plan.duration}</span>
         </p>
 

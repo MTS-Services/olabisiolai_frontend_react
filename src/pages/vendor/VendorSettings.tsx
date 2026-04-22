@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { BusinessProfileCard } from "@/components/sections/vendor/settings/BusinessProfileCard";
 import { SecurityAccessCard } from "@/components/sections/vendor/settings/SecurityAccessCard";
@@ -7,7 +7,25 @@ import { VerifiedStatusCard } from "@/components/sections/vendor/settings/Verifi
 import { CurrentPlanCard } from "@/components/sections/vendor/settings/CurrentPlanCard";
 import { ActionButtons } from "@/components/sections/vendor/settings/ActionButtons";
 
+type VendorPlan = "free" | "premium";
+
 export default function VendorSettings() {
+  const [plan, setPlan] = useState<VendorPlan>(() => {
+    const savedPlan = localStorage.getItem("vendorPlan");
+    return savedPlan === "premium" ? "premium" : "free";
+  });
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "vendorPlan") {
+        setPlan(e.newValue === "premium" ? "premium" : "free");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   const [twoFactor, setTwoFactor] = useState(true);
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifySms, setNotifySms] = useState(false);
@@ -33,7 +51,7 @@ export default function VendorSettings() {
               notifyWhatsapp={notifyWhatsapp} 
               setNotifyWhatsapp={setNotifyWhatsapp} 
             />
-            <CurrentPlanCard />
+            <CurrentPlanCard plan={plan} />
           </div>
         </div>
       </section>

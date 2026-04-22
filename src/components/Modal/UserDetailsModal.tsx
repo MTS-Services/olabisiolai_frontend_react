@@ -1,21 +1,22 @@
 import { X } from "lucide-react";
 
-type UserRow = {
+export type UserDetailsRow = {
   name: string;
   phone: string;
   email: string;
-  status: "active" | "blocked";
+  status: "active" | "blocked" | "pending";
   joinDate: string;
 };
 
 interface UserDetailsModalProps {
   open: boolean;
   onClose: () => void;
-  user: UserRow | null;
+  user: UserDetailsRow | null;
 }
 
-function statusClass(status: UserRow["status"]) {
+function statusClass(status: UserDetailsRow["status"]) {
   if (status === "active") return "bg-success/10 text-success";
+  if (status === "pending") return "bg-amber-100 text-amber-600";
   return "bg-tint-red text-brand-red";
 }
 
@@ -66,7 +67,7 @@ export function UserDetailsModal({ open, onClose, user }: UserDetailsModalProps)
               <div>
                 <p>Status</p>
                 <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(user.status)}`}>
-                  {user.status}
+                  {user.status === "active" ? "Active" : user.status === "pending" ? "Pending" : "Blocked"}
                 </span>
               </div>
 

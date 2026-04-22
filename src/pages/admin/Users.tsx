@@ -1,87 +1,158 @@
-import { Ban, ChevronDown, ChevronLeft, ChevronRight, Eye, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Ban, ChevronDown, Eye, Loader2, Search, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-import { UserDetailsModal } from "@/components/Modal/UserDetailsModal";
+import { UserDetailsModal, type UserDetailsRow } from "@/components/Modal/UserDetailsModal";
+import { request } from "@/api/request";
 
-type UserRow = {
-  name: string;
-  phone: string;
-  email: string;
-  status: "active" | "blocked";
-  joinDate: string;
+type UserRow = UserDetailsRow & {
+  id: number;
 };
 type StatusFilter = "all" | UserRow["status"];
 
-const users: UserRow[] = [
-  {
-    name: "Chukwudi Okafor",
-    phone: "+234 803 123 4567",
-    email: "chukwudi@email.com",
-    status: "active",
-    joinDate: "Jan 15, 2024",
-  },
-  {
-    name: "Aisha Mohammed",
-    phone: "+234 805 987 6543",
-    email: "aisha@email.com",
-    status: "active",
-    joinDate: "Jan 18, 2024",
-  },
-  {
-    name: "Oluwaseun Adeyemi",
-    phone: "+234 807 234 5678",
-    email: "seun@email.com",
-    status: "active",
-    joinDate: "Jan 20, 2024",
-  },
-  {
-    name: "Ngozi Eze",
-    phone: "+234 809 876 5432",
-    email: "ngozi@email.com",
-    status: "blocked",
-    joinDate: "Jan 22, 2024",
-  },
-  {
-    name: "Ibrahim Musa",
-    phone: "+234 810 345 6789",
-    email: "ibrahim@email.com",
-    status: "active",
-    joinDate: "Jan 25, 2024",
-  },
-  {
-    name: "Ibrahim Musa",
-    phone: "+234 810 345 6789",
-    email: "ibrahim@email.com",
-    status: "active",
-    joinDate: "Jan 25, 2024",
-  },
-  {
-    name: "Ibrahim Musa",
-    phone: "+234 810 345 6789",
-    email: "ibrahim@email.com",
-    status: "active",
-    joinDate: "Jan 25, 2024",
-  },
-  {
-    name: "Ibrahim Musa",
-    phone: "+234 810 345 6789",
-    email: "ibrahim@email.com",
-    status: "active",
-    joinDate: "Jan 25, 2024",
-  },
-];
+type UsersApiEnvelope = {
+  data?: unknown;
+  message?: string;
+};
+
+const USERS_ROLE_PAYLOAD = "user";
+const USERS_ROLE_BODY = {
+  role: USERS_ROLE_PAYLOAD,
+  roll: USERS_ROLE_PAYLOAD,
+  user_role: USERS_ROLE_PAYLOAD,
+};
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") return null;
+  return value as Record<string, unknown>;
+}
+
+function getNestedData(body: unknown): unknown {
+  const root = toRecord(body);
+  if (!root) return body;
+  if ("data" in root) return root.data;
+  return body;
+}
+
+function pickUsersArray(body: unknown): unknown[] {
+  const data = getNestedData(body);
+
+  if (Array.isArray(data)) return data;
+
+  const dataRecord = toRecord(data);
+  if (!dataRecord) return [];
+
+  if (Array.isArray(dataRecord.data)) return dataRecord.data;
+  if (Array.isArray(dataRecord.users)) return dataRecord.users;
+  if (Array.isArray(dataRecord.items)) return dataRecord.items;
+
+  return [];
+}
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function toStatus(value: unknown): UserRow["status"] {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "active") return "active";
+    if (normalized === "pending") return "pending";
+    if (normalized === "block" || normalized === "blocked" || normalized === "inactive") return "blocked";
+  }
+  return "active";
+}
+
+function toDateLabel(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
+}
+
+function mapApiUser(raw: unknown, index: number): UserRow {
+  const rawRecord = toRecord(raw) ?? {};
+  const item = toRecord(rawRecord.user) ?? rawRecord;
+  const id = toNumber(item.user_id ?? item.id) ?? index + 1;
+
+  return {
+    id,
+    name: String(item.name ?? item.full_name ?? item.username ?? "-"),
+    phone: String(item.phone ?? item.mobile ?? item.phone_number ?? "-"),
+    email: String(item.email ?? "-"),
+    status: toStatus(item.status),
+    joinDate: toDateLabel(item.created_at ?? item.join_date ?? item.joinDate),
+  };
+}
+
+async function postToAnyAdminUsersEndpoint<TResponse>(
+  paths: string[],
+  body: Record<string, unknown>,
+) {
+  let lastError: unknown = null;
+  for (const path of paths) {
+    try {
+      return await request.post<TResponse>(path, body);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
 
 function statusClass(status: UserRow["status"]) {
   if (status === "active") return "bg-success/10 text-success";
+  if (status === "pending") return "bg-amber-100 text-amber-600";
   return "bg-tint-red text-brand-red";
 }
 
+function limitText(value: string, max = 24) {
+  if (value.length <= max) return value;
+  return `${value.slice(0, max)}...`;
+}
+
 export default function Users() {
+  const [users, setUsers] = useState<UserRow[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [actionUserId, setActionUserId] = useState<number | null>(null);
+  const [actionType, setActionType] = useState<"view" | "status" | "delete" | null>(null);
+
+  const fetchUsers = async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setIsLoading(true);
+    }
+    setError(null);
+    try {
+      const res = await postToAnyAdminUsersEndpoint<UsersApiEnvelope>(
+        ["/api/v1/admin/users", "/admin/users"],
+        USERS_ROLE_BODY,
+      );
+      const list = pickUsersArray(res.data).map(mapApiUser);
+      setUsers(list);
+    } catch (error) {
+      console.error("Users list fetch failed", error);
+      setError("Failed to load users. Please check API path or payload.");
+    } finally {
+      if (!silent) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    void fetchUsers();
+  }, []);
 
   const filteredUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -97,9 +168,77 @@ export default function Users() {
         user.email.toLowerCase().includes(query)
       );
     });
-  }, [searchTerm, statusFilter]);
+  }, [users, searchTerm, statusFilter]);
 
   const statusLabel = statusFilter === "all" ? "Select Status" : statusFilter;
+
+  const handleView = async (user: UserRow) => {
+    setActionUserId(user.id);
+    setActionType("view");
+    try {
+      const res = await postToAnyAdminUsersEndpoint<UsersApiEnvelope>(
+        ["/api/v1/admin/users/view", "/admin/users/view"],
+        {
+          ...USERS_ROLE_BODY,
+          user_id: user.id,
+        },
+      );
+      const viewPayload = getNestedData(res.data);
+      const fullUser = mapApiUser(viewPayload, 0);
+      setSelectedUser({ ...user, ...fullUser });
+      setIsModalOpen(true);
+    } catch {
+      setSelectedUser(user);
+      setIsModalOpen(true);
+    } finally {
+      setActionUserId(null);
+      setActionType(null);
+    }
+  };
+
+  const handleStatusChange = async (user: UserRow) => {
+    const previousStatus = user.status;
+    const nextStatus: UserRow["status"] = previousStatus === "active" ? "blocked" : "active";
+    setActionUserId(user.id);
+    setActionType("status");
+    setUsers((prev) => prev.map((row) => (row.id === user.id ? { ...row, status: nextStatus } : row)));
+    try {
+      await postToAnyAdminUsersEndpoint(
+        ["/api/v1/admin/users/status-change", "/admin/users/status-change"],
+        {
+          ...USERS_ROLE_BODY,
+          user_id: user.id,
+          status: nextStatus === "blocked" ? "block" : "active",
+        },
+      );
+    } catch {
+      setUsers((prev) => prev.map((row) => (row.id === user.id ? { ...row, status: previousStatus } : row)));
+      setError("Failed to update user status.");
+    } finally {
+      setActionUserId(null);
+      setActionType(null);
+    }
+  };
+
+  const handleDelete = async (user: UserRow) => {
+    const confirmed = window.confirm(`Delete ${user.name}?`);
+    if (!confirmed) return;
+
+    setActionUserId(user.id);
+    setActionType("delete");
+    try {
+      await postToAnyAdminUsersEndpoint(["/api/v1/admin/users/delete", "/admin/users/delete"], {
+        ...USERS_ROLE_BODY,
+        user_id: user.id,
+      });
+      await fetchUsers({ silent: true });
+    } catch {
+      setError("Failed to delete user.");
+    } finally {
+      setActionUserId(null);
+      setActionType(null);
+    }
+  };
 
   return (
     <div>
@@ -108,6 +247,12 @@ export default function Users() {
       </div>
 
       <section className="rounded-2xl border border-border-gray bg-card p-3 shadow-sm sm:p-4 lg:p-6">
+        {error ? (
+          <div className="mb-4 rounded-lg border border-tint-red/40 bg-tint-red/10 px-3 py-2 text-sm text-brand-red">
+            {error}
+          </div>
+        ) : null}
+
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <label className="relative min-w-0 w-full flex-1 sm:max-w-[971px] sm:min-w-56">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-chat-meta" />
@@ -131,7 +276,7 @@ export default function Users() {
             </button>
             {isStatusMenuOpen ? (
               <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-border-gray bg-card shadow-sm">
-                {(["all", "active", "blocked"] as const).map((status) => (
+                {(["all", "active", "blocked", "pending"] as const).map((status) => (
                   <button
                     key={status}
                     type="button"
@@ -172,16 +317,31 @@ export default function Users() {
               </tr>
             </thead>
             <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-2 py-8 text-center text-sm text-chat-meta sm:px-4">
+                    Loading users...
+                  </td>
+                </tr>
+              ) : null}
               {filteredUsers.map((user, index) => (
                 <tr key={`${user.email}-${index}`} className="border-b border-border-light">
-                  <td className="px-2 py-3 text-sm font-medium text-ink sm:px-4 sm:py-5 sm:text-base">{user.name}</td>
-                  <td className="px-2 py-3 sm:px-4 sm:py-4">
-                    <p className="text-xs leading-5 text-ink sm:text-sm">{user.phone}</p>
-                    <p className="text-xs leading-5 text-chat-meta sm:text-sm">{user.email}</p>
+                  <td className="px-2 py-3 text-sm font-medium text-ink sm:px-4 sm:py-5 sm:text-base" title={user.name}>
+                    {limitText(user.name, 22)}
                   </td>
                   <td className="px-2 py-3 sm:px-4 sm:py-4">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(user.status)}`}>
-                      {user.status}
+                    <p className="text-xs leading-5 text-ink sm:text-sm" title={user.phone}>
+                      {limitText(user.phone, 18)}
+                    </p>
+                    <p className="text-xs leading-5 text-chat-meta sm:text-sm" title={user.email}>
+                      {limitText(user.email, 28)}
+                    </p>
+                  </td>
+                  <td className="px-2 py-3 sm:px-4 sm:py-4">
+                    <span
+                      className={`inline-flex min-w-[76px] justify-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(user.status)}`}
+                    >
+                      {user.status === "active" ? "Active" : user.status === "pending" ? "Pending" : "Blocked"}
                     </span>
                   </td>
                   <td className="px-2 py-3 text-xs text-body-secondary sm:px-4 sm:py-4 sm:text-sm">{user.joinDate}</td>
@@ -190,24 +350,45 @@ export default function Users() {
                       <button
                         type="button"
                         className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsModalOpen(true);
-                        }}
+                        onClick={() => void handleView(user)}
+                        disabled={actionUserId === user.id}
                       >
-                        <Eye className="size-4 text-body-secondary" />
+                        {actionUserId === user.id && actionType === "view" ? (
+                          <Loader2 className="size-4 animate-spin text-body-secondary" />
+                        ) : (
+                          <Eye className="size-4 text-body-secondary" />
+                        )}
                       </button>
-                      <button type="button" className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted">
-                        <Ban className="size-4 text-amber-500" />
+                      <button
+                        type="button"
+                        className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted"
+                        onClick={() => void handleStatusChange(user)}
+                        disabled={actionUserId === user.id}
+                        title={user.status === "active" ? "Block user" : "Activate user"}
+                      >
+                        {actionUserId === user.id && actionType === "status" ? (
+                          <Loader2 className="size-4 animate-spin text-amber-500" />
+                        ) : (
+                          <Ban className="size-4 text-amber-500" />
+                        )}
                       </button>
-                      <button type="button" className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted">
-                        <Trash2 className="size-4 text-brand-red" />
+                      <button
+                        type="button"
+                        className="inline-flex h-7 w-10 items-center justify-center rounded-xl hover:bg-muted"
+                        onClick={() => void handleDelete(user)}
+                        disabled={actionUserId === user.id}
+                      >
+                        {actionUserId === user.id && actionType === "delete" ? (
+                          <Loader2 className="size-4 animate-spin text-brand-red" />
+                        ) : (
+                          <Trash2 className="size-4 text-brand-red" />
+                        )}
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {filteredUsers.length === 0 ? (
+              {!isLoading && filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-2 py-8 text-center text-sm text-chat-meta sm:px-4">
                     No users found for the current search/filter.
@@ -222,27 +403,6 @@ export default function Users() {
           <p className="text-xs font-medium text-body-secondary">
             Showing {filteredUsers.length === 0 ? 0 : 1}-{filteredUsers.length} of {users.length} users
           </p>
-          <div className="inline-flex items-center gap-2">
-            <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-body-secondary/30">
-              <ChevronLeft className="size-3.5" />
-            </button>
-            <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-red text-xs font-semibold text-ice">
-              1
-            </button>
-            <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold text-body-secondary">
-              2
-            </button>
-            <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold text-body-secondary">
-              3
-            </button>
-            <span className="px-1 text-base text-body-secondary">...</span>
-            <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold text-body-secondary">
-              49
-            </button>
-            <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-body-secondary">
-              <ChevronRight className="size-3.5" />
-            </button>
-          </div>
         </div>
       </section>
 

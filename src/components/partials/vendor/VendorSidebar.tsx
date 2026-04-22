@@ -18,6 +18,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import logo from "@/assets/vendor/logo.jpeg";
 
 const items = [
   { to: "/vendor/dashboard", label: "Dashboard", icon: LayoutGrid, end: true },
@@ -145,12 +146,7 @@ export function VendorSidebar({
 
         {/* Logo */}
         <Link to="/" className="px-4 pt-2 pb-2 text-center" onClick={onClose}>
-          <h2 className="text-xl font-extrabold text-vendor-header font-manrope">
-            Gidira Vendor
-          </h2>
-          <p className="text-sm text-vendor-header font-inter font-normal">
-            Verified Merchant
-          </p>
+         <img src={logo} alt="Gidira Vendor" className="h-full w-auto" />
         </Link>
 
         {/* Nav */}

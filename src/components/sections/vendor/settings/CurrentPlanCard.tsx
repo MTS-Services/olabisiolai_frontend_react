@@ -2,10 +2,12 @@ import { Award } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 type VendorPlan = "free" | "premium";
 
 export function CurrentPlanCard({ plan }: { plan: VendorPlan }) {
+  const navigate = useNavigate();
   const isPremium = plan === "premium";
   
   return (
@@ -31,8 +33,10 @@ export function CurrentPlanCard({ plan }: { plan: VendorPlan }) {
         </div>
         <Button
           type="button"
-          className="mt-6 w-full bg-sky-100 font-inter font-semibold text-foreground shadow-none hover:bg-sky-100/80"
+          onClick={() => navigate('/vendor/boost')}
+          className="mt-6 w-full cursor-pointer bg-sky-100 font-inter font-semibold text-foreground shadow-none hover:bg-sky-100/80"
         >
+
           Manage subscription
         </Button>
       </CardContent>

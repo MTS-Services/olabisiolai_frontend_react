@@ -1,25 +1,21 @@
 import { Ban, ChevronDown, CircleAlert, Eye, Loader2, Search, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { UserDetailsModal, type UserDetailsRow } from "@/components/Modal/UserDetailsModal";
+import { UserDetailsModal, type UserDetailsRow, type UserRole } from "@/components/Modal/UserDetailsModal";
 import { request } from "@/api/request";
 
 type UserRow = UserDetailsRow & {
   id: number;
 };
 type StatusFilter = "all" | UserRow["status"];
+type RoleFilter = "all" | UserRole;
 
 type UsersApiEnvelope = {
   data?: unknown;
   message?: string;
 };
 
-const USERS_ROLE_PAYLOAD = "user";
-const USERS_ROLE_BODY = {
-  role: USERS_ROLE_PAYLOAD,
-  roll: USERS_ROLE_PAYLOAD,
-  user_role: USERS_ROLE_PAYLOAD,
-};
+const SUPPORTED_ROLES: UserRole[] = ["user", "vendor", "admin"];
 
 function toRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object") return null;
@@ -74,6 +70,13 @@ function toDateLabel(value: unknown): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
 }
 
+function toRole(value: unknown): UserRole {
+  if (typeof value !== "string") return "user";
+  const normalized = value.trim().toLowerCase();
+  if (SUPPORTED_ROLES.includes(normalized as UserRole)) return normalized as UserRole;
+  return "user";
+}
+
 function mapApiUser(raw: unknown, index: number): UserRow {
   const rawRecord = toRecord(raw) ?? {};
   const item = toRecord(rawRecord.user) ?? rawRecord;
@@ -84,6 +87,7 @@ function mapApiUser(raw: unknown, index: number): UserRow {
     name: String(item.name ?? item.full_name ?? item.username ?? "-"),
     phone: String(item.phone ?? item.mobile ?? item.phone_number ?? "-"),
     email: String(item.email ?? "-"),
+    role: toRole(item.role ?? item.user_role),
     status: toStatus(item.status),
     joinDate: toDateLabel(item.created_at ?? item.join_date ?? item.joinDate),
   };
@@ -110,6 +114,12 @@ function statusClass(status: UserRow["status"]) {
   return "bg-tint-red text-brand-red";
 }
 
+function roleClass(role: UserRole) {
+  if (role === "admin") return "bg-tint-red text-brand-red";
+  if (role === "vendor") return "bg-amber-100 text-amber-600";
+  return "bg-surface-soft text-chat-accent";
+}
+
 function limitText(value: string, max = 24) {
   if (value.length <= max) return value;
   return `${value.slice(0, max)}...`;
@@ -120,6 +130,8 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,7 +149,7 @@ export default function Users() {
     try {
       const res = await postToAnyAdminUsersEndpoint<UsersApiEnvelope>(
         ["/api/v1/admin/users", "/admin/users"],
-        USERS_ROLE_BODY,
+        {},
       );
       const list = pickUsersArray(res.data).map(mapApiUser);
       setUsers(list);
@@ -159,6 +171,9 @@ export default function Users() {
     const query = searchTerm.trim().toLowerCase();
 
     return users.filter((user) => {
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      if (!matchesRole) return false;
+
       const matchesStatus = statusFilter === "all" || user.status === statusFilter;
       if (!matchesStatus) return false;
 
@@ -169,9 +184,10 @@ export default function Users() {
         user.email.toLowerCase().includes(query)
       );
     });
-  }, [users, searchTerm, statusFilter]);
+  }, [users, searchTerm, statusFilter, roleFilter]);
 
   const statusLabel = statusFilter === "all" ? "Select Status" : statusFilter;
+  const roleLabel = roleFilter === "all" ? "Select Role" : roleFilter;
 
   const handleView = async (user: UserRow) => {
     setActionUserId(user.id);
@@ -180,7 +196,6 @@ export default function Users() {
       const res = await postToAnyAdminUsersEndpoint<UsersApiEnvelope>(
         ["/api/v1/admin/users/view", "/admin/users/view"],
         {
-          ...USERS_ROLE_BODY,
           user_id: user.id,
         },
       );
@@ -207,7 +222,6 @@ export default function Users() {
       await postToAnyAdminUsersEndpoint(
         ["/api/v1/admin/users/status-change", "/admin/users/status-change"],
         {
-          ...USERS_ROLE_BODY,
           user_id: user.id,
           status: nextStatus === "blocked" ? "block" : "active",
         },
@@ -231,7 +245,6 @@ export default function Users() {
     setActionType("delete");
     try {
       await postToAnyAdminUsersEndpoint(["/api/v1/admin/users/delete", "/admin/users/delete"], {
-        ...USERS_ROLE_BODY,
         user_id: deleteTarget.id,
       });
       setDeleteTarget(null);
@@ -269,33 +282,70 @@ export default function Users() {
             />
           </label>
 
-          <div className="relative w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setIsStatusMenuOpen((prev) => !prev)}
-              className="inline-flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-border-gray bg-card px-4 text-sm text-body-secondary sm:min-w-48"
-            >
-              <span className="capitalize">{statusLabel}</span>
-              <ChevronDown className="size-4" />
-            </button>
-            {isStatusMenuOpen ? (
-              <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-border-gray bg-card shadow-sm">
-                {(["all", "active", "blocked", "pending"] as const).map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(status);
-                      setIsStatusMenuOpen(false);
-                    }}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm capitalize text-ink hover:bg-muted"
-                  >
-                    <span>{status === "all" ? "Select Status" : status}</span>
-                    {statusFilter === status ? <span className="text-xs text-chat-accent">Selected</span> : null}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <div className="relative w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRoleMenuOpen((prev) => !prev);
+                  setIsStatusMenuOpen(false);
+                }}
+                className="inline-flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-border-gray bg-card px-4 text-sm text-body-secondary sm:min-w-44"
+              >
+                <span className="capitalize">{roleLabel}</span>
+                <ChevronDown className="size-4" />
+              </button>
+              {isRoleMenuOpen ? (
+                <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-xl border border-border-gray bg-card shadow-sm">
+                  {(["all", "user", "vendor", "admin"] as const).map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => {
+                        setRoleFilter(role);
+                        setIsRoleMenuOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm capitalize text-ink hover:bg-muted"
+                    >
+                      <span>{role === "all" ? "Select Role" : role}</span>
+                      {roleFilter === role ? <span className="text-xs text-chat-accent">Selected</span> : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="relative w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStatusMenuOpen((prev) => !prev);
+                  setIsRoleMenuOpen(false);
+                }}
+                className="inline-flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-border-gray bg-card px-4 text-sm text-body-secondary sm:min-w-48"
+              >
+                <span className="capitalize">{statusLabel}</span>
+                <ChevronDown className="size-4" />
+              </button>
+              {isStatusMenuOpen ? (
+                <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-border-gray bg-card shadow-sm">
+                  {(["all", "active", "blocked", "pending"] as const).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter(status);
+                        setIsStatusMenuOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm capitalize text-ink hover:bg-muted"
+                    >
+                      <span>{status === "all" ? "Select Status" : status}</span>
+                      {statusFilter === status ? <span className="text-xs text-chat-accent">Selected</span> : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -308,6 +358,9 @@ export default function Users() {
                 </th>
                 <th className="px-2 py-2 text-left text-xs font-semibold text-body-secondary sm:px-4 sm:py-3 sm:text-sm">
                   Phone / Email
+                </th>
+                <th className="px-2 py-2 text-left text-xs font-semibold text-body-secondary sm:px-4 sm:py-3 sm:text-sm">
+                  Role
                 </th>
                 <th className="px-2 py-2 text-left text-xs font-semibold text-body-secondary sm:px-4 sm:py-3 sm:text-sm">
                   Status
@@ -323,7 +376,7 @@ export default function Users() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-2 py-8 text-center text-sm text-chat-meta sm:px-4">
+                  <td colSpan={6} className="px-2 py-8 text-center text-sm text-chat-meta sm:px-4">
                     Loading users...
                   </td>
                 </tr>
@@ -340,6 +393,13 @@ export default function Users() {
                     <p className="text-xs leading-5 text-chat-meta sm:text-sm" title={user.email}>
                       {limitText(user.email, 28)}
                     </p>
+                  </td>
+                  <td className="px-2 py-3 sm:px-4 sm:py-4">
+                    <span
+                      className={`inline-flex min-w-[70px] justify-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${roleClass(user.role)}`}
+                    >
+                      {user.role}
+                    </span>
                   </td>
                   <td className="px-2 py-3 sm:px-4 sm:py-4">
                     <span
@@ -394,7 +454,7 @@ export default function Users() {
               ))}
               {!isLoading && filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-2 py-8 text-center text-sm text-chat-meta sm:px-4">
+                  <td colSpan={6} className="px-2 py-8 text-center text-sm text-chat-meta sm:px-4">
                     No users found for the current search/filter.
                   </td>
                 </tr>

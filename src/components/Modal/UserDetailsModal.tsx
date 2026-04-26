@@ -1,9 +1,12 @@
 import { X } from "lucide-react";
 
+export type UserRole = "user" | "vendor" | "admin";
+
 export type UserDetailsRow = {
   name: string;
   phone: string;
   email: string;
+  role: UserRole;
   status: "active" | "blocked" | "pending";
   joinDate: string;
 };
@@ -18,6 +21,12 @@ function statusClass(status: UserDetailsRow["status"]) {
   if (status === "active") return "bg-success/10 text-success";
   if (status === "pending") return "bg-amber-100 text-amber-600";
   return "bg-tint-red text-brand-red";
+}
+
+function roleClass(role: UserRole) {
+  if (role === "admin") return "bg-tint-red text-brand-red";
+  if (role === "vendor") return "bg-amber-100 text-amber-600";
+  return "bg-surface-soft text-chat-accent";
 }
 
 export function UserDetailsModal({ open, onClose, user }: UserDetailsModalProps) {
@@ -62,6 +71,15 @@ export function UserDetailsModal({ open, onClose, user }: UserDetailsModalProps)
                   <p className="text-sm font-medium text-ink">Email</p>
                   <p className="text-sm text-body-secondary">{user.email}</p>
                 </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-ink">Role</p>
+                <span
+                  className={`inline-flex min-w-[70px] justify-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${roleClass(user.role)}`}
+                >
+                  {user.role}
+                </span>
               </div>
 
               <div>

@@ -6,7 +6,6 @@ import { GuestGate } from "@/routes/GuestGate";
 import { suspensePage } from "@/routes/routeUtils";
 
 const UserType = lazy(() => import("@/pages/frontend/auth/UserType"));
-const Login = lazy(() => import("@/pages/frontend/auth/Login"));
 const LoginGoogle = lazy(() => import("@/pages/frontend/auth/LoginGoogle"));
 const LoginEmail = lazy(() => import("@/pages/frontend/auth/LoginEmail"));
 const ForgetPassword = lazy(() => import("@/pages/frontend/auth/ForgetPassword"));
@@ -25,7 +24,7 @@ export const authRoutes: RouteObject = {
     },
     {
       path: "/login",
-      element: <GuestGate>{suspensePage(Login)}</GuestGate>,
+      element: <GuestGate>{suspensePage(UserType)}</GuestGate>,
     },
     {
       path: "/login/google",

@@ -1,4 +1,4 @@
-import { Ban, ChevronDown, Eye, Loader2, Search, Trash2 } from "lucide-react";
+import { Ban, ChevronDown, CircleAlert, Eye, Loader2, Search, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { UserDetailsModal, type UserDetailsRow } from "@/components/Modal/UserDetailsModal";
@@ -126,6 +126,7 @@ export default function Users() {
   const [error, setError] = useState<string | null>(null);
   const [actionUserId, setActionUserId] = useState<number | null>(null);
   const [actionType, setActionType] = useState<"view" | "status" | "delete" | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
 
   const fetchUsers = async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
@@ -220,17 +221,20 @@ export default function Users() {
     }
   };
 
-  const handleDelete = async (user: UserRow) => {
-    const confirmed = window.confirm(`Delete ${user.name}?`);
-    if (!confirmed) return;
+  const handleDelete = (user: UserRow) => {
+    setDeleteTarget(user);
+  };
 
-    setActionUserId(user.id);
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setActionUserId(deleteTarget.id);
     setActionType("delete");
     try {
       await postToAnyAdminUsersEndpoint(["/api/v1/admin/users/delete", "/admin/users/delete"], {
         ...USERS_ROLE_BODY,
-        user_id: user.id,
+        user_id: deleteTarget.id,
       });
+      setDeleteTarget(null);
       await fetchUsers({ silent: true });
     } catch {
       setError("Failed to delete user.");
@@ -411,6 +415,65 @@ export default function Users() {
         onClose={() => setIsModalOpen(false)}
         user={selectedUser}
       />
+
+      {deleteTarget ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
+          onClick={() => setDeleteTarget(null)}
+          role="presentation"
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl bg-card p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-user-title"
+            aria-describedby="delete-user-desc"
+          >
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-lg text-body-secondary hover:bg-muted"
+              aria-label="Close"
+            >
+              <X className="size-4" />
+            </button>
+
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex size-10 items-center justify-center rounded-full bg-tint-red text-brand-red">
+                <CircleAlert className="size-5" />
+              </span>
+              <div className="min-w-0 space-y-1">
+                <h2 id="delete-user-title" className="text-lg font-semibold text-ink">
+                  Confirm Delete
+                </h2>
+                <p id="delete-user-desc" className="text-sm text-body-secondary">
+                  Delete user <span className="font-semibold text-ink">{deleteTarget.name}</span>? This action cannot
+                  be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-lg border border-border-gray px-4 py-2 text-sm font-medium text-body-secondary hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmDelete()}
+                disabled={actionType === "delete"}
+                className="inline-flex min-w-[110px] items-center justify-center rounded-lg bg-brand-red px-4 py-2 text-sm font-semibold text-ice hover:bg-brand-red/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {actionType === "delete" ? <Loader2 className="size-4 animate-spin" /> : "Confirm Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { getRoleDashboard } from "@/auth/rolePolicy";
+import { getUserRoles } from "@/auth/roles";
 import { useAuth } from "@/auth/useAuth";
 import { HeaderAvatar } from "@/components/ui/HeaderAvatar";
 import { Button } from "@/components/ui/button";
@@ -68,9 +70,11 @@ function HeaderSearch({ className }: { className?: string }) {
 function HeaderToolbar({
   isLightHeader,
   showTradeNav,
+  dashboardPath,
 }: {
   isLightHeader: boolean;
   showTradeNav: boolean;
+  dashboardPath: string;
 }) {
   const { isAuthenticated, logout, user } = useAuth();
   const avatarSrc = resolveUserAvatar(user);
@@ -130,7 +134,7 @@ function HeaderToolbar({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/user/dashboard" className="flex items-center gap-2">
+              <Link to={dashboardPath} className="flex items-center gap-2">
                 <Settings className="size-4" aria-hidden />
                 Dashboard
               </Link>
@@ -169,11 +173,13 @@ function MobileMenu({
   isAuthenticated,
   logout,
   avatarSrc,
+  dashboardPath,
 }: {
   showTradeNav: boolean;
   isAuthenticated: boolean;
   logout: () => Promise<void>;
   avatarSrc: string;
+  dashboardPath: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -239,15 +245,23 @@ function MobileMenu({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         {isAuthenticated ? (
-          <DropdownMenuItem
-            onSelect={() => {
-              void logout();
-            }}
-            className="rounded-lg text-brand-red focus:text-brand-red"
-          >
-            <LogOut className="size-4" aria-hidden />
-            Logout
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild className="rounded-lg">
+              <Link to={dashboardPath} className="flex items-center gap-2 py-2">
+                <Settings className="size-4" aria-hidden />
+                Dashboard
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                void logout();
+              }}
+              className="rounded-lg text-brand-red focus:text-brand-red"
+            >
+              <LogOut className="size-4" aria-hidden />
+              Logout
+            </DropdownMenuItem>
+          </>
         ) : (
           <DropdownMenuItem asChild className="rounded-lg">
             <Link to="/user-type" className="flex items-center gap-2 py-2">
@@ -264,6 +278,8 @@ function MobileMenu({
 export function FrontendHeader() {
   const { pathname } = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
+  const primaryRole = getUserRoles(user)[0];
+  const dashboardPath = primaryRole ? getRoleDashboard(primaryRole) ?? "/user/dashboard" : "/user/dashboard";
   const isLightHeader =
     pathname === "/" ||
     pathname === "/trade" ||
@@ -300,6 +316,7 @@ export function FrontendHeader() {
             isAuthenticated={isAuthenticated}
             logout={logout}
             avatarSrc={avatarSrc}
+            dashboardPath={dashboardPath}
           />
         </div>
         {showHeaderSearch ? <HeaderSearch /> : null}
@@ -326,7 +343,11 @@ export function FrontendHeader() {
           {showHeaderSearch ? <HeaderSearch className="max-w-xl lg:max-w-2xl" /> : null}
         </div>
 
-        <HeaderToolbar isLightHeader={isLightHeader} showTradeNav={showTradeNav} />
+        <HeaderToolbar
+          isLightHeader={isLightHeader}
+          showTradeNav={showTradeNav}
+          dashboardPath={dashboardPath}
+        />
       </div>
     </header>
   );

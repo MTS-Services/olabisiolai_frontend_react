@@ -1,169 +1,193 @@
-import { useState } from "react";
-import { Check, X, FileText } from "lucide-react";
+import { useMemo } from "react";
+import { Download } from "lucide-react";
 
-import { RejectVerificationModal } from "@/components/Modal/RejectVerificationModal";
+type QueueHealth = "stable" | "unstable";
+type VerificationStatus = "pending" | "approved" | "flagged";
 
-type PaymentStatus = "confirmed" | "pending";
-type DocStatus = "verified" | "missing";
-
-type VerificationCard = {
+type VerificationRow = {
   id: number;
   businessName: string;
-  owner: string;
-  submitted: string;
-  paymentStatus: PaymentStatus;
-  documents: { label: string; status: DocStatus }[];
+  category: string;
+  dateJoined: string;
+  verificationDate: string;
+  status: VerificationStatus;
 };
 
-const DATA: VerificationCard[] = [
+const DATA: VerificationRow[] = [
   {
     id: 1,
-    businessName: "Divine Salon & Spa",
-    owner: "Grace Okonkwo",
-    submitted: "Mar 28, 2024",
-    paymentStatus: "confirmed",
-    documents: [
-      { label: "Valid ID", status: "verified" },
-      { label: "CAC Document", status: "verified" },
-      { label: "Proof of Address", status: "verified" },
-    ],
+    businessName: "Lagos Logistics Ltd",
+    category: "Logistics",
+    dateJoined: "2023-10-24",
+    verificationDate: "2026-04-24",
+    status: "pending",
   },
   {
     id: 2,
-    businessName: "AutoFix Mechanics",
-    owner: "Emeka Nwankwo",
-    submitted: "Mar 29, 2024",
-    paymentStatus: "confirmed",
-    documents: [
-      { label: "Valid ID", status: "verified" },
-      { label: "CAC Document", status: "verified" },
-      { label: "Proof of Address", status: "missing" },
-    ],
+    businessName: "Horizon Plumbing",
+    category: "Plumbing",
+    dateJoined: "2023-10-25",
+    verificationDate: "2026-04-25",
+    status: "pending",
   },
   {
     id: 3,
-    businessName: "Fresh & Clean Laundry",
-    owner: "Fatima Bello",
-    submitted: "Mar 30, 2024",
-    paymentStatus: "pending",
-    documents: [
-      { label: "Valid ID", status: "verified" },
-      { label: "CAC Document", status: "missing" },
-      { label: "Proof of Address", status: "verified" },
-    ],
+    businessName: "City Electricals Hub",
+    category: "Electrical",
+    dateJoined: "2023-10-25",
+    verificationDate: "2026-04-27",
+    status: "approved",
   },
   {
     id: 4,
-    businessName: "QuickFix Plumbing",
-    owner: "John Okoro",
-    submitted: "Apr 1, 2024",
-    paymentStatus: "confirmed",
-    documents: [
-      { label: "Valid ID", status: "verified" },
-      { label: "CAC Document", status: "verified" },
-      { label: "Proof of Address", status: "verified" },
-    ],
+    businessName: "Fresh Clean Nigeria",
+    category: "Cleaning",
+    dateJoined: "2023-10-26",
+    verificationDate: "2026-04-28",
+    status: "flagged",
   },
 ];
 
-function PaymentBadge({ status }: { status: PaymentStatus }) {
-  return status === "confirmed" ? (
-    <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-0.5 text-xs font-medium text-green-600">
-      Payment Confirmed
-    </span>
-  ) : (
-    <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-0.5 text-xs font-medium text-orange-500">
-      Payment Pending
-    </span>
-  );
+function formatDate(input: string) {
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) return input;
+  return date.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
 }
 
-function DocRow({ label, status }: { label: string; status: DocStatus }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-      <div className="flex items-center gap-3">
-        <FileText className="size-4 text-gray-400" />
-        <span className="text-sm text-gray-700">{label}</span>
-      </div>
-      {status === "verified" ? (
-        <Check className="size-4 text-green-500" strokeWidth={2.5} />
-      ) : (
-        <X className="size-4 text-red-500" strokeWidth={2.5} />
-      )}
-    </div>
-  );
+function statusClass(status: VerificationStatus) {
+  if (status === "approved") return "bg-green-100 text-green-700";
+  if (status === "flagged") return "bg-red-100 text-red-700";
+  return "bg-amber-100 text-amber-700";
 }
 
-function Card({
-  card,
-  onRejectClick,
-}: {
-  card: VerificationCard;
-  onRejectClick: (card: VerificationCard) => void;
-}) {
-  const canApprove = card.paymentStatus === "confirmed";
-
-  return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-gray-900">{card.businessName}</h3>
-          <p className="mt-0.5 text-sm text-gray-500">Owner: {card.owner}</p>
-          <p className="text-xs text-gray-400">Submitted: {card.submitted}</p>
-        </div>
-        <div className="shrink-0 pt-0.5">
-          <PaymentBadge status={card.paymentStatus} />
-        </div>
-      </div>
-
-      {/* Documents */}
-      <div className="flex flex-col gap-2">
-        {card.documents.map((doc) => (
-          <DocRow key={doc.label} label={doc.label} status={doc.status} />
-        ))}
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-3">
-        <button
-          disabled={!canApprove}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-opacity ${canApprove
-            ? "bg-blue-500 text-white hover:bg-blue-600 active:opacity-80"
-            : "cursor-not-allowed bg-blue-100 text-blue-300"
-            }`}
-        >
-          Approve
-        </button>
-        <button
-          type="button"
-          onClick={() => onRejectClick(card)}
-          className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white transition-opacity hover:bg-red-600 active:opacity-80"
-        >
-          Reject
-        </button>
-      </div>
-    </div>
-  );
+function exportCsv(rows: VerificationRow[]) {
+  const headers = [
+    "Business Name",
+    "Category",
+    "Date Joined",
+    "Verification Date",
+    "Status",
+  ];
+  const csvLines = [
+    headers.join(","),
+    ...rows.map((row) =>
+      [row.businessName, row.category, formatDate(row.dateJoined), formatDate(row.verificationDate), row.status]
+        .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+        .join(","),
+    ),
+  ];
+  const blob = new Blob([`\uFEFF${csvLines.join("\r\n")}`], { type: "text/csv;charset=utf-8;" });
+  const now = new Date();
+  const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `verification-log-${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
 }
 
 export default function VerificationGrid() {
-  const [rejectTarget, setRejectTarget] = useState<VerificationCard | null>(null);
+  const todayKey = new Date().toDateString();
+  const todaysVerified = useMemo(
+    () =>
+      DATA.filter(
+        (item) => item.status === "approved" && new Date(item.verificationDate).toDateString() === todayKey,
+      ).length,
+    [todayKey],
+  );
+
+  const averageHours = 2.4;
+  const queueHealth: QueueHealth = averageHours < 24 ? "stable" : "unstable";
 
   return (
-    <div className=" bg-gray-100 ">
-      <div className="mx-auto grid max-w-9xl grid-cols-1 gap-5 sm:grid-cols-2">
-        {DATA.map((card) => (
-          <Card key={card.id} card={card} onRejectClick={setRejectTarget} />
-        ))}
+    <div>
+      <div className="mb-4">
+        <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Verifications</h1>
       </div>
 
-      <RejectVerificationModal
-        open={rejectTarget !== null}
-        onClose={() => setRejectTarget(null)}
-        businessName={rejectTarget?.businessName ?? ""}
-        onConfirm={() => undefined}
-      />
+      <div className="mb-4">
+        <button
+          type="button"
+          onClick={() => exportCsv(DATA)}
+          className="inline-flex items-center gap-2 rounded-xl border border-border-gray bg-card px-4 py-2.5 text-sm font-semibold text-ink hover:bg-muted"
+        >
+          <Download className="size-4" />
+          Export Log (Excel/CSV)
+        </button>
+      </div>
+
+      <section className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Queue Health</p>
+          <p className={`mt-1 text-4xl font-semibold leading-10 ${queueHealth === "stable" ? "text-success" : "text-brand-red"}`}>
+            {queueHealth === "stable" ? "Stable" : "Unstable"}
+          </p>
+          <p className="mt-1 text-sm text-body-secondary">Avg response time: {averageHours}hrs</p>
+          <p className="mt-1 text-xs text-body-secondary">
+            {queueHealth === "stable" ? "Less than 24 hours" : "Above 24 hours"}
+          </p>
+        </article>
+
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Today&apos;s Verified</p>
+          <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{todaysVerified.toLocaleString()}</p>
+          <p className="mt-1 text-sm font-medium text-success">KPI for verification officer</p>
+        </article>
+      </section>
+
+      <section className="overflow-x-auto rounded-2xl border border-border-gray bg-card">
+        <table className="w-full min-w-[980px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-border-gray bg-muted/40">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Business Name</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Category</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Date Joined</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Verification Date</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Status</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-body-secondary">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {DATA.map((row) => (
+              <tr key={row.id} className="border-b border-border-light">
+                <td className="px-4 py-3 font-medium text-ink">{row.businessName}</td>
+                <td className="px-4 py-3 text-ink">{row.category}</td>
+                <td className="px-4 py-3 text-body-secondary">{formatDate(row.dateJoined)}</td>
+                <td className="px-4 py-3 text-body-secondary">{formatDate(row.verificationDate)}</td>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusClass(row.status)}`}>
+                    {row.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      className="rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success/90"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+                    >
+                      Flag
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-md border border-border-gray px-3 py-1.5 text-xs font-semibold text-body-secondary hover:bg-muted"
+                    >
+                      Request Info
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }

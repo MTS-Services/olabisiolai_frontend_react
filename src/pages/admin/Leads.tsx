@@ -13,7 +13,7 @@ const leads: LeadRow[] = [
     userName: "Chukwudi Okafor",
     phone: "+234 803 123 4567",
     leadType: "whatsapp",
-    dateShort: "Apr 1, 02:30 PM",
+    dateShort: "2026-04-04 14:32",
     dateTimeLong: "April 1, 2024 at 02:30 PM",
   },
   {
@@ -22,7 +22,7 @@ const leads: LeadRow[] = [
     userName: "Aisha Mohammed",
     phone: "+234 805 987 6543",
     leadType: "direct_message",
-    dateShort: "Apr 1, 03:45 PM",
+    dateShort: "2026-04-04 13:45",
     dateTimeLong: "April 1, 2024 at 03:45 PM",
   },
   {
@@ -31,7 +31,7 @@ const leads: LeadRow[] = [
     userName: "Ngozi Eze",
     phone: "+234 809 876 5432",
     leadType: "whatsapp",
-    dateShort: "Apr 2, 10:15 AM",
+    dateShort: "2026-04-04 12:18",
     dateTimeLong: "April 2, 2024 at 10:15 AM",
   },
   {
@@ -40,7 +40,7 @@ const leads: LeadRow[] = [
     userName: "Ibrahim Musa",
     phone: "+234 810 345 6789",
     leadType: "direct_message",
-    dateShort: "Apr 2, 11:20 AM",
+    dateShort: "2026-04-04 11:22",
     dateTimeLong: "April 2, 2024 at 11:20 AM",
   },
   {
@@ -48,8 +48,8 @@ const leads: LeadRow[] = [
     business: "TechHub Solutions",
     userName: "Aisha Mohammed",
     phone: "+234 805 987 6543",
-    leadType: "quote",
-    dateShort: "Apr 1, 03:45 PM",
+    leadType: "direct_message",
+    dateShort: "2026-04-04 10:15",
     dateTimeLong: "April 1, 2024 at 03:45 PM",
   },
   {
@@ -58,7 +58,7 @@ const leads: LeadRow[] = [
     userName: "Chukwudi Okafor",
     phone: "+234 803 123 4567",
     leadType: "whatsapp",
-    dateShort: "Apr 1, 02:30 PM",
+    dateShort: "2026-04-04 09:08",
     dateTimeLong: "April 1, 2024 at 02:30 PM",
   },
 ];
@@ -69,14 +69,6 @@ function LeadTypeCell({ leadType }: { leadType: LeadRow["leadType"] }) {
       <span className="inline-flex items-center gap-1 rounded-full bg-[rgb(27_175_93/0.1)] px-2.5 py-0.5 text-xs font-medium text-[#1baf5d]">
         <Phone className="size-3 shrink-0" strokeWidth={2} aria-hidden />
         WhatsApp
-      </span>
-    );
-  }
-  if (leadType === "quote") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-        <MessageSquare className="size-3 shrink-0" strokeWidth={2} aria-hidden />
-        Quote
       </span>
     );
   }
@@ -104,9 +96,7 @@ export default function Leads() {
       ? "Select Lead Type"
       : leadTypeFilter === "direct_message"
         ? "Direct Message"
-        : leadTypeFilter === "whatsapp"
-          ? "WhatsApp"
-          : "Quote";
+        : "WhatsApp";
 
   return (
     <div>
@@ -115,6 +105,28 @@ export default function Leads() {
       </div>
 
       <section className="rounded-2xl border border-border-gray bg-card p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]">
+        <div className="mb-6 rounded-xl border border-chat-border-subtle bg-background p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-accent">Lead Management</p>
+          <p className="text-xs text-chat-meta">Track, review, and manage lead sources in the marketplace</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <article className="rounded-lg border border-chat-border-subtle bg-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Total Leads</p>
+              <p className="mt-1 text-3xl font-semibold text-ink">342,109</p>
+              <p className="text-xs font-medium text-success">+12%</p>
+            </article>
+            <article className="rounded-lg border border-chat-border-subtle bg-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Conversion Rate</p>
+              <p className="mt-1 text-3xl font-semibold text-ink">8.4%</p>
+              <p className="text-xs font-medium text-amber-600">Stable</p>
+            </article>
+            <article className="rounded-lg border border-chat-border-subtle bg-card p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Avg Response Time</p>
+              <p className="mt-1 text-3xl font-semibold text-ink">2.1hrs</p>
+              <p className="text-xs font-medium text-brand-red">+8%</p>
+            </article>
+          </div>
+        </div>
+
         <div className="mb-6">
           <div className="relative inline-block w-48">
             <button
@@ -127,7 +139,7 @@ export default function Leads() {
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-5 -translate-y-1/2 text-body-secondary" />
             {filterOpen ? (
               <div className="absolute left-0 z-20 mt-2 w-full overflow-hidden rounded-xl border border-border-gray bg-card shadow-sm">
-                {(["all", "whatsapp", "direct_message", "quote"] as const).map((key) => (
+                {(["all", "whatsapp", "direct_message"] as const).map((key) => (
                   <button
                     key={key}
                     type="button"
@@ -143,7 +155,7 @@ export default function Leads() {
                         ? "Direct Message"
                         : key === "whatsapp"
                           ? "WhatsApp"
-                          : "Quote"}
+                          : "Direct Message"}
                   </button>
                 ))}
               </div>
@@ -158,7 +170,7 @@ export default function Leads() {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Business</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">User</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Lead Type</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Date</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Timestamp</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-body-secondary">Actions</th>
               </tr>
             </thead>

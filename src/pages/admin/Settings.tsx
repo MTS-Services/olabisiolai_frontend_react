@@ -1,127 +1,21 @@
 import { useState } from "react";
-import React from "react";
+import { Plus, Shield } from "lucide-react";
 
-// ─── Icons ───────────────────────────────────────────────────────────────────
-const UserIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-  </svg>
-);
-const CardIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" />
-  </svg>
-);
-const ShieldIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-  </svg>
-);
-const RocketIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-    <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
-  </svg>
-);
-const EyeIcon = ({ open }: { open: boolean }) =>
-  open ? (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-const CheckIcon = () => (
-  <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="2,6 5,9 10,3" />
-  </svg>
-);
-const SaveIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-    <polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
-  </svg>
-);
-const SpinIcon = () => (
-  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-  </svg>
-);
-const DoneIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-function SectionCard({ icon, iconBg, iconColor, title, badge, description, children }: { icon: React.ReactNode; iconBg: string; iconColor: string; title: string; badge?: string; description?: string; children: React.ReactNode }) {
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} ${iconColor}`}>
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-slate-900 text-[15px] tracking-tight">{title}</span>
-            {badge && (
-              <span className="text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                {badge}
-              </span>
-            )}
-          </div>
-          <p className="text-[12px] text-slate-400 mt-0.5">{description}</p>
-        </div>
-      </div>
-      <div className="px-6 py-5">{children}</div>
-    </div>
-  );
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <label className="block text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">
-      {children}
-    </label>
-  );
-}
-
-function Input({ className = "", ...props }: { className?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={`w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-slate-50/60 text-slate-800 text-[13.5px] placeholder:text-slate-300 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all duration-150 ${className}`}
-      {...props}
-    />
-  );
-}
-
-function KeyField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  const [visible, setVisible] = useState(false);
-  return (
-    <div>
-      <Label>{label}</Label>
-      <div className="relative">
-        <input
-          type={visible ? "text" : "password"}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full h-10 pl-3.5 pr-10 rounded-xl border border-slate-200 bg-slate-50/60 text-slate-800 text-[13px] font-mono placeholder:text-slate-300 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all duration-150"
-        />
-        <button
-          type="button"
-          onClick={() => setVisible((v) => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
-        >
-          <EyeIcon open={visible} />
-        </button>
-      </div>
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${on ? "bg-chat-accent" : "bg-slate-300"
+        }`}
+    >
+      <span
+        className={`inline-block size-[18px] rounded-full bg-white shadow transition-transform duration-200 ${on ? "translate-x-[22px]" : "translate-x-[3px]"
+          }`}
+      />
+    </button>
   );
 }
 
@@ -131,215 +25,220 @@ const DOCS = [
   "Proof of Address (Utility Bill, etc.)",
 ];
 
-const BOOST_TIERS = [
-  { key: "day7", label: "7-Day Boost", badge: "Starter", badgeCls: "bg-amber-50 text-amber-700 border-amber-100" },
-  { key: "day30", label: "30-Day Boost", badge: "Popular", badgeCls: "bg-violet-50 text-violet-700 border-violet-100", featured: true },
-  { key: "top1", label: "Top 1 Position", badge: "Premium", badgeCls: "bg-pink-50 text-pink-700 border-pink-100" },
-];
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function PlatformSettings() {
-  // General
-  const [general, setGeneral] = useState({ name: "Gidira", email: "admin@gidira.com", phone: "+234 800 123 4567" });
-  // Payment
-  const [payment, setPayment] = useState({ pk: "pk_test_xxxxxxxxxxxx", sk: "sk_test_xxxxxxxxxxxx" });
-  // Verification
-  const [docs, setDocs] = useState([true, true, true]);
-  const [fee, setFee] = useState("5000");
-  // Boost
-  const [boost, setBoost] = useState({ day7: "15000", day30: "50000", top1: "100000" });
-  // Save state
-  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved
-
-  const toggleDoc = (i: number) => setDocs((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
-
-  const handleSave = () => {
-    setSaveState("saving");
-    setTimeout(() => {
-      setSaveState("saved");
-      setTimeout(() => setSaveState("idle"), 2500);
-    }, 1400);
-  };
+  const [requiredDocs, setRequiredDocs] = useState([true, true, true]);
+  const [verificationPackages, setVerificationPackages] = useState({
+    basic: "5000",
+    standard: "12000",
+    premium: "25000",
+  });
+  const [security, setSecurity] = useState({
+    mandatory2FA: true,
+    sessionTimeout: false,
+  });
+  const [notificationChannels, setNotificationChannels] = useState({
+    systemWide: true,
+    emailDigest: true,
+    securityPings: true,
+    smsAlerts: false,
+  });
+  const [ipWhitelist, setIpWhitelist] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
 
   return (
-    <div className=" bg-slate-50 p-4 font-sans">
-      <div className="max-w-9xl mx-auto space-y-4">
-
-        {/* Page header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Settings</h1> 
+    <div className="bg-slate-50 p-4">
+      <div className="mx-auto max-w-9xl space-y-4">
+        <div className="mb-4">
+          <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Settings</h1>
         </div>
 
-        {/* ── General Settings ── */}
-        <SectionCard
-          icon={<UserIcon />}
-          iconBg="bg-violet-50"
-          iconColor="text-violet-500"
-          title="General Settings"
-          description="Basic platform identity and contact details"
-        >
-          <div className="space-y-4">
+        <section className="rounded-2xl border border-chat-border-subtle bg-card p-5">
+          <div className="mb-4 flex items-center gap-3 border-b border-border-gray pb-4">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+              <Shield className="size-4" />
+            </span>
             <div>
-              <Label>Platform Name</Label>
-              <Input
-                value={general.name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeneral((p) => ({ ...p, name: e.target.value }))}
-                placeholder="Your platform name"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Platform Email</Label>
-                <Input
-                  type="email"
-                  value={general.email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeneral((p) => ({ ...p, email: e.target.value }))}
-                  placeholder="admin@example.com"
-                />
-              </div>
-              <div>
-                <Label>Platform Phone</Label>
-                <Input
-                  type="tel"
-                  value={general.phone}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeneral((p) => ({ ...p, phone: e.target.value }))}
-                  placeholder="+234 800 000 0000"
-                />
-              </div>
+              <h2 className="text-xl font-semibold text-ink">Verification Settings</h2>
+              <p className="text-sm text-chat-meta">Required documents and fees for user verification</p>
             </div>
           </div>
-        </SectionCard>
 
-        {/* ── Payment Settings ── */}
-        <SectionCard
-          icon={<CardIcon />}
-          iconBg="bg-emerald-50"
-          iconColor="text-emerald-500"
-          title="Payment Settings"
-          badge="Paystack"
-          description="API credentials for payment processing"
-        >
-          <div className="space-y-4">
-            <KeyField
-              label="Public Key"
-              value={payment.pk}
-              onChange={(v: string) => setPayment((p) => ({ ...p, pk: v }))}
-            />
-            <KeyField
-              label="Secret Key"
-              value={payment.sk}
-              onChange={(v: string) => setPayment((p) => ({ ...p, sk: v }))}
-            />
-          </div>
-        </SectionCard>
-
-        {/* ── Verification Settings ── */}
-        <SectionCard
-          icon={<ShieldIcon />}
-          iconBg="bg-orange-50"
-          iconColor="text-orange-500"
-          title="Verification Settings"
-          description="Required documents and fees for user verification"
-        >
           <div>
-            <Label>Required Documents</Label>
-            <div className="space-y-2 mb-5">
-              {DOCS.map((doc, i) => (
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-chat-meta">Required Documents</p>
+            <div className="space-y-2">
+              {DOCS.map((doc, idx) => (
                 <button
-                  key={i}
+                  key={doc}
                   type="button"
-                  onClick={() => toggleDoc(i)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-[13px] transition-all duration-150 ${
-                    docs[i]
-                      ? "border-violet-200  text-slate-700"
-                      : "border-slate-200 bg-slate-50/60 text-slate-400 hover:border-slate-300"
-                  }`}
+                  onClick={() =>
+                    setRequiredDocs((prev) => prev.map((item, i) => (i === idx ? !item : item)))
+                  }
+                  className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm ${requiredDocs[idx]
+                      ? "border-violet-200 bg-violet-50/40 text-ink"
+                      : "border-border-gray bg-background text-body-secondary"
+                    }`}
                 >
-                  <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 border transition-all duration-150 ${
-                    docs[i] ? "bg-violet-500 border-violet-500" : "border-slate-300"
-                  }`}>
-                    {docs[i] && <CheckIcon />}
-                  </div>
+                  <span
+                    className={`inline-flex size-5 items-center justify-center rounded-md border text-xs ${requiredDocs[idx]
+                        ? "border-violet-500 bg-violet-500 text-white"
+                        : "border-border-gray bg-card text-transparent"
+                      }`}
+                  >
+                    ✓
+                  </span>
                   {doc}
                 </button>
               ))}
             </div>
+          </div>
 
-            <div className="border-t border-slate-100 pt-5">
-              <div className="w-48">
-                <Label>Verification Fee (₦)</Label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[13px] pointer-events-none">₦</span>
-                  <Input
-                    type="number"
-                    className="pl-7"
-                    value={fee}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFee(e.target.value)}
-                    placeholder="0"
+          <div className="mt-5 border-t border-border-gray pt-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-chat-meta">
+              Verification Packages (3 Types)
+            </p>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              {[
+                { key: "basic", label: "Basic Verification", desc: "Standard KYC document check" },
+                { key: "standard", label: "Standard Verification", desc: "KYC + business profile validation" },
+                { key: "premium", label: "Premium Verification", desc: "Priority review + advanced checks" },
+              ].map((item) => (
+                <article key={item.key} className="rounded-xl border border-chat-border-subtle bg-background p-3">
+                  <p className="text-sm font-semibold text-ink">{item.label}</p>
+                  <p className="text-xs text-chat-meta">{item.desc}</p>
+                  <div className="relative mt-2">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-chat-meta">
+                      ₦
+                    </span>
+                    <input
+                      type="number"
+                      value={verificationPackages[item.key as keyof typeof verificationPackages]}
+                      onChange={(event) =>
+                        setVerificationPackages((prev) => ({
+                          ...prev,
+                          [item.key]: event.target.value,
+                        }))
+                      }
+                      className="h-10 w-full rounded-lg border border-border-gray bg-card pl-7 pr-3 text-sm text-ink outline-none focus:border-chat-accent"
+                    />
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-chat-border-subtle bg-card p-5">
+          <h2 className="mb-3 text-xl font-semibold text-ink">Security & Access Control</h2>
+          <div className="space-y-3 border-b border-border-gray pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-ink">Mandatory 2FA</p>
+                <p className="text-xs text-chat-meta">Enforce two-factor for all admin staff</p>
+              </div>
+              <Toggle
+                on={security.mandatory2FA}
+                onToggle={() =>
+                  setSecurity((prev) => ({ ...prev, mandatory2FA: !prev.mandatory2FA }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-ink">Session Timeout</p>
+                <p className="text-xs text-chat-meta">Auto logout after 30 min inactivity</p>
+              </div>
+              <Toggle
+                on={security.sessionTimeout}
+                onToggle={() =>
+                  setSecurity((prev) => ({ ...prev, sessionTimeout: !prev.sessionTimeout }))
+                }
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-chat-meta">IP Whitelisting</p>
+              <input
+                value={ipWhitelist}
+                onChange={(event) => setIpWhitelist(event.target.value)}
+                placeholder="Enter IP addresses..."
+                className="h-10 w-full rounded-lg border border-border-gray bg-background px-3 text-sm text-ink outline-none focus:border-chat-accent"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4">
+            <h3 className="mb-2 text-sm font-semibold text-ink">Notification Channels</h3>
+            <div className="space-y-3">
+              {[
+                {
+                  key: "systemWide",
+                  label: "System-wide Alerts",
+                  desc: "Critical system notifications",
+                },
+                { key: "emailDigest", label: "Email Daily Digest", desc: "Daily summary reports" },
+                { key: "securityPings", label: "Critical Security Pings", desc: "Immediate security alerts" },
+                { key: "smsAlerts", label: "SMS Alerts", desc: "Critical SMS notifications" },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-ink">{item.label}</p>
+                    <p className="text-xs text-chat-meta">{item.desc}</p>
+                  </div>
+                  <Toggle
+                    on={notificationChannels[item.key as keyof typeof notificationChannels]}
+                    onToggle={() =>
+                      setNotificationChannels((prev) => ({
+                        ...prev,
+                        [item.key]: !prev[item.key as keyof typeof prev],
+                      }))
+                    }
                   />
                 </div>
+              ))}
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-chat-meta">Webhook URL</p>
+                <input
+                  value={webhookUrl}
+                  onChange={(event) => setWebhookUrl(event.target.value)}
+                  placeholder="https://..."
+                  className="h-10 w-full rounded-lg border border-border-gray bg-background px-3 text-sm text-ink outline-none focus:border-chat-accent"
+                />
               </div>
             </div>
           </div>
-        </SectionCard>
+        </section>
 
-        {/* ── Boost Pricing ── */}
-        <SectionCard
-          icon={<RocketIcon />}
-          iconBg="bg-pink-50"
-          iconColor="text-pink-500"
-          title="Boost Pricing"
-          description="Set rates for listing promotion packages"
-        >
-          <div className="grid grid-cols-3 gap-3">
-            {BOOST_TIERS.map(({ key, label, badge, badgeCls, featured }) => (
-              <div
-                key={key}
-                className={`rounded-xl border p-4 transition-all duration-200 ${
-                  featured
-                    ? "border-violet-200 bg-violet-50/40 shadow-sm shadow-violet-100"
-                    : "border-slate-200 bg-slate-50/60 hover:border-slate-300"
-                }`}
-              >
-                <p className="text-[10.5px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">{label}</p>
-                <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full border mb-3 ${badgeCls}`}>
-                  {badge}
-                </span>
-                <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[12px] pointer-events-none">₦</span>
-                  <input
-                    type="number"
-                    value={boost[key as keyof typeof boost]}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBoost((p) => ({ ...p, [key as keyof typeof boost]: e.target.value }))}
-                    className="w-full h-9 pl-6 pr-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 text-[13px] font-semibold outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
-                  />
-                </div>
-              </div>
-            ))}
+        <section className="rounded-2xl border border-chat-border-subtle bg-card p-5">
+          <h2 className="text-2xl font-semibold text-ink">Team Hierarchy</h2>
+          <div className="mt-4 space-y-3">
+            <div>
+              <p className="text-3xl font-semibold leading-10 text-ink">Super Admin</p>
+              <p className="text-sm text-chat-meta">3 members</p>
+              <p className="text-xs text-success">Access: All pages</p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold leading-10 text-ink">Editor Unit</p>
+              <p className="text-sm text-chat-meta">5 members</p>
+              <p className="text-xs text-body-secondary">Access: Users, Reviews, Notifications</p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold leading-10 text-ink">Support Staff</p>
+              <p className="text-sm text-chat-meta">12 members</p>
+              <p className="text-xs text-body-secondary">Access: Leads, Businesses, Payments follow-up</p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold leading-10 text-ink">Verification Officer</p>
+              <p className="text-sm text-chat-meta">4 members</p>
+              <p className="text-xs text-brand-red">Access: Verification page only</p>
+            </div>
           </div>
-        </SectionCard>
-
-        {/* ── Footer ── */}
-        <div className="flex items-center justify-between pt-2 pb-4">
-          <p className="text-[12.5px] text-slate-400">
-            {saveState === "saved" ? "✓ All settings saved successfully" : "All changes will be saved together"}
-          </p>
           <button
             type="button"
-            onClick={handleSave}
-            disabled={saveState === "saving"}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13.5px] font-semibold text-white transition-all duration-200 active:scale-95 shadow-sm disabled:opacity-80 ${
-              saveState === "saved"
-                ? "bg-emerald-500 shadow-emerald-200"
-                : "bg-slate-900 hover:bg-slate-700 shadow-slate-200"
-            }`}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-chat-accent/30 bg-surface-soft px-3 py-2 text-sm font-semibold text-chat-accent hover:bg-surface-soft/70"
           >
-            {saveState === "saving" ? <><SpinIcon /> Saving…</> :
-             saveState === "saved"  ? <><DoneIcon /> Saved!</> :
-             <><SaveIcon /> Save All Changes</>}
+            <Plus className="size-4" />
+            Add Admin Unit
           </button>
-        </div>
-
+        </section>
       </div>
     </div>
   );

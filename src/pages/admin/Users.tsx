@@ -1,4 +1,18 @@
-import { Ban, ChevronDown, CircleAlert, Eye, Loader2, Search, Trash2, X } from "lucide-react";
+import {
+  Ban,
+  BriefcaseBusiness,
+  ChevronDown,
+  CircleAlert,
+  Download,
+  Eye,
+  Loader2,
+  Search,
+  ShieldUser,
+  Trash2,
+  UserPlus,
+  UsersRound,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { UserDetailsModal, type UserDetailsRow, type UserRole } from "@/components/Modal/UserDetailsModal";
@@ -68,6 +82,13 @@ function toDateLabel(value: unknown): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
+}
+
+function toDate(value: unknown): Date | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
 }
 
 function toRole(value: unknown): UserRole {
@@ -188,6 +209,43 @@ export default function Users() {
 
   const statusLabel = statusFilter === "all" ? "Select Status" : statusFilter;
   const roleLabel = roleFilter === "all" ? "Select Role" : roleFilter;
+  const allUsers = users.length;
+  const totalUsers = useMemo(() => users.filter((user) => user.role === "user").length, [users]);
+  const totalVendors = useMemo(() => users.filter((user) => user.role === "vendor").length, [users]);
+  const totalAdmins = useMemo(() => users.filter((user) => user.role === "admin").length, [users]);
+  const newSignups = useMemo(() => {
+    const threshold = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return users.filter((user) => {
+      const parsed = toDate(user.joinDate);
+      return parsed ? parsed.getTime() >= threshold : false;
+    }).length;
+  }, [users]);
+
+  const exportToExcel = () => {
+    const rows = filteredUsers.map((user) => ({
+      Name: user.name,
+      Phone: user.phone,
+      Email: user.email,
+      Role: user.role,
+      Status: user.status,
+      "Join Date": user.joinDate,
+    }));
+    const headers = ["Name", "Phone", "Email", "Role", "Status", "Join Date"];
+    const escapeCell = (value: string) => `"${value.replace(/"/g, '""')}"`;
+    const csvLines = [headers.join(","), ...rows.map((row) => headers.map((h) => escapeCell(String(row[h as keyof typeof row] ?? ""))).join(","))];
+    const blob = new Blob([`\uFEFF${csvLines.join("\r\n")}`], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const now = new Date();
+    const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `users-${stamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
 
   const handleView = async (user: UserRow) => {
     setActionUserId(user.id);
@@ -260,6 +318,74 @@ export default function Users() {
   return (
     <div>
       <div className="mb-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-chat-accent">User Management</p>
+        <p className="text-sm text-body-secondary">Oversee and moderate the Gidira ecosystem participants.</p>
+      </div>
+
+      <section className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">All Users</p>
+              <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{allUsers.toLocaleString()}</p>
+              <p className="mt-1 text-xs font-medium text-success">Overall</p>
+            </div>
+            <span className="rounded-lg bg-success/10 p-2 text-success">
+              <UsersRound className="size-4" />
+            </span>
+          </div>
+        </article>
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Total Users</p>
+              <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{totalUsers.toLocaleString()}</p>
+              <p className="mt-1 text-xs font-medium text-success">+8%</p>
+            </div>
+            <span className="rounded-lg bg-success/10 p-2 text-success">
+              <UsersRound className="size-4" />
+            </span>
+          </div>
+        </article>
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Total Vendors</p>
+              <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{totalVendors.toLocaleString()}</p>
+              <p className="mt-1 text-xs font-medium text-chat-accent">Updated</p>
+            </div>
+            <span className="rounded-lg bg-surface-soft p-2 text-chat-accent">
+              <BriefcaseBusiness className="size-4" />
+            </span>
+          </div>
+        </article>
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Total Admins</p>
+              <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{totalAdmins.toLocaleString()}</p>
+              <p className="mt-1 text-xs font-medium text-brand-red">Internal</p>
+            </div>
+            <span className="rounded-lg bg-tint-red p-2 text-brand-red">
+              <ShieldUser className="size-4" />
+            </span>
+          </div>
+        </article>
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">New Signups</p>
+              <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{newSignups.toLocaleString()}</p>
+              <p className="mt-1 text-xs font-medium text-amber-600">Steady</p>
+            </div>
+            <span className="rounded-lg bg-amber-100 p-2 text-amber-600">
+              <UserPlus className="size-4" />
+            </span>
+          </div>
+        </article>
+      </section>
+
+      <div className="mb-4">
         <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Users</h1>
       </div>
 
@@ -283,6 +409,14 @@ export default function Users() {
           </label>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <button
+              type="button"
+              onClick={exportToExcel}
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-chat-accent/30 bg-surface-soft px-4 text-sm font-medium text-chat-accent hover:bg-surface-soft/70 sm:w-auto"
+            >
+              <Download className="size-4" />
+              Export to Excel
+            </button>
             <div className="relative w-full sm:w-auto">
               <button
                 type="button"

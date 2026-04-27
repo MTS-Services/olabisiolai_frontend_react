@@ -1,32 +1,156 @@
-import { useState } from "react";
-import { Search, ChevronDown, Eye, Check, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  ArrowUpRight,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { BusinessDetailsModal } from "@/components/Modal/BusinessDetailsModal";
 
 type Status = "pending" | "active" | "suspended";
 type Verification = "pending" | "verified" | "rejected";
 type Boost = "none" | "active";
+type Plan = "free" | "premium";
+type BusinessType = "service" | "retail" | "restaurant" | "technology" | "education" | "auto";
 
 type Business = {
   id: number;
   name: string;
   category: string;
+  type: BusinessType;
   location: string;
   status: Status;
   verification: Verification;
   boost: Boost;
+  plan: Plan;
+  joinDate: string;
 };
 
 const DATA: Business[] = [
-  { id: 1, name: "Divine Salon & Spa", category: "Beauty Services", location: "Surulere, Lagos", status: "pending", verification: "pending", boost: "none" },
-  { id: 2, name: "Divine Salon & Spa", category: "Beauty Services", location: "Surulere, Lagos", status: "pending", verification: "pending", boost: "none" },
-  { id: 3, name: "Divine Salon & Spa", category: "Beauty Services", location: "Surulere, Lagos", status: "pending", verification: "pending", boost: "none" },
-  { id: 4, name: "Divine Salon & Spa", category: "Beauty Services", location: "Surulere, Lagos", status: "pending", verification: "pending", boost: "none" },
-  { id: 5, name: "Divine Salon & Spa", category: "Beauty Services", location: "Surulere, Lagos", status: "pending", verification: "pending", boost: "none" },
-  { id: 6, name: "Mama Put Restaurant", category: "Restaurants", location: "Ikeja, Lagos", status: "active", verification: "verified", boost: "active" },
-  { id: 7, name: "TechHub Solutions", category: "Technology", location: "Victoria Island, Lagos", status: "active", verification: "verified", boost: "none" },
-  { id: 8, name: "Fresh Groceries Ltd", category: "Retail", location: "Yaba, Lagos", status: "active", verification: "verified", boost: "active" },
-  { id: 9, name: "AutoFix Mechanics", category: "Auto Services", location: "Festac, Lagos", status: "active", verification: "pending", boost: "none" },
-  { id: 10, name: "EduLearn Academy", category: "Education", location: "Lekki, Lagos", status: "suspended", verification: "rejected", boost: "none" },
+  {
+    id: 1,
+    name: "Divine Salon & Spa",
+    category: "Beauty Services",
+    type: "service",
+    location: "Surulere, Lagos",
+    status: "pending",
+    verification: "pending",
+    boost: "none",
+    plan: "free",
+    joinDate: "2026-03-09",
+  },
+  {
+    id: 2,
+    name: "Lagos Logistics Hub",
+    category: "Logistics",
+    type: "service",
+    location: "Yaba, Lagos",
+    status: "active",
+    verification: "verified",
+    boost: "active",
+    plan: "premium",
+    joinDate: "2026-01-22",
+  },
+  {
+    id: 3,
+    name: "Mama Put Restaurant",
+    category: "Restaurants",
+    type: "restaurant",
+    location: "Ikeja, Lagos",
+    status: "active",
+    verification: "verified",
+    boost: "active",
+    plan: "premium",
+    joinDate: "2025-12-15",
+  },
+  {
+    id: 4,
+    name: "TechHub Solutions",
+    category: "Technology",
+    type: "technology",
+    location: "Victoria Island, Lagos",
+    status: "active",
+    verification: "verified",
+    boost: "none",
+    plan: "premium",
+    joinDate: "2026-02-11",
+  },
+  {
+    id: 5,
+    name: "Fresh Groceries Ltd",
+    category: "Retail",
+    type: "retail",
+    location: "Lekki, Lagos",
+    status: "active",
+    verification: "verified",
+    boost: "none",
+    plan: "free",
+    joinDate: "2026-02-28",
+  },
+  {
+    id: 6,
+    name: "AutoFix Mechanics",
+    category: "Auto Services",
+    type: "auto",
+    location: "Festac, Lagos",
+    status: "pending",
+    verification: "pending",
+    boost: "none",
+    plan: "free",
+    joinDate: "2026-04-01",
+  },
+  {
+    id: 7,
+    name: "EduLearn Academy",
+    category: "Education",
+    type: "education",
+    location: "Ajah, Lagos",
+    status: "suspended",
+    verification: "rejected",
+    boost: "none",
+    plan: "free",
+    joinDate: "2025-11-04",
+  },
+  {
+    id: 8,
+    name: "QuickMart Stores",
+    category: "Retail",
+    type: "retail",
+    location: "Ikoyi, Lagos",
+    status: "active",
+    verification: "verified",
+    boost: "active",
+    plan: "premium",
+    joinDate: "2026-03-17",
+  },
+  {
+    id: 9,
+    name: "Prime Tutors NG",
+    category: "Education",
+    type: "education",
+    location: "Magodo, Lagos",
+    status: "pending",
+    verification: "pending",
+    boost: "none",
+    plan: "free",
+    joinDate: "2026-04-09",
+  },
+  {
+    id: 10,
+    name: "BlueByte Tech",
+    category: "Technology",
+    type: "technology",
+    location: "Lekki Phase 1, Lagos",
+    status: "active",
+    verification: "verified",
+    boost: "active",
+    plan: "premium",
+    joinDate: "2026-01-07",
+  },
 ];
 
 const statusStyles: Record<Status, string> = {
@@ -54,41 +178,150 @@ function Badge({ label, className }: { label: string; className: string }) {
   );
 }
 
-function SelectFilter({ placeholder }: { placeholder: string }) {
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
+}
+
+function SelectFilter({
+  placeholder,
+  value,
+  onChange,
+  options,
+}: {
+  placeholder: string;
+  value: string;
+  onChange: (next: string) => void;
+  options: string[];
+}) {
   return (
-    <button className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 hover:border-gray-300 hover:bg-gray-50 transition-colors">
-      {placeholder}
-      <ChevronDown className="size-4 text-gray-400" />
-    </button>
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 appearance-none rounded-lg border border-gray-200 bg-white px-3 pr-8 text-sm text-gray-600 outline-none transition-colors hover:border-gray-300 focus:border-gray-400"
+      >
+        <option value="all">{placeholder}</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+    </div>
   );
 }
 
 export default function BusinessTable() {
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = 49;
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filtered = DATA.filter(
-    (b) =>
-      b.name.toLowerCase().includes(search.toLowerCase()) ||
-      b.category.toLowerCase().includes(search.toLowerCase()) ||
-      b.location.toLowerCase().includes(search.toLowerCase())
-  );
+  const typeOptions = useMemo(() => Array.from(new Set(DATA.map((item) => item.type))), []);
+  const categoryOptions = useMemo(() => Array.from(new Set(DATA.map((item) => item.category))), []);
+
+  const filtered = DATA.filter((b) => {
+    const query = search.toLowerCase();
+    const matchesSearch =
+      b.name.toLowerCase().includes(query) ||
+      b.category.toLowerCase().includes(query) ||
+      b.location.toLowerCase().includes(query);
+    const matchesType = typeFilter === "all" || b.type === typeFilter;
+    const matchesCategory = categoryFilter === "all" || b.category === categoryFilter;
+    return matchesSearch && matchesType && matchesCategory;
+  });
+
+  const totalBusinesses = DATA.length;
+  const freeVendors = DATA.filter((item) => item.plan === "free").length;
+  const premiumVendors = DATA.filter((item) => item.plan === "premium").length;
+  const verifiedBusinesses = DATA.filter((item) => item.verification === "verified").length;
+  const verificationRate = totalBusinesses === 0 ? 0 : Math.round((verifiedBusinesses / totalBusinesses) * 100);
+  const pendingReview = DATA.filter((item) => item.verification === "pending").length;
+
+  const handleExport = (target: "crm" | "staff") => {
+    const headers = [
+      "Business Name",
+      "Category",
+      "Type",
+      "Location",
+      "Status",
+      "Verification",
+      "Boost",
+      "Plan",
+      "Join Date",
+    ];
+    const rows = filtered.map((item) => [
+      item.name,
+      item.category,
+      item.type,
+      item.location,
+      item.status,
+      item.verification,
+      item.boost,
+      item.plan,
+      formatDate(item.joinDate),
+    ]);
+    const csvRows = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\r\n");
+    const now = new Date();
+    const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const blob = new Blob([`\uFEFF${csvRows}`], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `businesses-${target}-${stamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
 
   const pages = [1, 2, 3];
 
   return (
     <>
-
       <div className="mb-4">
-        <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Businesses</h1></div>
-      <div className=" bg-gray-50  font-sans">
-        <div className="mx-auto max-w-9xl rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Businesses</h1>
+      </div>
 
+      <section className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Total Businesses</p>
+          <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{totalBusinesses.toLocaleString()}</p>
+          <p className="mt-1 text-xs font-medium text-success">+8%</p>
+        </article>
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Free Vendors</p>
+          <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{freeVendors.toLocaleString()}</p>
+          <p className="mt-1 text-xs font-medium text-chat-accent">Plan: Free</p>
+        </article>
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Premium Vendors</p>
+          <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{premiumVendors.toLocaleString()}</p>
+          <p className="mt-1 text-xs font-medium text-brand-red">Plan: Premium</p>
+        </article>
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Verification Rate</p>
+          <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{verificationRate}%</p>
+          <p className="mt-1 text-xs font-medium text-amber-600">Stable</p>
+        </article>
+        <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Pending Review</p>
+          <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{pendingReview.toLocaleString()}</p>
+          <p className="mt-1 text-xs font-medium text-brand-red">Urgent</p>
+        </article>
+      </section>
+
+      <div className="bg-gray-50 font-sans">
+        <div className="mx-auto max-w-9xl rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           {/* Toolbar */}
-          <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-6 py-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
               <input
@@ -99,18 +332,42 @@ export default function BusinessTable() {
                 className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <SelectFilter placeholder="Select Type" />
-              <SelectFilter placeholder="Select Category" />
+            <div className="flex flex-wrap items-center gap-3">
+              <SelectFilter
+                placeholder="Select Type"
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={typeOptions}
+              />
+              <SelectFilter
+                placeholder="Select Category"
+                value={categoryFilter}
+                onChange={setCategoryFilter}
+                options={categoryOptions}
+              />
+              <button
+                type="button"
+                onClick={() => handleExport("crm")}
+                className="inline-flex h-10 items-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Export CRM
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport("staff")}
+                className="inline-flex h-10 items-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Export Staff
+              </button>
             </div>
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[1120px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {["Business Name", "Category", "Location", "Status", "Verification", "Boost", "Actions"].map((h) => (
+                  {["Business Name", "Category", "Location", "Join Date", "Status", "Verification", "Boost", "Actions"].map((h) => (
                     <th
                       key={h}
                       className={`px-6 py-3 text-left text-xs font-medium text-gray-900 ${h === "Actions" ? "text-right" : ""}`}
@@ -126,6 +383,7 @@ export default function BusinessTable() {
                     <td className="px-6 py-3.5 font-medium text-gray-900 whitespace-nowrap">{b.name}</td>
                     <td className="px-6 py-3.5 text-gray-900">{b.category}</td>
                     <td className="px-6 py-3.5 text-gray-900">{b.location}</td>
+                    <td className="px-6 py-3.5 text-gray-900 whitespace-nowrap">{formatDate(b.joinDate)}</td>
                     <td className="px-6 py-3.5">
                       <Badge label={b.status} className={statusStyles[b.status]} />
                     </td>
@@ -137,6 +395,10 @@ export default function BusinessTable() {
                     </td>
                     <td className="px-6 py-3.5">
                       <div className="flex items-center justify-end gap-3">
+                        <button className="inline-flex h-8 items-center gap-1 rounded-md bg-brand-red px-3 text-xs font-semibold text-white transition-colors hover:bg-brand-red/90">
+                          <ArrowUpRight className="size-3" />
+                          Message Business
+                        </button>
                         <button
                           className="text-gray-700 hover:text-gray-600 transition-colors"
                           onClick={() => {
@@ -156,13 +418,22 @@ export default function BusinessTable() {
                     </td>
                   </tr>
                 ))}
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
+                      No businesses found for current search/filter.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
           <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
-            <p className="text-xs text-gray-400">Showing 1-10 of 482 transactions</p>
+            <p className="text-xs text-gray-400">
+              Showing {filtered.length === 0 ? 0 : 1}-{filtered.length} of {DATA.length} businesses
+            </p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -177,8 +448,8 @@ export default function BusinessTable() {
                   key={p}
                   onClick={() => setCurrentPage(p)}
                   className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
-                      ? "bg-gray-900 text-white"
-                      : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                    ? "bg-gray-900 text-white"
+                    : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
                     }`}
                 >
                   {p}
@@ -190,8 +461,8 @@ export default function BusinessTable() {
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${currentPage === totalPages
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
                   }`}
               >
                 {totalPages}

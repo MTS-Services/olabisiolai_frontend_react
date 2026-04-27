@@ -1,14 +1,27 @@
-import { CheckCircle2, FileText, Megaphone, TrendingUp, UserRound, Store } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  FileText,
+  Megaphone,
+  MousePointerClick,
+  TrendingUp,
+  Store,
+} from "lucide-react";
 
 export default function Dashboard() {
   const stats = [
-    { label: "Total Users", value: "12,458", icon: UserRound, tint: "bg-surface-soft text-chat-accent" },
-    { label: "Total Businesses", value: "3,847", icon: Store, tint: "bg-tint-red text-brand-red" },
-    { label: "Verified Businesses", value: "2,156", icon: CheckCircle2, tint: "bg-success/10 text-success" },
-    { label: "Pending Verifications", value: "124", icon: TrendingUp, tint: "bg-amber-100 text-amber-500" },
-    { label: "Total Leads", value: "8,932", icon: FileText, tint: "bg-surface-soft text-chat-accent" },
-    { label: "Active Boosts", value: "456", icon: TrendingUp, tint: "bg-tint-red text-brand-red" },
-    { label: "Revenue", value: "₦4.8M", icon: Megaphone, tint: "bg-success/10 text-ink" },
+    { label: "Total Businesses", value: "12,842", icon: Store, tint: "bg-surface-soft text-chat-accent" },
+    {
+      label: "Total Verified Businesses",
+      value: "12,842",
+      icon: CheckCircle2,
+      tint: "bg-success/10 text-success",
+    },
+    { label: "Pending Verifications", value: "148", icon: TrendingUp, tint: "bg-amber-100 text-amber-500" },
+    { label: "Daily Active Users", value: "84.2k", icon: Activity, tint: "bg-surface-soft text-chat-accent" },
+    { label: "Total Lead Clicks", value: "342,109", icon: MousePointerClick, tint: "bg-tint-red text-brand-red" },
+    // { label: "Active Boosts", value: "456", icon: TrendingUp, tint: "bg-tint-red text-brand-red" },
+    // { label: "Revenue", value: "₦4.8M", icon: Megaphone, tint: "bg-success/10 text-ink" },
   ] as const;
 
   return (

@@ -1,12 +1,14 @@
-import { Banknote, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Eye } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Eye } from "lucide-react";
 import { useMemo, useState } from "react";
 
 
 import type { PaymentRow, PaymentStatus, PaymentStatusFilter } from "@/components/Modal/PaymentDetailsModal.types";
 
 const TOTAL_PAYMENTS = 482;
+type TransactionTab = "all" | "subscription" | "boost" | "verification";
+type PaymentWithType = PaymentRow & { transactionType: Exclude<TransactionTab, "all"> };
 
-const payments: PaymentRow[] = [
+const payments: PaymentWithType[] = [
   {
     id: 1,
     business: "Mama Put Restaurant",
@@ -16,6 +18,7 @@ const payments: PaymentRow[] = [
     amountNgn: 12500,
     method: "card",
     status: "completed",
+    transactionType: "verification",
     dateShort: "Apr 1, 02:30 PM",
     dateTimeLong: "April 1, 2024 at 02:30 PM",
   },
@@ -28,6 +31,7 @@ const payments: PaymentRow[] = [
     amountNgn: 48000,
     method: "bank_transfer",
     status: "completed",
+    transactionType: "subscription",
     dateShort: "Apr 1, 03:45 PM",
     dateTimeLong: "April 1, 2024 at 03:45 PM",
   },
@@ -40,6 +44,7 @@ const payments: PaymentRow[] = [
     amountNgn: 8200,
     method: "wallet",
     status: "pending",
+    transactionType: "boost",
     dateShort: "Apr 2, 10:15 AM",
     dateTimeLong: "April 2, 2024 at 10:15 AM",
   },
@@ -52,6 +57,7 @@ const payments: PaymentRow[] = [
     amountNgn: 15600,
     method: "card",
     status: "failed",
+    transactionType: "verification",
     dateShort: "Apr 2, 11:20 AM",
     dateTimeLong: "April 2, 2024 at 11:20 AM",
   },
@@ -64,6 +70,7 @@ const payments: PaymentRow[] = [
     amountNgn: 22000,
     method: "bank_transfer",
     status: "completed",
+    transactionType: "subscription",
     dateShort: "Apr 3, 09:05 AM",
     dateTimeLong: "April 3, 2024 at 09:05 AM",
   },
@@ -76,6 +83,7 @@ const payments: PaymentRow[] = [
     amountNgn: 9900,
     method: "card",
     status: "pending",
+    transactionType: "boost",
     dateShort: "Apr 3, 01:40 PM",
     dateTimeLong: "April 3, 2024 at 01:40 PM",
   },
@@ -116,13 +124,17 @@ function StatusCell({ status }: { status: PaymentStatus }) {
 export default function Payments() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>("all");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TransactionTab>("all");
 
 
 
   const filtered = useMemo(() => {
-    if (statusFilter === "all") return payments;
-    return payments.filter((p) => p.status === statusFilter);
-  }, [statusFilter]);
+    return payments.filter((p) => {
+      const matchesStatus = statusFilter === "all" || p.status === statusFilter;
+      const matchesTab = activeTab === "all" || p.transactionType === activeTab;
+      return matchesStatus && matchesTab;
+    });
+  }, [statusFilter, activeTab]);
 
   const filterLabel =
     statusFilter === "all"
@@ -133,67 +145,136 @@ export default function Payments() {
           ? "Pending"
           : "Failed";
 
-  const totals = useMemo(() => {
-    const completed = payments.filter((p) => p.status === "completed");
-    const pending = payments.filter((p) => p.status === "pending");
-    const completedSum = completed.reduce((s, p) => s + p.amountNgn, 0);
-    const pendingSum = pending.reduce((s, p) => s + p.amountNgn, 0);
-    return {
-      volume: completedSum + pendingSum + payments.filter((p) => p.status === "failed").reduce((s, p) => s + p.amountNgn, 0),
-      completedSum,
-      pendingCount: pending.length,
-    };
-  }, []);
-
-  const statCards = [
-    {
-      label: "Total volume",
-      value: formatNgn(totals.volume),
-      icon: CircleDollarSign,
-      tint: "bg-surface-soft text-chat-accent",
-    },
-    {
-      label: "Completed",
-      value: formatNgn(totals.completedSum),
-      icon: Banknote,
-      tint: "bg-success/10 text-success",
-    },
-    {
-      label: "Pending",
-      value: String(totals.pendingCount),
-      icon: Clock3,
-      tint: "bg-amber-100 text-amber-700",
-    },
-  ] as const;
+  const exportForFinance = () => {
+    const headers = ["Business", "Payer", "Email", "Reference", "Amount (NGN)", "Type", "Method", "Status", "Date"];
+    const csv = [
+      headers.join(","),
+      ...filtered.map((row) =>
+        [
+          row.business,
+          row.payerName,
+          row.payerEmail,
+          row.reference,
+          row.amountNgn,
+          row.transactionType,
+          methodLabel(row.method),
+          row.status,
+          row.dateShort,
+        ]
+          .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\r\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+    const now = new Date();
+    const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `finance-payments-${stamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
 
   return (
     <div>
       <div className="mb-4">
         <h1 className="text-2xl font-semibold leading-8 text-ink-heading sm:text-2xl">Payments</h1>
-        <p className="mt-1 text-sm text-chat-meta">Track marketplace transactions and payout activity.</p>
+        <p className="mt-1 text-sm text-chat-meta">Track platform revenue and verification settlements.</p>
       </div>
 
-      <section className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {statCards.map((item) => (
-          <article
-            key={item.label}
-            className="rounded-xl border border-chat-border-subtle bg-card p-4 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
+      <section className="mb-4 rounded-2xl border border-chat-border-subtle bg-card p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-chat-accent">Financial Overview</p>
+            <h2 className="text-xl font-semibold text-ink">Payments & Revenue</h2>
+          </div>
+          <button
+            type="button"
+            onClick={exportForFinance}
+            className="inline-flex items-center gap-2 rounded-lg border border-border-gray bg-background px-3 py-2 text-xs font-semibold text-ink hover:bg-muted"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs text-chat-meta">{item.label}</p>
-                <p className="mt-1 truncate text-2xl font-semibold leading-8 text-ink sm:text-3xl">{item.value}</p>
-              </div>
-              <span className={`shrink-0 rounded-lg p-2 ${item.tint}`}>
-                <item.icon className="size-4" />
-              </span>
+            <Download className="size-4" />
+            Export for Finance
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Total Revenue</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦48.2M</p>
+            <p className="text-xs font-medium text-success">+14%</p>
+          </article>
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Verification Revenue</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦3.8M</p>
+            <p className="text-xs font-medium text-amber-700">12 pending</p>
+          </article>
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Subscription Revenue</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦28.4M</p>
+            <p className="text-xs font-medium text-success">+18%</p>
+          </article>
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Boost Revenue</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦19.8M</p>
+            <p className="text-xs font-medium text-success">+22%</p>
+          </article>
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-sm font-semibold text-ink">Revenue Trends</p>
+            <div className="mt-2 h-24 rounded-md bg-linear-to-b from-blue-100 to-transparent" />
+          </article>
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-sm font-semibold text-ink">Revenue Breakdown</p>
+            <div className="mt-2 space-y-2 text-xs">
+              {[
+                { label: "Subscriptions", width: "56%" },
+                { label: "Boosts", width: "39%" },
+                { label: "Verifications", width: "5%" },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="mb-1 flex items-center justify-between text-body-secondary">
+                    <span>{item.label}</span>
+                    <span>{item.width}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted">
+                    <div className="h-2 rounded-full bg-chat-accent" style={{ width: item.width }} />
+                  </div>
+                </div>
+              ))}
             </div>
           </article>
-        ))}
+        </div>
       </section>
 
 
       <section className="rounded-2xl border border-border-gray bg-card p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-ink">Transaction History</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-b border-border-gray pb-2">
+            {([
+              ["all", "All Transactions"],
+              ["subscription", "Subscriptions"],
+              ["boost", "Boosts"],
+              ["verification", "Verification"],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={`rounded-md px-3 py-1.5 text-sm font-semibold ${activeTab === key ? "bg-chat-accent text-ice" : "text-body-secondary hover:bg-muted"
+                  }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="mb-6">
           <div className="relative inline-block w-48">
             <button
@@ -233,6 +314,7 @@ export default function Payments() {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Reference</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Amount</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Method</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Type</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Status</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-body-secondary">Date</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-body-secondary">Actions</th>
@@ -241,7 +323,7 @@ export default function Payments() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-chat-meta">
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-chat-meta">
                     No payments for this filter.
                   </td>
                 </tr>
@@ -256,6 +338,7 @@ export default function Payments() {
                   <td className="px-4 py-4 font-mono text-sm text-ink">{row.reference}</td>
                   <td className="px-4 py-4 text-sm font-semibold text-ink">{formatNgn(row.amountNgn)}</td>
                   <td className="px-4 py-4 text-sm text-gray-600">{methodLabel(row.method)}</td>
+                  <td className="px-4 py-4 text-sm capitalize text-gray-600">{row.transactionType}</td>
                   <td className="px-4 py-4">
                     <StatusCell status={row.status} />
                   </td>

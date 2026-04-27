@@ -1,41 +1,75 @@
-import { useState } from "react";
-import { MessageSquare, Mail, Phone } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 
-type Channel = "sms" | "email" | "whatsapp";
+type NotificationKind = "system" | "user" | "broadcast";
+type AlertTone = "red" | "blue" | "green" | "amber";
 
-type NotificationConfig = {
-  id: Channel;
-  label: string;
-  icon: React.ReactNode;
-  iconBg: string;
-  placeholder: string;
+type NotificationItem = {
+  id: number;
+  title: string;
+  message: string;
+  timeAgo: string;
+  kind: NotificationKind;
+  tone: AlertTone;
+  actionLabel: string;
 };
 
-const CHANNELS: NotificationConfig[] = [
+const ITEMS: NotificationItem[] = [
   {
-    id: "sms",
-    label: "SMS Notifications",
-    icon: <MessageSquare className="size-5" strokeWidth={1.8} style={{ color: "#3b82f6" }} />,
-    iconBg: "bg-blue-50",
-    placeholder: "Type your SMS message here…",
+    id: 1,
+    title: "Verification Queue Overflow",
+    message: "18 pending applications exceed 48-hour SLA.",
+    timeAgo: "12 min ago",
+    kind: "system",
+    tone: "red",
+    actionLabel: "Review Queue",
   },
   {
-    id: "email",
-    label: "Email Notifications",
-    icon: <Mail className="size-5" strokeWidth={1.8} style={{ color: "#8b5cf6" }} />,
-    iconBg: "bg-violet-50",
-    placeholder: "Type your email message here…",
+    id: 2,
+    title: "New Business Registration",
+    message: "TechVista Solutions submitted verification docs.",
+    timeAgo: "45 min ago",
+    kind: "user",
+    tone: "blue",
+    actionLabel: "View Application",
   },
   {
-    id: "whatsapp",
-    label: "WhatsApp Notifications",
-    icon: <Phone className="size-5" strokeWidth={1.8} style={{ color: "#22c55e" }} />,
-    iconBg: "bg-green-50",
-    placeholder: "Enable to edit template…",
+    id: 3,
+    title: "Payment Processed",
+    message: "₦350,000 subscription from Kano Motors Ltd.",
+    timeAgo: "2 hours ago",
+    kind: "system",
+    tone: "green",
+    actionLabel: "View Receipt",
+  },
+  {
+    id: 4,
+    title: "Boost Expiring Soon",
+    message: "3 Gold tier boosts expiring in 48 hours.",
+    timeAgo: "3 hours ago",
+    kind: "broadcast",
+    tone: "amber",
+    actionLabel: "View Boosts",
+  },
+  {
+    id: 5,
+    title: "System Maintenance",
+    message: "Scheduled: Apr 5, 2026, 02:00-04:00 WAT.",
+    timeAgo: "5 hours ago",
+    kind: "system",
+    tone: "blue",
+    actionLabel: "View Details",
+  },
+  {
+    id: 6,
+    title: "Monthly Report Ready",
+    message: "March 2026 analytics report available.",
+    timeAgo: "1 day ago",
+    kind: "broadcast",
+    tone: "green",
+    actionLabel: "Download",
   },
 ];
-
-const VARS = ["{name}", "{business_name}", "{date}"];
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
@@ -44,125 +78,166 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       role="switch"
       aria-checked={on}
       onClick={onToggle}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-        on ? "bg-green-500" : "bg-slate-200"
-      }`}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${on ? "bg-green-500" : "bg-slate-200"
+        }`}
     >
       <span
-        className={`inline-block size-[18px] rounded-full bg-white shadow transition-transform duration-200 ${
-          on ? "translate-x-[22px]" : "translate-x-[3px]"
-        }`}
+        className={`inline-block size-[18px] rounded-full bg-white shadow transition-transform duration-200 ${on ? "translate-x-[22px]" : "translate-x-[3px]"
+          }`}
       />
     </button>
   );
 }
 
 export default function NotificationSettings() {
-  const [enabled, setEnabled] = useState<Record<Channel, boolean>>({
-    sms: true,
-    email: true,
-    whatsapp: false,
-  });
-  const [templates, setTemplates] = useState<Record<Channel, string>>({
-    sms: "",
-    email: "",
-    whatsapp: "",
+  const [activeTab, setActiveTab] = useState<"all" | NotificationKind>("all");
+  const [settings, setSettings] = useState({
+    emailAlerts: true,
+    smsAlerts: false,
+    pushNotifications: true,
+    dailyDigest: false,
   });
 
-  const toggle = (id: Channel) =>
-    setEnabled((prev) => ({ ...prev, [id]: !prev[id] }));
+  const filteredItems = useMemo(() => {
+    if (activeTab === "all") return ITEMS;
+    return ITEMS.filter((item) => item.kind === activeTab);
+  }, [activeTab]);
+
+  const toneClass = (tone: AlertTone) => {
+    if (tone === "red") return "bg-brand-red";
+    if (tone === "blue") return "bg-chat-accent";
+    if (tone === "green") return "bg-success";
+    return "bg-amber-500";
+  };
 
   return (
-    <div className="min-h-screen bg-slate-100/70 p-4 sm:p-8 font-sans flex flex-col gap-4">
-        <h1 className="text-2xl font-bold">Notification </h1>
-      {CHANNELS.map((ch) => {
-        const on = enabled[ch.id];
-        return (
-          <div
-            key={ch.id}
-            className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-100 px-6 py-5"
+    <div>
+      <div className="mb-4">
+        <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Notifications</h1>
+      </div>
+
+      <section className="rounded-2xl border border-chat-border-subtle bg-card p-4">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-chat-accent">Communication Hub</p>
+            <h2 className="text-2xl font-semibold text-ink">Notification Center</h2>
+            <p className="text-sm text-chat-meta">Manage alerts, broadcasts, and system notifications</p>
+          </div>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-lg bg-chat-accent px-3 py-2 text-xs font-semibold text-white hover:bg-chat-accent/90"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3.5">
-                <div className={`flex size-11 items-center justify-center rounded-xl ${ch.iconBg}`}>
-                  {ch.icon}
+            <Plus className="size-4" />
+            Create Broadcast
+          </button>
+        </div>
+
+        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Unread Alerts</p>
+            <div className="mt-1 flex items-center gap-2">
+              <p className="text-4xl font-semibold leading-10 text-ink">24</p>
+              <span className="rounded-full bg-tint-red px-2 py-0.5 text-[10px] font-semibold uppercase text-brand-red">
+                Urgent
+              </span>
+            </div>
+          </article>
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Sent Today</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">1,842</p>
+          </article>
+          <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Delivery Rate</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">98.4%</p>
+          </article>
+        </div>
+
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {([
+            ["all", "All"],
+            ["system", "System Alerts"],
+            ["user", "User Notifications"],
+            ["broadcast", "Broadcasts"],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${activeTab === key ? "bg-chat-accent text-white" : "bg-background text-body-secondary hover:bg-muted"
+                }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-2">
+          {filteredItems.map((item) => (
+            <article key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-chat-border-subtle bg-background p-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className={`size-2 rounded-full ${toneClass(item.tone)}`} />
+                  <p className="text-sm font-semibold text-ink">{item.title}</p>
                 </div>
-                <div>
-                  <p className="text-[15px] font-bold tracking-tight text-slate-900">{ch.label}</p>
-                  <span
-                    className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${
-                      on
-                        ? "bg-green-100 text-green-700"
-                        : "bg-slate-100 text-slate-400"
-                    }`}
-                  >
-                    <span
-                      className={`size-1.5 rounded-full ${on ? "bg-green-500" : "bg-slate-400"}`}
-                    />
-                    {on ? "Active" : "Inactive"}
-                  </span>
-                </div>
+                <p className="mt-1 text-xs text-body-secondary">{item.message}</p>
+                <p className="text-xs text-chat-meta">{item.timeAgo}</p>
               </div>
-              <Toggle on={on} onToggle={() => toggle(ch.id)} />
-            </div>
-
-            {/* Divider */}
-            <div className="mb-5 -mx-6 border-t border-slate-100" />
-
-            {/* Textarea */}
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-              Message Template
-            </p>
-            <textarea
-              rows={ch.id === "email" ? 5 : 3}
-              disabled={!on}
-              value={templates[ch.id]}
-              onChange={(e) =>
-                setTemplates((prev) => ({ ...prev, [ch.id]: e.target.value }))
-              }
-              placeholder={on ? ch.placeholder : "Enable to edit template…"}
-              className={`w-full resize-y rounded-xl border px-3.5 py-3 text-[13.5px] leading-relaxed outline-none transition-all duration-150 font-sans ${
-                on
-                  ? "border-slate-200 bg-slate-50/50 text-slate-700 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                  : "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
-              }`}
-            />
-
-            {/* Variables */}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-[11.5px] font-medium text-slate-400">Variables:</span>
-              {VARS.map((v) => (
-                <span
-                  key={v}
-                  className={`rounded-md border px-2 py-0.5 font-mono text-[11.5px] font-semibold transition-opacity ${
-                    on
-                      ? "border-slate-200 bg-slate-100 text-slate-500"
-                      : "border-slate-100 bg-slate-50 text-slate-300"
-                  }`}
-                >
-                  {v}
-                </span>
-              ))}
-            </div>
-
-            {/* Footer */}
-            <div className="mt-4 flex justify-end">
               <button
                 type="button"
-                disabled={!on}
-                className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition-all active:scale-95 ${
-                  on
-                    ? "bg-slate-900 text-white hover:bg-slate-700 shadow-sm"
-                    : "cursor-not-allowed bg-slate-100 text-slate-300"
-                }`}
+                className="shrink-0 rounded-md border border-border-gray px-2.5 py-1 text-[11px] font-semibold text-body-secondary hover:bg-muted"
               >
-                Save Template
+                {item.actionLabel}
               </button>
+            </article>
+          ))}
+        </div>
+
+        <section className="mt-4 rounded-xl border border-chat-border-subtle bg-background p-4">
+          <h3 className="text-sm font-semibold text-ink">Notification Settings</h3>
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="flex items-center justify-between rounded-lg border border-chat-border-subtle bg-card px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-ink">Email Alerts</p>
+                <p className="text-xs text-chat-meta">Receive email notifications</p>
+              </div>
+              <Toggle
+                on={settings.emailAlerts}
+                onToggle={() => setSettings((prev) => ({ ...prev, emailAlerts: !prev.emailAlerts }))}
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-chat-border-subtle bg-card px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-ink">SMS Alerts</p>
+                <p className="text-xs text-chat-meta">Receive SMS notifications</p>
+              </div>
+              <Toggle
+                on={settings.smsAlerts}
+                onToggle={() => setSettings((prev) => ({ ...prev, smsAlerts: !prev.smsAlerts }))}
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-chat-border-subtle bg-card px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-ink">Push Notifications</p>
+                <p className="text-xs text-chat-meta">Receive browser push alerts</p>
+              </div>
+              <Toggle
+                on={settings.pushNotifications}
+                onToggle={() => setSettings((prev) => ({ ...prev, pushNotifications: !prev.pushNotifications }))}
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-chat-border-subtle bg-card px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-ink">Daily Digest</p>
+                <p className="text-xs text-chat-meta">Receive daily summary email</p>
+              </div>
+              <Toggle
+                on={settings.dailyDigest}
+                onToggle={() => setSettings((prev) => ({ ...prev, dailyDigest: !prev.dailyDigest }))}
+              />
             </div>
           </div>
-        );
-      })}
+        </section>
+      </section>
     </div>
   );
 }

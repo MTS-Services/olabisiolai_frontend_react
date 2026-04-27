@@ -1,4 +1,4 @@
-import { Check, Clock, Dot, Lock } from "lucide-react";
+import { Check, Dot, Lock } from "lucide-react";
 
 interface ProgressStep {
   id: string;
@@ -55,36 +55,33 @@ export function VerificationProgress({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="bg-white p-6">
-        <h2 className="text-xl font-medium mb-6">Verification Progress</h2>
+      <div className="bg-white p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-medium mb-4 sm:mb-6">Verification Progress</h2>
 
         {/* Timeline */}
-        <div className="space-y-4 mb-8">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex items-start gap-4">
+        <div className="space-y-4 mb-6 sm:mb-8">
+          {steps.map((step) => (
+            <div key={step.id} className="flex items-start gap-3 sm:gap-4 relative">
               <div
-                className={`flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center ${getStatusColor(step.status)}`}
+                className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center ${getStatusColor(step.status)}`}
               >
                 {getStatusIcon(step.status)}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-base font-inter">{step.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h3 className="font-medium text-sm sm:text-base font-inter">{step.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   {step.description}
                 </p>
               </div>
-              {index < steps.length - 1 && (
-                <div className="absolute left-5 mt-10 w-0.5 h-8 bg-gray-200"></div>
-              )}
             </div>
           ))}
         </div>
 
         {/* Verification Strength */}
-        <div className="border-t pt-6">
+        <div className="border-t pt-4 sm:pt-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-base font-inter font-medium">Verification Strength</span>
-            <span className="text-base font-inter text-muted-foreground">
+            <span className="text-sm sm:text-base font-inter font-medium">Verification Strength</span>
+            <span className="text-sm sm:text-base font-inter text-muted-foreground">
               {verificationStrength}%
             </span>
           </div>

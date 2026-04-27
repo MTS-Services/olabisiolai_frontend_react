@@ -1,4 +1,4 @@
-import { Shield, Lock, TrendingUp, ShieldCheck, Banknote } from "lucide-react";
+import { Lock, ShieldCheck, Banknote } from "lucide-react";
 
 interface Benefit {
   icon: React.ReactNode;
@@ -29,20 +29,20 @@ export function WhyVerifySection() {
   ];
 
   return (
-    <div className="rounded-xl border bg-black p-6 shadow-sm">
+    <div className="rounded-xl border bg-black p-4 sm:p-6 shadow-sm">
       <div className="">
-        <h2 className="text-xl font-semibold mb-6 text-white">Why verify your identity?</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-white">Why verify your identity?</h2>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3 sm:gap-4">
         {benefits.map((benefit, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white">
+          <div key={index} className="flex items-start gap-3">
+            <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-white">
               {benefit.icon}
             </div>
-            <div className="flex items-center gap-1">
-              <h3 className="font-medium text-base text-white">{benefit.title}: </h3>
-              <p className="text-sm text-white">{benefit.description}</p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+              <h3 className="font-medium text-sm sm:text-base text-white">{benefit.title}: </h3>
+              <p className="text-xs sm:text-sm text-white">{benefit.description}</p>
             </div>
           </div>
         ))}

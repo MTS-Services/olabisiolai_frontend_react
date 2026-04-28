@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowUpRight,
   Check,
@@ -10,148 +11,12 @@ import {
   Trash2,
 } from "lucide-react";
 import { BusinessDetailsModal } from "@/components/Modal/BusinessDetailsModal";
+import { fetchAdminBusinessInfo, type AdminBusinessInfo } from "@/features/business/adminBusinessInfoApi";
 
 type Status = "pending" | "active" | "suspended";
 type Verification = "pending" | "verified" | "rejected";
 type Boost = "none" | "active";
-type Plan = "free" | "premium";
-type BusinessType = "service" | "retail" | "restaurant" | "technology" | "education" | "auto";
-
-type Business = {
-  id: number;
-  name: string;
-  category: string;
-  type: BusinessType;
-  location: string;
-  status: Status;
-  verification: Verification;
-  boost: Boost;
-  plan: Plan;
-  joinDate: string;
-};
-
-const DATA: Business[] = [
-  {
-    id: 1,
-    name: "Divine Salon & Spa",
-    category: "Beauty Services",
-    type: "service",
-    location: "Surulere, Lagos",
-    status: "pending",
-    verification: "pending",
-    boost: "none",
-    plan: "free",
-    joinDate: "2026-03-09",
-  },
-  {
-    id: 2,
-    name: "Lagos Logistics Hub",
-    category: "Logistics",
-    type: "service",
-    location: "Yaba, Lagos",
-    status: "active",
-    verification: "verified",
-    boost: "active",
-    plan: "premium",
-    joinDate: "2026-01-22",
-  },
-  {
-    id: 3,
-    name: "Mama Put Restaurant",
-    category: "Restaurants",
-    type: "restaurant",
-    location: "Ikeja, Lagos",
-    status: "active",
-    verification: "verified",
-    boost: "active",
-    plan: "premium",
-    joinDate: "2025-12-15",
-  },
-  {
-    id: 4,
-    name: "TechHub Solutions",
-    category: "Technology",
-    type: "technology",
-    location: "Victoria Island, Lagos",
-    status: "active",
-    verification: "verified",
-    boost: "none",
-    plan: "premium",
-    joinDate: "2026-02-11",
-  },
-  {
-    id: 5,
-    name: "Fresh Groceries Ltd",
-    category: "Retail",
-    type: "retail",
-    location: "Lekki, Lagos",
-    status: "active",
-    verification: "verified",
-    boost: "none",
-    plan: "free",
-    joinDate: "2026-02-28",
-  },
-  {
-    id: 6,
-    name: "AutoFix Mechanics",
-    category: "Auto Services",
-    type: "auto",
-    location: "Festac, Lagos",
-    status: "pending",
-    verification: "pending",
-    boost: "none",
-    plan: "free",
-    joinDate: "2026-04-01",
-  },
-  {
-    id: 7,
-    name: "EduLearn Academy",
-    category: "Education",
-    type: "education",
-    location: "Ajah, Lagos",
-    status: "suspended",
-    verification: "rejected",
-    boost: "none",
-    plan: "free",
-    joinDate: "2025-11-04",
-  },
-  {
-    id: 8,
-    name: "QuickMart Stores",
-    category: "Retail",
-    type: "retail",
-    location: "Ikoyi, Lagos",
-    status: "active",
-    verification: "verified",
-    boost: "active",
-    plan: "premium",
-    joinDate: "2026-03-17",
-  },
-  {
-    id: 9,
-    name: "Prime Tutors NG",
-    category: "Education",
-    type: "education",
-    location: "Magodo, Lagos",
-    status: "pending",
-    verification: "pending",
-    boost: "none",
-    plan: "free",
-    joinDate: "2026-04-09",
-  },
-  {
-    id: 10,
-    name: "BlueByte Tech",
-    category: "Technology",
-    type: "technology",
-    location: "Lekki Phase 1, Lagos",
-    status: "active",
-    verification: "verified",
-    boost: "active",
-    plan: "premium",
-    joinDate: "2026-01-07",
-  },
-];
+type Business = AdminBusinessInfo;
 
 const statusStyles: Record<Status, string> = {
   pending: "bg-orange-50 text-orange-500 border border-orange-200",
@@ -222,11 +87,19 @@ export default function BusinessTable() {
   const totalPages = 49;
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const listQuery = useQuery({
+    queryKey: ["admin", "business-info"],
+    queryFn: fetchAdminBusinessInfo,
+  });
+  const businesses = listQuery.data ?? [];
 
-  const typeOptions = useMemo(() => Array.from(new Set(DATA.map((item) => item.type))), []);
-  const categoryOptions = useMemo(() => Array.from(new Set(DATA.map((item) => item.category))), []);
+  const typeOptions = useMemo(() => Array.from(new Set(businesses.map((item) => item.type))), [businesses]);
+  const categoryOptions = useMemo(
+    () => Array.from(new Set(businesses.map((item) => item.category))),
+    [businesses],
+  );
 
-  const filtered = DATA.filter((b) => {
+  const filtered = businesses.filter((b) => {
     const query = search.toLowerCase();
     const matchesSearch =
       b.name.toLowerCase().includes(query) ||
@@ -237,12 +110,12 @@ export default function BusinessTable() {
     return matchesSearch && matchesType && matchesCategory;
   });
 
-  const totalBusinesses = DATA.length;
-  const freeVendors = DATA.filter((item) => item.plan === "free").length;
-  const premiumVendors = DATA.filter((item) => item.plan === "premium").length;
-  const verifiedBusinesses = DATA.filter((item) => item.verification === "verified").length;
+  const totalBusinesses = businesses.length;
+  const freeVendors = businesses.filter((item) => item.plan === "free").length;
+  const premiumVendors = businesses.filter((item) => item.plan === "premium").length;
+  const verifiedBusinesses = businesses.filter((item) => item.verification === "verified").length;
   const verificationRate = totalBusinesses === 0 ? 0 : Math.round((verifiedBusinesses / totalBusinesses) * 100);
-  const pendingReview = DATA.filter((item) => item.verification === "pending").length;
+  const pendingReview = businesses.filter((item) => item.verification === "pending").length;
 
   const handleExport = () => {
     const headers = [
@@ -317,6 +190,11 @@ export default function BusinessTable() {
           <p className="mt-1 text-xs font-medium text-brand-red">Urgent</p>
         </article>
       </section>
+      {listQuery.isError ? (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Failed to load businesses from <span className="font-mono">GET /admin/business-info</span>.
+        </div>
+      ) : null}
 
       <div className="bg-gray-50 font-sans">
         <div className="mx-auto max-w-9xl rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -371,6 +249,13 @@ export default function BusinessTable() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
+                {listQuery.isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
+                      Loading businesses...
+                    </td>
+                  </tr>
+                ) : null}
                 {filtered.map((b) => (
                   <tr key={b.id} className="group hover:bg-gray-50/60 transition-colors">
                     <td className="px-6 py-3.5 font-medium text-gray-900 whitespace-nowrap">{b.name}</td>
@@ -425,7 +310,7 @@ export default function BusinessTable() {
           {/* Pagination */}
           <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
             <p className="text-xs text-gray-400">
-              Showing {filtered.length === 0 ? 0 : 1}-{filtered.length} of {DATA.length} businesses
+              Showing {filtered.length === 0 ? 0 : 1}-{filtered.length} of {businesses.length} businesses
             </p>
             <div className="flex items-center gap-1">
               <button

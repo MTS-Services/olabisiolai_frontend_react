@@ -85,12 +85,11 @@ function statusBadge(status: ReviewRow["status"]) {
 export default function Reviews() {
   const [selectedReview, setSelectedReview] = useState<ReviewRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"all" | "pending" | "flagged" | "approved">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "flagged">("all");
 
   const visibleReviews = useMemo(() => {
     if (activeTab === "all") return reviews;
-    if (activeTab === "flagged") return reviews.filter((review) => review.flagged);
-    return reviews.filter((review) => review.status === activeTab);
+    return reviews.filter((review) => review.flagged);
   }, [activeTab]);
 
   return (
@@ -102,7 +101,7 @@ export default function Reviews() {
       <section className="mb-4 rounded-2xl border border-chat-border-subtle bg-card p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-chat-accent">Content Moderation</p>
         <h2 className="text-2xl font-semibold text-ink">Review Management</h2>
-        <p className="text-sm text-chat-meta">Monitor and moderate customer reviews across the platform</p>
+        <p className="text-sm text-chat-meta">Monitor customer reviews and user-reported businesses across the platform</p>
 
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
@@ -121,7 +120,7 @@ export default function Reviews() {
             <p className="mt-1 text-xs font-medium text-brand-red">Urgent</p>
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Pending Today</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Reviews Today</p>
             <p className="mt-1 text-4xl font-semibold leading-10 text-ink">156</p>
             <p className="mt-1 text-xs font-medium text-success">+9%</p>
           </article>
@@ -130,7 +129,7 @@ export default function Reviews() {
 
       <section className="rounded-2xl border border-border-gray bg-card p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]">
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-background p-2">
-          {(["all", "pending", "flagged", "approved"] as const).map((tab) => (
+          {(["all", "flagged"] as const).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -138,7 +137,7 @@ export default function Reviews() {
               className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${activeTab === tab ? "bg-chat-accent text-ice" : "bg-card text-body-secondary hover:bg-muted"
                 }`}
             >
-              {tab === "all" ? "All Reviews" : tab}
+              {tab === "all" ? "All Reviews" : "Flagged / Reported"}
             </button>
           ))}
         </div>

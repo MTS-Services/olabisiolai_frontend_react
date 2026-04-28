@@ -125,6 +125,7 @@ export default function Payments() {
   const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TransactionTab>("all");
+  const [trendRange, setTrendRange] = useState<"monthly" | "yearly">("monthly");
 
 
 
@@ -144,6 +145,39 @@ export default function Payments() {
         : statusFilter === "pending"
           ? "Pending"
           : "Failed";
+
+  const trendSeries = trendRange === "monthly"
+    ? [
+      { label: "Jan", value: 62 },
+      { label: "Feb", value: 69 },
+      { label: "Mar", value: 76 },
+      { label: "Apr", value: 82 },
+      { label: "May", value: 88 },
+      { label: "Jun", value: 93 },
+    ]
+    : [
+      { label: "2021", value: 34 },
+      { label: "2022", value: 46 },
+      { label: "2023", value: 61 },
+      { label: "2024", value: 74 },
+      { label: "2025", value: 86 },
+      { label: "2026", value: 95 },
+    ];
+
+  const chartHeight = 128;
+  const chartWidth = 560;
+  const spacing = chartWidth / Math.max(trendSeries.length - 1, 1);
+  const maxValue = Math.max(...trendSeries.map((point) => point.value));
+  const minValue = Math.min(...trendSeries.map((point) => point.value));
+  const range = Math.max(maxValue - minValue, 1);
+
+  const points = trendSeries
+    .map((point, index) => {
+      const x = index * spacing;
+      const y = chartHeight - ((point.value - minValue) / range) * (chartHeight - 20) - 10;
+      return `${x},${y}`;
+    })
+    .join(" ");
 
   const exportForFinance = () => {
     const headers = ["Business", "Payer", "Email", "Reference", "Amount (NGN)", "Type", "Method", "Status", "Date"];
@@ -209,7 +243,7 @@ export default function Payments() {
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Verification Revenue</p>
             <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦3.8M</p>
-            <p className="text-xs font-medium text-amber-700">12 pending</p>
+            <p className="text-xs font-medium text-success">+12%</p>
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Subscription Revenue</p>
@@ -225,8 +259,54 @@ export default function Payments() {
 
         <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
-            <p className="text-sm font-semibold text-ink">Revenue Trends</p>
-            <div className="mt-2 h-24 rounded-md bg-linear-to-b from-blue-100 to-transparent" />
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-ink">Revenue Trends</p>
+              <div className="inline-flex rounded-md border border-border-gray bg-card p-1">
+                <button
+                  type="button"
+                  onClick={() => setTrendRange("monthly")}
+                  className={`rounded px-2.5 py-1 text-xs font-medium ${trendRange === "monthly" ? "bg-chat-accent text-ice" : "text-body-secondary hover:bg-muted"
+                    }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTrendRange("yearly")}
+                  className={`rounded px-2.5 py-1 text-xs font-medium ${trendRange === "yearly" ? "bg-chat-accent text-ice" : "text-body-secondary hover:bg-muted"
+                    }`}
+                >
+                  Yearly
+                </button>
+              </div>
+            </div>
+            <div className="mt-3 rounded-md border border-border-gray bg-linear-to-b from-blue-50 to-transparent p-3">
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-28 w-full" preserveAspectRatio="none">
+                {[0, 1, 2, 3].map((line) => {
+                  const y = (chartHeight / 4) * line;
+                  return <line key={line} x1={0} y1={y} x2={chartWidth} y2={y} stroke="currentColor" className="text-border-gray" strokeWidth="1" />;
+                })}
+                <polyline
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className="text-chat-accent"
+                  points={points}
+                />
+                {trendSeries.map((point, index) => {
+                  const x = index * spacing;
+                  const y = chartHeight - ((point.value - minValue) / range) * (chartHeight - 20) - 10;
+                  return <circle key={point.label} cx={x} cy={y} r="3" className="fill-chat-accent" />;
+                })}
+              </svg>
+              <div className="mt-2 grid grid-cols-6 text-[10px] text-body-secondary">
+                {trendSeries.map((point) => (
+                  <span key={point.label} className="text-center">
+                    {point.label}
+                  </span>
+                ))}
+              </div>
+            </div>
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-sm font-semibold text-ink">Revenue Breakdown</p>

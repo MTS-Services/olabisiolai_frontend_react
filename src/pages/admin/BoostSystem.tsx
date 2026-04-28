@@ -89,22 +89,66 @@ const INITIAL_WAITING: WaitingEntry[] = [
 
 const BOOST_PLANS = [
   {
-    title: "Bronze",
-    price: "₦6,000",
-    description: "7 days boost, basic analytics",
-    tag: "basic",
+    medal: "🥉",
+    title: "Top 5 Boost",
+    subtitle: "Affordable visibility for growing businesses",
+    prices: [
+      { days: "7 Days", amount: "₦3,000" },
+      { days: "14 Days", amount: "₦5,000" },
+      { days: "30 Days", amount: "₦10,000" },
+    ],
+    slotNote: "5 slots available in this LGA",
+    features: [
+      "Appear in Top 5 in your LGA",
+      "Boost badge on listing",
+      "Increased visibility & inquiries",
+    ],
+    cta: "Boost with Bronze",
+    cardClass: "border-[#f0d6bd] bg-[#fff6eb]",
+    ctaClass: "bg-[#8d4a1a] text-white hover:bg-[#7a3f16]",
+    slotClass: "text-[#c77b38]",
   },
   {
-    title: "Silver",
-    price: "₦15,000",
-    description: "15 days boost, priority support",
-    tag: "most popular",
+    medal: "🥈",
+    title: "Top 3 Boost",
+    subtitle: "Higher visibility for competitive LGAs",
+    prices: [
+      { days: "7 Days", amount: "₦5,000" },
+      { days: "14 Days", amount: "₦10,000" },
+      { days: "30 Days", amount: "₦15,000" },
+    ],
+    slotNote: "3 slots available in this LGA",
+    features: [
+      "Guaranteed Top 3 placement",
+      "Higher ranking than Bronze",
+      "Boost badge & strong visibility",
+    ],
+    cta: "Boost with Silver",
+    cardClass: "border-[#d9dee8] bg-[#f5f7fb]",
+    ctaClass: "bg-[#364152] text-white hover:bg-[#2c3544]",
+    slotClass: "text-[#5f6b7a]",
   },
   {
-    title: "Gold",
-    price: "₦35,000",
-    description: "30 days boost, featured manager",
-    tag: "elite",
+    medal: "🥇",
+    title: "Top 1 Exclusive",
+    subtitle: "The #1 spot reserved for one business per LGA",
+    prices: [
+      { days: "7 Days", amount: "₦10,000" },
+      { days: "14 Days", amount: "₦15,000" },
+      { days: "30 Days", amount: "₦20,000" },
+    ],
+    slotNote: "Slot currently occupied",
+    features: [
+      "Guaranteed #1 position",
+      "Exclusive - one per LGA",
+      "Spotlight badge & 10x more reach",
+      "Premium vendors get first access",
+    ],
+    cta: "Join Waiting List",
+    cardClass: "border-[#f2dd8b] bg-[#fffbe6]",
+    ctaClass: "bg-[#c89c2a] text-white hover:bg-[#b48822]",
+    slotClass: "text-[#c89c2a]",
+    tag: "Most Popular",
   },
 ] as const;
 
@@ -226,17 +270,37 @@ export default function BoostSystem() {
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {BOOST_PLANS.map((plan) => (
-            <article key={plan.title} className="rounded-xl border border-chat-border-subtle bg-background p-4">
-              <div className="mb-2 flex items-center justify-between">
+            <article key={plan.title} className={`rounded-xl border p-4 ${plan.cardClass}`}>
+              <div className="mb-2">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm" aria-hidden>
+                    {plan.medal}
+                  </span>
+                  {"tag" in plan ? (
+                    <span className="rounded-full bg-[#ffe8a3] px-2 py-0.5 text-[10px] font-semibold uppercase text-[#b47d00]">
+                      {plan.tag}
+                    </span>
+                  ) : null}
+                </div>
                 <h4 className="text-sm font-semibold text-ink">{plan.title}</h4>
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-700">
-                  {plan.tag}
-                </span>
+                <p className="text-[11px] text-body-secondary">{plan.subtitle}</p>
               </div>
-              <p className="text-2xl font-semibold text-ink">{plan.price}</p>
-              <p className="mt-1 text-xs text-chat-meta">{plan.description}</p>
-              <button type="button" className="mt-3 rounded-md bg-brand-red px-3 py-1.5 text-xs font-semibold text-white">
-                Manage Tier
+              <div className="space-y-1.5">
+                {plan.prices.map((price) => (
+                  <div key={price.days} className="flex items-center justify-between rounded-md border border-border-gray bg-white px-2.5 py-1.5 text-xs">
+                    <span className="text-body-secondary">{price.days}</span>
+                    <span className="font-semibold text-ink">{price.amount}</span>
+                  </div>
+                ))}
+              </div>
+              <p className={`mt-2 text-[11px] font-semibold ${plan.slotClass}`}>* {plan.slotNote}</p>
+              <ul className="mt-2 space-y-1.5 text-[11px] text-body-secondary">
+                {plan.features.map((feature) => (
+                  <li key={feature}>- {feature}</li>
+                ))}
+              </ul>
+              <button type="button" className={`mt-3 w-full rounded-md px-3 py-1.5 text-xs font-semibold ${plan.ctaClass}`}>
+                {plan.cta}
               </button>
             </article>
           ))}

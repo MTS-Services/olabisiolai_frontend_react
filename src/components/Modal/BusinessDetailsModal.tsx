@@ -12,6 +12,7 @@ export type BusinessDetailsModalBusiness = {
   status: Status;
   verification: Verification;
   boost: Boost;
+  joinDate?: string;
 };
 
 interface BusinessDetailsModalProps {
@@ -100,7 +101,9 @@ export function BusinessDetailsModal({ open, onClose, business }: BusinessDetail
 
             <div>
               <p className="text-sm font-medium text-gray-900">Join Date</p>
-              <p className="text-sm text-gray-600">{new Date(business.id).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-600">
+                {business.joinDate ? new Date(business.joinDate).toLocaleDateString() : "N/A"}
+              </p>
             </div>
 
 

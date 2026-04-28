@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { ChevronRight, MapPin, Plus, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useCategoryCatalog } from "@/features/categories/useCategoryCatalog";
+import { createVendorBusiness } from "@/features/business/vendorBusinessApi";
 
 function Label({ children }: { children: ReactNode }) {
   return (
@@ -76,6 +78,7 @@ function DashedUpload({
   subhelper,
   minHeight,
   multiple,
+  onChange,
 }: {
   id: string;
   accept: string;
@@ -83,6 +86,7 @@ function DashedUpload({
   subhelper: string;
   minHeight?: string;
   multiple?: boolean;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }) {
   return (
     <div
@@ -106,6 +110,7 @@ function DashedUpload({
             accept={accept}
             className="sr-only"
             multiple={multiple}
+            onChange={onChange}
           />
           <span className="flex size-11 items-center justify-center rounded-full bg-neutral-200/80 text-foreground">
             <Upload className="size-5" aria-hidden />
@@ -127,7 +132,13 @@ export default function ChoosePlanForm() {
   const { data: categories = [], isPending: categoriesLoading, isError: categoriesError } =
     useCategoryCatalog();
   const [categoryId, setCategoryId] = useState("");
+  const [location, setLocation] = useState("");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
   const [services, setServices] = useState<string[]>([""]);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [coverPhotos, setCoverPhotos] = useState<File[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const addService = () => setServices((s) => [...s, ""]);
   const setServiceAt = (index: number, value: string) =>
@@ -137,10 +148,35 @@ export default function ChoosePlanForm() {
       return next;
     });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const createBusinessMutation = useMutation({
+    mutationFn: createVendorBusiness,
+    onSuccess: () => {
+      navigate("/vendor/dashboard");
+    },
+    onError: (error: unknown) => {
+      setSubmitError(getMessageFromUnknown(error));
+    },
+  });
 
-    navigate("/vendor/dashboard");
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitError(null);
+    const formData = new FormData(e.currentTarget);
+
+    createBusinessMutation.mutate({
+      category_id: categoryId,
+      business_name: String(formData.get("businessName") ?? ""),
+      location,
+      state,
+      city,
+      business_description: String(formData.get("description") ?? ""),
+      services,
+      phone: String(formData.get("phone") ?? ""),
+      whatsapp: String(formData.get("whatsapp") ?? ""),
+      website: String(formData.get("website") ?? ""),
+      logo,
+      cover_photos: coverPhotos,
+    });
   };
 
   return (
@@ -213,6 +249,8 @@ export default function ChoosePlanForm() {
                 </>
               }
               rightIcon={MapPin}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
             >
               <option value="">Select location</option>
               <option>Lagos</option>
@@ -222,12 +260,14 @@ export default function ChoosePlanForm() {
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <SelectField label="State">
+            <SelectField label="State" value={state} onChange={(e) => setState(e.target.value)}>
+              <option value="">Select state</option>
               <option>Lagos</option>
               <option>Ogun</option>
               <option>Oyo</option>
             </SelectField>
-            <SelectField label="City">
+            <SelectField label="City" value={city} onChange={(e) => setCity(e.target.value)}>
+              <option value="">Select city</option>
               <option>Ikeja</option>
               <option>Victoria Island</option>
               <option>Lekki</option>
@@ -333,7 +373,12 @@ export default function ChoosePlanForm() {
             accept="image/jpeg,image/png,image/webp"
             helper="Click to upload photos or drag and drop"
             subhelper="JPG, PNG up to 10MB each"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              setLogo(file);
+            }}
           />
+          {logo ? <p className="mt-2 text-xs text-muted-foreground">{logo.name}</p> : null}
         </CardContent>
       </Card>
 
@@ -350,7 +395,16 @@ export default function ChoosePlanForm() {
             helper="Click to upload photos or drag and drop"
             subhelper="JPG, PNG up to 10MB each (max 5 photos)"
             multiple
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? []);
+              setCoverPhotos(files.slice(0, 5));
+            }}
           />
+          {coverPhotos.length > 0 ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {coverPhotos.length} file(s) selected
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -365,18 +419,42 @@ export default function ChoosePlanForm() {
             </span>
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            {submitError ? (
+              <p className="text-sm text-destructive sm:mr-auto">{submitError}</p>
+            ) : null}
             <Button
               type="button"
               variant="outline"
               className="border-border bg-card font-inter sm:min-w-[120px]"
               onClick={() => navigate("/vendor/dashboard")}
+              disabled={createBusinessMutation.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit">Create business profile</Button>
+            <Button type="submit" disabled={createBusinessMutation.isPending}>
+              {createBusinessMutation.isPending ? "Creating..." : "Create business profile"}
+            </Button>
           </div>
         </CardContent>
       </Card>
     </form>
   );
+}
+
+function getMessageFromUnknown(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "response" in error &&
+    error.response &&
+    typeof error.response === "object" &&
+    "data" in error.response &&
+    error.response.data &&
+    typeof error.response.data === "object"
+  ) {
+    const data = error.response.data as Record<string, unknown>;
+    if (typeof data.message === "string" && data.message.trim()) return data.message;
+  }
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return "Could not create business profile.";
 }

@@ -1,29 +1,12 @@
-import { CategoryCard } from "@/components/CategoryCard";
+import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-interface CategoryType {
-  name: string;
-  icon: string;
-}
+import { CategoryCard } from "@/components/CategoryCard";
+import { lucideIconForCategoryName } from "@/features/categories/iconForCategoryName";
+import { useCategoryCatalog } from "@/features/categories/useCategoryCatalog";
 
 export function Category() {
-  const categories: CategoryType[] = [
-    { name: "Plumbing", icon: "Wrench" },
-    { name: "Electrical", icon: "Zap" },
-    { name: "Catering", icon: "UtensilsCrossed" },
-    { name: "Cleaning", icon: "Sparkles" },
-    { name: "Construction", icon: "HardHat" },
-    { name: "Beauty & Spa", icon: "Scissors" },
-    { name: "Photography", icon: "Camera" },
-    { name: "Logistics", icon: "Truck" },
-    { name: "Tutoring", icon: "GraduationCap" },
-    { name: "Legal Services", icon: "Scale" },
-    { name: "Accounting", icon: "Calculator" },
-    { name: "Auto Repair", icon: "Car" },
-    { name: "Laundry", icon: "Shirt" },
-    { name: "Security", icon: "Shield" },
-    { name: "Marketing", icon: "Megaphone" },
-  ];
+  const { data: categories = [], isPending, isError, refetch } = useCategoryCatalog();
 
   return (
     <div className="mb-20">
@@ -32,16 +15,35 @@ export function Category() {
           <h2 className="lg:text-3xl text-2xl font-inter font-bold text-text-primary text-center">Browse by Category</h2>
         </div>
         <div className="mt-12">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
-            {categories.map((category) => (
-              <CategoryCard
-                key={category.name}
-                name={category.name}
-                icon={category.icon}
-                to="/filters"
-              />
-            ))}
-          </div>
+          {isPending ? (
+            <div className="flex justify-center py-16 text-text-secondary">
+              <Loader2 className="size-9 animate-spin" aria-hidden />
+            </div>
+          ) : isError ? (
+            <div className="rounded-xl border border-border bg-card px-4 py-8 text-center text-sm text-text-secondary">
+              <p>Categories could not be loaded.</p>
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="mt-3 text-primary font-medium underline-offset-2 hover:underline"
+              >
+                Try again
+              </button>
+            </div>
+          ) : categories.length === 0 ? (
+            <p className="text-center text-sm text-text-secondary py-12">No categories yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
+              {categories.map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  name={category.name}
+                  icon={lucideIconForCategoryName(category.name)}
+                  to={`/filters?category=${encodeURIComponent(category.name)}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
         <div className="mt-8 text-center">
           <Link to="/filters" className="bg-primary text-primary-foreground font-inter font-medium text-lg px-4 py-3 rounded-xl">All Categories</Link>

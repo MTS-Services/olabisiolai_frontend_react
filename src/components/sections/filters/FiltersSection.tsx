@@ -1,6 +1,18 @@
 import { Star } from "lucide-react";
 
-export default function FiltersSection() {
+export type FiltersSectionProps = {
+  categoryLabels: string[];
+  selectedCategory: string;
+  onSelectCategory: (label: string) => void;
+  categoriesLoading?: boolean;
+};
+
+export default function FiltersSection({
+  categoryLabels,
+  selectedCategory,
+  onSelectCategory,
+  categoriesLoading,
+}: FiltersSectionProps) {
   const size = 24;
 
   return (
@@ -28,7 +40,7 @@ export default function FiltersSection() {
               strokeLinejoin="round"
             />
           </svg>
-        
+
           <span className="text-primary text-sm font-medium">Verified Only</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" />
@@ -42,27 +54,24 @@ export default function FiltersSection() {
         <h3 className="font-inter font-semibold text-text-primary mb-3">
           Category
         </h3>
-        <div className="space-y-2">
-          {[
-            "All",
-            "Plumbing",
-            "Electrical",
-            "Catering",
-            "Cleaning",
-            "Construction",
-            "Beauty & Spa",
-            "Photography",
-          ].map((category) => (
-            <label key={category} className="flex items-center">
-              <input
-                type="radio"
-                name="category"
-                className="mr-2 accent-primary"
-              />
-              <span className="text-text-secondary">{category}</span>
-            </label>
-          ))}
-        </div>
+        {categoriesLoading ? (
+          <p className="text-sm text-text-secondary">Loading categories…</p>
+        ) : (
+          <div className="space-y-2">
+            {categoryLabels.map((label) => (
+              <label key={label} className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="category"
+                  className="mr-2 accent-primary"
+                  checked={selectedCategory === label}
+                  onChange={() => onSelectCategory(label)}
+                />
+                <span className="text-text-secondary">{label}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Distances Section */}

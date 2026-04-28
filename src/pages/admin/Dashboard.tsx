@@ -1,8 +1,6 @@
 import {
   Activity,
   CheckCircle2,
-  FileText,
-  Megaphone,
   MousePointerClick,
   TrendingUp,
   Store,

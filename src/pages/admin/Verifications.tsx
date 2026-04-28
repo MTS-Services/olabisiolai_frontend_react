@@ -133,7 +133,7 @@ export default function VerificationGrid() {
         <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Today&apos;s Verified</p>
           <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{todaysVerified.toLocaleString()}</p>
-          <p className="mt-1 text-sm font-medium text-success">KPI for verification officer</p>
+          <p className="mt-1 text-sm font-medium text-success">+12% from yesterday</p>
         </article>
       </section>
 

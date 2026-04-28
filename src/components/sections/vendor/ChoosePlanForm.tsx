@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useCategoryCatalog } from "@/features/categories/useCategoryCatalog";
 
 function Label({ children }: { children: ReactNode }) {
   return (
@@ -23,11 +24,17 @@ function SelectField({
   children,
   className,
   rightIcon: RightIcon,
+  value,
+  onChange,
+  disabled,
 }: {
   label: ReactNode;
   children: ReactNode;
   className?: string;
   rightIcon?: LucideIcon;
+  value?: string;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
+  disabled?: boolean;
 }) {
   const Extra = RightIcon;
   return (
@@ -35,10 +42,14 @@ function SelectField({
       <Label>{label}</Label>
       <div className="relative">
         <select
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
           className={cn(
             "h-11 w-full appearance-none rounded-md border border-border-light bg-secondary/80 px-3 pr-10 text-sm text-foreground shadow-sm transition-shadow",
             Extra && "pr-12",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/25",
+            disabled && "cursor-not-allowed opacity-70",
           )}
         >
           {children}
@@ -113,6 +124,9 @@ function DashedUpload({
 
 export default function ChoosePlanForm() {
   const navigate = useNavigate();
+  const { data: categories = [], isPending: categoriesLoading, isError: categoriesError } =
+    useCategoryCatalog();
+  const [categoryId, setCategoryId] = useState("");
   const [services, setServices] = useState<string[]>([""]);
 
   const addService = () => setServices((s) => [...s, ""]);
@@ -161,18 +175,36 @@ export default function ChoosePlanForm() {
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <SelectField
-              label={
-                <>
-                  Category <span className="text-destructive">*</span>
-                </>
-              }
-            >
-              <option value="">Select category</option>
-              <option>Home services</option>
-              <option>Transport &amp; logistics</option>
-              <option>Professional services</option>
-            </SelectField>
+            <div className="space-y-1.5">
+              <SelectField
+                label={
+                  <>
+                    Category <span className="text-destructive">*</span>
+                  </>
+                }
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                disabled={categoriesLoading || categoriesError}
+              >
+                <option value="">
+                  {categoriesLoading
+                    ? "Loading categories…"
+                    : categoriesError
+                      ? "Categories unavailable"
+                      : "Select category"}
+                </option>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </SelectField>
+              {categoriesError ? (
+                <p className="text-xs text-destructive">
+                  Categories could not be loaded (check <span className="font-mono">GET /public/categories</span> on the API).
+                </p>
+              ) : null}
+            </div>
 
             <SelectField
               label={

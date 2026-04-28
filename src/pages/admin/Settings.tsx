@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Shield } from "lucide-react";
+import { Building, Building2, Plus, Shield, User } from "lucide-react";
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
@@ -27,11 +27,6 @@ const DOCS = [
 
 export default function PlatformSettings() {
   const [requiredDocs, setRequiredDocs] = useState([true, true, true]);
-  const [verificationPackages, setVerificationPackages] = useState({
-    basic: "5000",
-    standard: "12000",
-    premium: "25000",
-  });
   const [security, setSecurity] = useState({
     mandatory2FA: true,
     sessionTimeout: false,
@@ -74,14 +69,14 @@ export default function PlatformSettings() {
                     setRequiredDocs((prev) => prev.map((item, i) => (i === idx ? !item : item)))
                   }
                   className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm ${requiredDocs[idx]
-                      ? "border-violet-200 bg-violet-50/40 text-ink"
-                      : "border-border-gray bg-background text-body-secondary"
+                    ? "border-violet-200 bg-violet-50/40 text-ink"
+                    : "border-border-gray bg-background text-body-secondary"
                     }`}
                 >
                   <span
                     className={`inline-flex size-5 items-center justify-center rounded-md border text-xs ${requiredDocs[idx]
-                        ? "border-violet-500 bg-violet-500 text-white"
-                        : "border-border-gray bg-card text-transparent"
+                      ? "border-violet-500 bg-violet-500 text-white"
+                      : "border-border-gray bg-card text-transparent"
                       }`}
                   >
                     ✓
@@ -98,29 +93,45 @@ export default function PlatformSettings() {
             </p>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {[
-                { key: "basic", label: "Basic Verification", desc: "Standard KYC document check" },
-                { key: "standard", label: "Standard Verification", desc: "KYC + business profile validation" },
-                { key: "premium", label: "Premium Verification", desc: "Priority review + advanced checks" },
+                {
+                  key: "individual",
+                  icon: User,
+                  label: "Individual",
+                  desc: "Best for solo entrepreneurs and independent contractors. Requires government ID and personal selfie verification.",
+                  badge: "Trusted Badge",
+                  price: "2,500",
+                  highlight: true,
+                },
+                {
+                  key: "businessName",
+                  icon: Building2,
+                  label: "Business Name",
+                  desc: "For registered sole proprietorships. Includes CAC document validation and business account linking.",
+                  badge: "Vendor Priority",
+                  price: "5,000",
+                },
+                {
+                  key: "limitedCompany",
+                  icon: Building,
+                  label: "Limited Company (LTD)",
+                  desc: "The gold standard for corporate entities. Comprehensive verification of directors, shareholders, and legal status.",
+                  badge: "Enterprise Blue Badge",
+                  price: "10,000",
+                },
               ].map((item) => (
-                <article key={item.key} className="rounded-xl border border-chat-border-subtle bg-background p-3">
-                  <p className="text-sm font-semibold text-ink">{item.label}</p>
-                  <p className="text-xs text-chat-meta">{item.desc}</p>
-                  <div className="relative mt-2">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-chat-meta">
-                      ₦
+                <article
+                  key={item.key}
+                  className={`rounded-xl border p-3 ${item.highlight ? "border-red-300 bg-[#eff4ff] shadow-[0_0_0_1px_rgba(239,68,68,0.18)]" : "border-chat-border-subtle bg-[#f7f9ff]"}`}
+                >
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <span className="inline-flex size-6 items-center justify-center rounded-md bg-rose-50 text-rose-500">
+                      <item.icon className="size-3.5" />
                     </span>
-                    <input
-                      type="number"
-                      value={verificationPackages[item.key as keyof typeof verificationPackages]}
-                      onChange={(event) =>
-                        setVerificationPackages((prev) => ({
-                          ...prev,
-                          [item.key]: event.target.value,
-                        }))
-                      }
-                      className="h-10 w-full rounded-lg border border-border-gray bg-card pl-7 pr-3 text-sm text-ink outline-none focus:border-chat-accent"
-                    />
+                    <p className="text-sm font-semibold text-ink">₦{item.price}</p>
                   </div>
+                  <p className="text-sm font-semibold text-ink">{item.label}</p>
+                  <p className="mt-1 min-h-14 text-[11px] leading-4 text-chat-meta">{item.desc}</p>
+                  <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-body-secondary">● {item.badge}</p>
                 </article>
               ))}
             </div>

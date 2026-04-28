@@ -244,7 +244,7 @@ export default function BusinessTable() {
   const verificationRate = totalBusinesses === 0 ? 0 : Math.round((verifiedBusinesses / totalBusinesses) * 100);
   const pendingReview = DATA.filter((item) => item.verification === "pending").length;
 
-  const handleExport = (target: "crm" | "staff") => {
+  const handleExport = () => {
     const headers = [
       "Business Name",
       "Category",
@@ -275,7 +275,7 @@ export default function BusinessTable() {
     const blob = new Blob([`\uFEFF${csvRows}`], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `businesses-${target}-${stamp}.csv`;
+    link.download = `businesses-export-${stamp}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -347,17 +347,10 @@ export default function BusinessTable() {
               />
               <button
                 type="button"
-                onClick={() => handleExport("crm")}
+                onClick={handleExport}
                 className="inline-flex h-10 items-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
-                Export CRM
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport("staff")}
-                className="inline-flex h-10 items-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-              >
-                Export Staff
+                Export to Excel
               </button>
             </div>
           </div>

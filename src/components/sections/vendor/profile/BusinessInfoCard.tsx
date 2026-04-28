@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight, Upload } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
 
 function Label({ children }: { children: string }) {
   return (
@@ -14,15 +16,31 @@ function Label({ children }: { children: string }) {
   );
 }
 
-function SelectField({ label, children }: { label: string; children: ReactNode }) {
+function SelectField({
+  label,
+  children,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  children: ReactNode;
+  value?: string;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
+  disabled?: boolean;
+}) {
   return (
     <div>
       <Label>{label}</Label>
       <div className="relative">
         <select
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
           className={cn(
             "h-11 w-full appearance-none rounded-md border border-border-light bg-background px-3 pr-10 text-sm text-foreground shadow-sm transition-shadow",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/25",
+            disabled && "cursor-not-allowed opacity-70",
           )}
         >
           {children}
@@ -51,6 +69,18 @@ function DashedFrame({ className, children }: { className?: string; children: Re
 }
 
 export function BusinessInfoCard() {
+  const { data, isPending, isError } = useVendorBusinessFormOptions();
+  const categories = data?.categories ?? [];
+  const [categoryId, setCategoryId] = useState("");
+  const [subcategory, setSubcategory] = useState("");
+
+  const selectedCategory = categories.find((c) => String(c.id) === categoryId);
+  const subOptions = selectedCategory?.subcategories ?? [];
+
+  useEffect(() => {
+    setSubcategory("");
+  }, [categoryId]);
+
   return (
     <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
       <CardHeader className="space-y-1 border-b border-border-light bg-card px-6 py-5">
@@ -66,16 +96,47 @@ export function BusinessInfoCard() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <SelectField label="Category">
-            <option>Transportation &amp; Logistics</option>
-            <option>Real Estate</option>
-            <option>Home Services</option>
+          <SelectField
+            label="Category"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            disabled={isPending || isError}
+          >
+            <option value="">
+              {isPending ? "Loading…" : isError ? "Unavailable" : "Select category"}
+            </option>
+            {categories.map((c) => (
+              <option key={c.id} value={String(c.id)}>
+                {c.name}
+              </option>
+            ))}
           </SelectField>
-          <SelectField label="Subcategory">
-            <option>Last Mile Delivery</option>
-            <option>Freight</option>
+          <SelectField
+            label="Subcategory"
+            value={subcategory}
+            onChange={(e) => setSubcategory(e.target.value)}
+            disabled={!categoryId || subOptions.length === 0}
+          >
+            <option value="">
+              {!categoryId
+                ? "Select a category first"
+                : subOptions.length === 0
+                  ? "No subcategories"
+                  : "Select subcategory"}
+            </option>
+            {subOptions.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </SelectField>
         </div>
+        {isError ? (
+          <p className="text-xs text-destructive">
+            Could not load categories. Sign in as a vendor and ensure{" "}
+            <span className="font-mono">GET /vendor/business/form-options</span> succeeds.
+          </p>
+        ) : null}
 
         <div>
           <Label>Location (Area)</Label>

@@ -29,6 +29,14 @@ type UsersApiEnvelope = {
   message?: string;
 };
 
+type UsersSummaryCounts = {
+  allUsers: number;
+  totalUsers: number;
+  totalVendors: number;
+  totalAdmins: number;
+  newSignups: number;
+};
+
 const SUPPORTED_ROLES: UserRole[] = ["user", "vendor", "admin"];
 
 function toRecord(value: unknown): Record<string, unknown> | null {
@@ -129,6 +137,29 @@ async function postToAnyAdminUsersEndpoint<TResponse>(
   throw lastError;
 }
 
+function pickSummaryInt(record: Record<string, unknown>, snake: string, camel: string): number {
+  const fromSnake = toNumber(record[snake]);
+  if (fromSnake !== null) return fromSnake;
+  const fromCamel = toNumber(record[camel]);
+  return fromCamel ?? 0;
+}
+
+function parseUsersSummary(body: unknown): UsersSummaryCounts | null {
+  const nested = getNestedData(body);
+  const record = toRecord(nested);
+  if (!record) return null;
+  const summary = toRecord(record.summary);
+  if (!summary) return null;
+
+  return {
+    allUsers: pickSummaryInt(summary, "all_users", "allUsers"),
+    totalUsers: pickSummaryInt(summary, "total_users", "totalUsers"),
+    totalVendors: pickSummaryInt(summary, "total_vendors", "totalVendors"),
+    totalAdmins: pickSummaryInt(summary, "total_admins", "totalAdmins"),
+    newSignups: pickSummaryInt(summary, "new_signups", "newSignups"),
+  };
+}
+
 function statusClass(status: UserRow["status"]) {
   if (status === "active") return "bg-success/10 text-success";
   if (status === "pending") return "bg-amber-100 text-amber-600";
@@ -160,6 +191,20 @@ export default function Users() {
   const [actionUserId, setActionUserId] = useState<number | null>(null);
   const [actionType, setActionType] = useState<"view" | "status" | "delete" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+  const [summaryCounts, setSummaryCounts] = useState<UsersSummaryCounts | null>(null);
+
+  const fetchSummary = async () => {
+    try {
+      const res = await postToAnyAdminUsersEndpoint<UsersApiEnvelope>(
+        ["/api/v1/admin/users/summary", "/admin/users/summary"],
+        {},
+      );
+      const parsed = parseUsersSummary(res.data);
+      if (parsed) setSummaryCounts(parsed);
+    } catch (error) {
+      console.error("Users summary fetch failed", error);
+    }
+  };
 
   const fetchUsers = async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
@@ -186,6 +231,7 @@ export default function Users() {
 
   useEffect(() => {
     void fetchUsers();
+    void fetchSummary();
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -209,17 +255,23 @@ export default function Users() {
 
   const statusLabel = statusFilter === "all" ? "Select Status" : statusFilter;
   const roleLabel = roleFilter === "all" ? "Select Role" : roleFilter;
-  const allUsers = users.length;
-  const totalUsers = useMemo(() => users.filter((user) => user.role === "user").length, [users]);
-  const totalVendors = useMemo(() => users.filter((user) => user.role === "vendor").length, [users]);
-  const totalAdmins = useMemo(() => users.filter((user) => user.role === "admin").length, [users]);
-  const newSignups = useMemo(() => {
+
+  const summaryFallback = useMemo((): UsersSummaryCounts => {
     const threshold = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    return users.filter((user) => {
-      const parsed = toDate(user.joinDate);
-      return parsed ? parsed.getTime() >= threshold : false;
-    }).length;
+    return {
+      allUsers: users.length,
+      totalUsers: users.filter((user) => user.role === "user").length,
+      totalVendors: users.filter((user) => user.role === "vendor").length,
+      totalAdmins: users.filter((user) => user.role === "admin").length,
+      newSignups: users.filter((user) => {
+        const parsed = toDate(user.joinDate);
+        return parsed ? parsed.getTime() >= threshold : false;
+      }).length,
+    };
   }, [users]);
+
+  const counts = summaryCounts ?? summaryFallback;
+  const { allUsers, totalUsers, totalVendors, totalAdmins, newSignups } = counts;
 
   const exportToExcel = () => {
     const rows = filteredUsers.map((user) => ({
@@ -307,6 +359,7 @@ export default function Users() {
       });
       setDeleteTarget(null);
       await fetchUsers({ silent: true });
+      void fetchSummary();
     } catch {
       setError("Failed to delete user.");
     } finally {

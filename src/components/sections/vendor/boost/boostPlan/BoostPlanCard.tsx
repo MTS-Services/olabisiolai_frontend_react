@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import { type Plan } from "./boostPlanData";
 
 const getBgClasses = (colorScheme: Plan["colorScheme"]) => {
@@ -56,6 +58,7 @@ const getSlotDotColor = (slotStatus: Plan["slotStatus"]) => {
 };
 
 export function BoostPlanCard({ plan }: { plan: Plan }) {
+  const navigate = useNavigate();
 
   return (
     <div className={`flex-1 flex flex-col rounded-2xl p-6 relative ${getBgClasses(plan.colorScheme)} ${plan.highlighted ? "mt-5 md:mt-0" : ""}`}>
@@ -120,7 +123,7 @@ export function BoostPlanCard({ plan }: { plan: Plan }) {
             </li>
           ))}
         </ul>
-        <button className={`w-full ${getButtonClasses(plan.colorScheme)} active:scale-[0.98] transition-all text-white font-bold text-sm py-3.5 rounded-xl`}>
+        <button onClick={() => navigate('/vendor/boost/review-pay')} className={`w-full ${getButtonClasses(plan.colorScheme)} active:scale-[0.98] transition-all text-white font-bold text-sm py-3.5 rounded-xl`}>
           {plan.cta}
         </button>
       </div>

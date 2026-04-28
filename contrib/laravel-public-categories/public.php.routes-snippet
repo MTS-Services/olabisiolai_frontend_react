@@ -1,0 +1,7 @@
+<?php
+
+use App\Http\Controllers\Api\V1\PublicCategoryCatalogController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/public/categories', [PublicCategoryCatalogController::class, 'index'])
+    ->name('public.categories.index');

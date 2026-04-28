@@ -1,8 +1,9 @@
 import FiltersSection from "@/components/sections/filters/FiltersSection";
 import ServiceCard from "@/components/sections/filters/ServiceCard";
+import { useCategoryCatalog } from "@/features/categories/useCategoryCatalog";
 import { ChevronLeft, Map, SlidersHorizontal, X } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
 interface BusinessType {
   id: number;
@@ -16,60 +17,86 @@ interface BusinessType {
   verified: boolean;
 }
 
+const MOCK_FEATURED_BUSINESSES: BusinessType[] = [
+  {
+    id: 1,
+    name: "Premium Plumbing Services",
+    category: "Plumbing",
+    location: "Lagos, Ikeja",
+    rating: 4.8,
+    reviews: 127,
+    description:
+      "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
+    image: "/images/feature/1.jpg",
+    verified: true,
+  },
+  {
+    id: 2,
+    name: "Sparkle Clean Services",
+    category: "Cleaning",
+    location: "Lagos, Surulere",
+    rating: 4.9,
+    reviews: 203,
+    description:
+      "Professional cleaning services for homes and offices. Eco-friendly products available.",
+    image: "/images/feature/1-1.jpg",
+    verified: true,
+  },
+  {
+    id: 3,
+    name: "Elite Electrical Solutions",
+    category: "Electrical",
+    location: "Lagos, Victoria Island",
+    rating: 4.6,
+    reviews: 89,
+    description:
+      "Certified electricians providing safe and reliable electrical installations and repairs.",
+    image: "/images/feature/1-2.jpg",
+    verified: true,
+  },
+  {
+    id: 4,
+    name: "Glamour Beauty Spa",
+    category: "Beauty & Spa",
+    location: "Lagos, Lekki",
+    rating: 4.7,
+    reviews: 156,
+    description: "Luxury spa and beauty treatments in a relaxing environment.",
+    image: "/images/feature/1-3.jpg",
+    verified: true,
+  },
+];
+
 export default function Filters() {
   const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const paramCategory = (searchParams.get("category") ?? "").trim();
 
-  const featuredBusinesses: BusinessType[] = [
-    {
-      id: 1,
-      name: "Premium Plumbing Services",
-      category: "Plumbing",
-      location: "Lagos, Ikeja",
-      rating: 4.8,
-      reviews: 127,
-      description:
-        "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
-      image: "/images/feature/1.jpg",
-      verified: true,
-    },
-    {
-      id: 2,
-      name: "Sparkle Clean Services",
-      category: "Cleaning",
-      location: "Lagos, Surulere",
-      rating: 4.9,
-      reviews: 203,
-      description:
-        "Professional cleaning services for homes and offices. Eco-friendly products available.",
-      image: "/images/feature/1-1.jpg",
-      verified: true,
-    },
-    {
-      id: 3,
-      name: "Elite Electrical Solutions",
-      category: "Electrical",
-      location: "Lagos, Victoria Island",
-      rating: 4.6,
-      reviews: 89,
-      description:
-        "Certified electricians providing safe and reliable electrical installations and repairs.",
-      image: "/images/feature/1-2.jpg",
-      verified: true,
-    },
-    {
-      id: 4,
-      name: "Glamour Beauty Spa",
-      category: "Beauty & Spa",
-      location: "Lagos, Lekki",
-      rating: 4.7,
-      reviews: 156,
-      description:
-        "Luxury spa and beauty treatments in a relaxing environment.",
-      image: "/images/feature/1-3.jpg",
-      verified: true,
-    },
-  ];
+  const { data: apiCategories = [], isPending: categoriesLoading } = useCategoryCatalog();
+  const categoryNames = useMemo(() => apiCategories.map((c) => c.name), [apiCategories]);
+  const categoryFilterLabels = useMemo(() => ["All", ...categoryNames], [categoryNames]);
+
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  useEffect(() => {
+    if (!paramCategory) return;
+    if (categoryNames.length === 0) return;
+    if (categoryNames.includes(paramCategory)) setSelectedCategory(paramCategory);
+  }, [paramCategory, categoryNames]);
+
+  const handleSelectCategory = (label: string) => {
+    setSelectedCategory(label);
+    const next = new URLSearchParams(searchParams);
+    if (label === "All") next.delete("category");
+    else next.set("category", label);
+    setSearchParams(next, { replace: true });
+  };
+
+  const visibleBusinesses = useMemo(() => {
+    if (selectedCategory === "All") return MOCK_FEATURED_BUSINESSES;
+    return MOCK_FEATURED_BUSINESSES.filter((b) => b.category === selectedCategory);
+  }, [selectedCategory]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,7 +159,12 @@ export default function Filters() {
               </button>
             </div>
             <div className="p-4">
-              <FiltersSection />
+              <FiltersSection
+                categoryLabels={categoryFilterLabels}
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleSelectCategory}
+                categoriesLoading={categoriesLoading}
+              />
             </div>
           </div>
         </div>
@@ -177,13 +209,18 @@ export default function Filters() {
 
         {/* Filters Sidebar — hidden on mobile, visible on lg+ */}
         <aside className="hidden lg:block w-1/6 shrink-0">
-          <FiltersSection />
+          <FiltersSection
+            categoryLabels={categoryFilterLabels}
+            selectedCategory={selectedCategory}
+            onSelectCategory={handleSelectCategory}
+            categoriesLoading={categoriesLoading}
+          />
         </aside>
 
         {/* Business Cards Section */}
         <div className="w-full lg:w-3/6 min-w-0">
           <div className="mt-0 lg:mt-4 space-y-4">
-            {featuredBusinesses.map((business) => (
+            {visibleBusinesses.map((business) => (
               <ServiceCard
                 key={business.id}
                 name={business.name}
@@ -210,8 +247,8 @@ export default function Filters() {
                 <button
                   key={page}
                   className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg ${page === 1
-                      ? "bg-primary text-primary-foreground"
-                      : "border border-border text-text-primary hover:bg-muted"
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-text-primary hover:bg-muted"
                     } ${page > 5 ? "hidden sm:flex items-center justify-center" : "flex items-center justify-center"}`}
                 >
                   {page.toString().padStart(2, "0")}

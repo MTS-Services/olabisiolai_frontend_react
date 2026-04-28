@@ -1,27 +1,89 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
 
-type Category = {
-  id: number;
-  name: string;
-  subcategories: string[];
-};
+import {
+  adminCreateCategory,
+  adminDeleteCategory,
+  adminListCategories,
+  adminUpdateCategory,
+} from "@/features/categories/adminCategoriesApi";
+import type { CategoryDto } from "@/features/categories/types";
 
-const DATA: Category[] = [
-  { id: 1, name: "Restaurants & Food", subcategories: ["Fast Food", "Fine Dining", "Cafes", "Street Food", "Catering"] },
-  { id: 2, name: "Technology", subcategories: ["Software", "Hardware", "IT Services", "Web Development"] },
-  { id: 3, name: "Beauty & Wellness", subcategories: ["Salons", "Spas", "Barbershops", "Fitness Centers"] },
-  { id: 4, name: "Retail & Shopping", subcategories: ["Clothing", "Groceries", "Electronics", "Home Goods"] },
-  { id: 5, name: "Professional Services", subcategories: ["Legal", "Accounting", "Consulting", "Marketing"] },
-];
+const PER_PAGE = 10;
 
 export default function CategoriesTable() {
-  const [categories, setCategories] = useState<Category[]>(DATA);
+  const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<CategoryDto | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [editName, setEditName] = useState("");
   const [editSubcategories, setEditSubcategories] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 400);
+    return () => window.clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const listQuery = useQuery({
+    queryKey: ["admin", "categories", page, debouncedSearch, PER_PAGE],
+    queryFn: () =>
+      adminListCategories({
+        search: debouncedSearch || undefined,
+        page,
+        per_page: PER_PAGE,
+      }),
+  });
+
+  const categories = listQuery.data?.categories ?? [];
+  const pagination = listQuery.data?.pagination;
+  const lastPage = pagination?.last_page ?? 1;
+
+  const createMut = useMutation({
+    mutationFn: () =>
+      adminCreateCategory({
+        name: editName,
+        subcategories: editSubcategories.split(",").map((s) => s.trim()).filter(Boolean),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["admin", "categories"] });
+      closeModal();
+    },
+    onError: (e: unknown) => setFormError(messageFromUnknown(e)),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: () => {
+      if (!editingCategory) throw new Error("No category");
+      return adminUpdateCategory({
+        id: editingCategory.id,
+        name: editName,
+        subcategories: editSubcategories.split(",").map((s) => s.trim()).filter(Boolean),
+      });
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["admin", "categories"] });
+      closeModal();
+    },
+    onError: (e: unknown) => setFormError(messageFromUnknown(e)),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => adminDeleteCategory(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin", "categories"] }),
+    onError: (e: unknown) => {
+      window.alert(messageFromUnknown(e));
+    },
+  });
 
   useEffect(() => {
     if (!showEditModal) return;
@@ -29,7 +91,6 @@ export default function CategoriesTable() {
     const prevBodyOverflow = document.body.style.overflow;
     const prevHtmlOverflow = document.documentElement.style.overflow;
 
-    // Prevent background page from scrolling while modal is open.
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
 
@@ -39,43 +100,45 @@ export default function CategoriesTable() {
     };
   }, [showEditModal]);
 
-  const handleDelete = (id: number) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
+  const closeModal = () => {
+    setShowEditModal(false);
+    setEditingCategory(null);
+    setIsAdding(false);
+    setFormError(null);
   };
 
-  const handleEdit = (category: Category) => {
+  const handleDelete = (id: number, name: string) => {
+    if (!window.confirm(`Delete category “${name}”?`)) return;
+    deleteMut.mutate(id);
+  };
+
+  const handleEdit = (category: CategoryDto) => {
     setIsAdding(false);
     setEditingCategory(category);
     setEditName(category.name);
     setEditSubcategories(category.subcategories.join(", "));
+    setFormError(null);
     setShowEditModal(true);
   };
 
   const handleSave = () => {
-    if (isAdding) {
-      const newId = Math.max(...categories.map(c => c.id), 0) + 1;
-      setCategories((prev) => [
-        ...prev,
-        { id: newId, name: editName, subcategories: editSubcategories.split(",").map((s) => s.trim()).filter(Boolean) }
-      ]);
-    } else if (editingCategory) {
-      setCategories((prev) =>
-        prev.map((c) =>
-          c.id === editingCategory.id
-            ? { ...c, name: editName, subcategories: editSubcategories.split(",").map((s) => s.trim()).filter(Boolean) }
-            : c
-        )
-      );
+    setFormError(null);
+    const name = editName.trim();
+    if (!name) {
+      setFormError("Name is required.");
+      return;
     }
-    setShowEditModal(false);
-    setEditingCategory(null);
-    setIsAdding(false);
+    if (isAdding) createMut.mutate();
+    else updateMut.mutate();
   };
 
-  const handleCloseModal = () => {
-    setShowEditModal(false);
+  const openAdd = () => {
+    setIsAdding(true);
     setEditingCategory(null);
-    setIsAdding(false);
+    setEditName("");
+    setEditSubcategories("");
+    setFormError(null);
+    setShowEditModal(true);
   };
 
   const EditIcon = () => (
@@ -108,23 +171,47 @@ export default function CategoriesTable() {
     </div>
   );
 
+  const saving = createMut.isPending || updateMut.isPending;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 font-sans">
-      {/* Header */}
       <h1 className="text-2xl font-bold text-gray-800">Categories</h1>
-      <div className="mb-5 flex items-center justify-end">
+
+      <div className="mb-4 mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search categories…"
+          className="w-full max-w-md rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+        />
         <button
-          onClick={() => {
-            setIsAdding(true);
-            setEditName("");
-            setEditSubcategories("");
-            setShowEditModal(true);
-          }}
-          className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 sm:px-5 text-sm font-medium text-white shadow-sm hover:bg-blue-600 active:scale-95 transition-all"
+          type="button"
+          onClick={openAdd}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 sm:px-5 text-sm font-medium text-white shadow-sm hover:bg-blue-600 active:scale-95 transition-all"
         >
           <Plus className="size-4" />
           Add Category
         </button>
+      </div>
+
+      {listQuery.isError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          Failed to load categories. Are you signed in as an admin?
+        </div>
+      ) : null}
+
+      <div className="mb-3 flex items-center gap-2 text-sm text-gray-600">
+        {listQuery.isFetching ? (
+          <>
+            <Loader2 className="size-4 animate-spin text-blue-500" aria-hidden />
+            <span>Updating…</span>
+          </>
+        ) : pagination ? (
+          <span>
+            Page {pagination.current_page} of {lastPage} · {pagination.total} total
+          </span>
+        ) : null}
       </div>
 
       {/* ── Desktop table (md and up) ── */}
@@ -156,6 +243,7 @@ export default function CategoriesTable() {
                   <td className="px-6 py-4 align-top pt-5">
                     <div className="flex items-center justify-end gap-3">
                       <button
+                        type="button"
                         onClick={() => handleEdit(cat)}
                         className="text-gray-900 hover:text-blue-600 transition-colors p-1 rounded-md hover:bg-blue-50"
                         aria-label={`Edit ${cat.name}`}
@@ -163,8 +251,10 @@ export default function CategoriesTable() {
                         <EditIcon />
                       </button>
                       <button
-                        onClick={() => handleDelete(cat.id)}
-                        className="text-red-400 hover:text-red-600 transition-colors p-1 rounded-md hover:bg-red-50"
+                        type="button"
+                        onClick={() => handleDelete(cat.id, cat.name)}
+                        disabled={deleteMut.isPending}
+                        className="text-red-400 hover:text-red-600 transition-colors p-1 rounded-md hover:bg-red-50 disabled:opacity-50"
                         aria-label={`Delete ${cat.name}`}
                       >
                         <Trash2 className="size-4" />
@@ -185,11 +275,11 @@ export default function CategoriesTable() {
             key={cat.id}
             className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4"
           >
-            {/* Card header */}
             <div className="flex items-start justify-between gap-3 mb-3">
               <p className="font-semibold text-gray-800 text-sm leading-tight">{cat.name}</p>
               <div className="flex items-center gap-1 shrink-0">
                 <button
+                  type="button"
                   onClick={() => handleEdit(cat)}
                   className="text-gray-600 hover:text-blue-600 transition-colors p-1.5 rounded-md hover:bg-blue-50"
                   aria-label={`Edit ${cat.name}`}
@@ -197,8 +287,10 @@ export default function CategoriesTable() {
                   <EditIcon />
                 </button>
                 <button
-                  onClick={() => handleDelete(cat.id)}
-                  className="text-red-400 hover:text-red-600 transition-colors p-1.5 rounded-md hover:bg-red-50"
+                  type="button"
+                  onClick={() => handleDelete(cat.id, cat.name)}
+                  disabled={deleteMut.isPending}
+                  className="text-red-400 hover:text-red-600 transition-colors p-1.5 rounded-md hover:bg-red-50 disabled:opacity-50"
                   aria-label={`Delete ${cat.name}`}
                 >
                   <Trash2 className="size-4" />
@@ -206,10 +298,8 @@ export default function CategoriesTable() {
               </div>
             </div>
 
-            {/* Divider */}
             <div className="border-t border-gray-100 mb-3" />
 
-            {/* Subcategory badges */}
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
               Subcategories
             </p>
@@ -218,15 +308,39 @@ export default function CategoriesTable() {
         ))}
       </div>
 
+      {pagination && pagination.total > PER_PAGE ? (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            disabled={page <= 1 || listQuery.isFetching}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600">
+            {page} / {lastPage}
+          </span>
+          <button
+            type="button"
+            disabled={page >= lastPage || listQuery.isFetching}
+            onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      ) : null}
+
       {/* ── Edit Modal ── */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-black/50 p-4">
           <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl max-h-[92dvh]">
-            {/* Modal header */}
             <div className="flex items-center justify-between border-b border-gray-100 px-4 pb-3 pt-4 sm:px-5 sm:pb-4 sm:pt-5">
-              <h3 className="text-base font-semibold text-gray-900">{isAdding ? 'Add Category' : 'Edit Category'}</h3>
+              <h3 className="text-base font-semibold text-gray-900">{isAdding ? "Add Category" : "Edit Category"}</h3>
               <button
-                onClick={handleCloseModal}
+                type="button"
+                onClick={closeModal}
                 className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-colors"
                 aria-label="Close modal"
               >
@@ -234,8 +348,10 @@ export default function CategoriesTable() {
               </button>
             </div>
 
-            {/* Modal body */}
             <div className="max-h-[calc(92dvh-132px)] overflow-y-auto px-4 py-4 space-y-4 sm:px-5">
+              {formError ? (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{formError}</p>
+              ) : null}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Category Name
@@ -261,19 +377,22 @@ export default function CategoriesTable() {
               </div>
             </div>
 
-            {/* Modal footer */}
             <div className="sticky bottom-0 flex gap-3 border-t border-gray-100 bg-white px-4 pb-4 pt-3 sm:justify-end sm:px-5 sm:pb-5 sm:pt-2">
               <button
-                onClick={handleCloseModal}
+                type="button"
+                onClick={closeModal}
                 className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 sm:flex-none sm:py-2"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSave}
-                className="flex-1 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 sm:flex-none sm:py-2"
+                disabled={saving}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 sm:flex-none sm:py-2 disabled:opacity-60"
               >
-                {isAdding ? 'Add' : 'Save'}
+                {saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                {isAdding ? "Add" : "Save"}
               </button>
             </div>
           </div>
@@ -281,4 +400,14 @@ export default function CategoriesTable() {
       )}
     </div>
   );
+}
+
+function messageFromUnknown(e: unknown): string {
+  if (e && typeof e === "object" && "response" in e) {
+    const res = (e as { response?: { data?: { message?: string } } }).response;
+    const msg = res?.data?.message;
+    if (typeof msg === "string" && msg.trim()) return msg;
+  }
+  if (e instanceof Error && e.message) return e.message;
+  return "Request failed.";
 }

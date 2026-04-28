@@ -17,6 +17,8 @@ const VendorReviews = lazy(() => import("@/pages/vendor/VendorReviews"));
 const VendorPayments = lazy(() => import("@/pages/vendor/VendorPayments"));
 const VendorSettings = lazy(() => import("@/pages/vendor/VendorSettings"));
 const AfterVerification = lazy(() => import("@/pages/vendor/AfterVerification"));
+const DocumentUpload = lazy(() => import("@/pages/vendor/DcoumentUpload"));
+
 
 /** Authenticated `vendor` role area (vendor shell + nested vendor pages). */
 export const vendorRoutes: RouteObject = {
@@ -37,6 +39,7 @@ export const vendorRoutes: RouteObject = {
     { path: "/vendor/reviews", element: suspensePage(VendorReviews) },
     { path: "/vendor/payments", element: suspensePage(VendorPayments) },
     { path: "/vendor/settings", element: suspensePage(VendorSettings) },
-    { path: "/vendor/after-verification", element: suspensePage(AfterVerification) },
+    { path: "/vendor/after-verification", element: suspensePage(AfterVerification) }, 
+    { path: "/vendor/document-upload", element: suspensePage(DocumentUpload) }, 
   ],
 };

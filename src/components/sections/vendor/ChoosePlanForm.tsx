@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
-import { ChevronRight, MapPin, Plus, Upload } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronRight, MapPin, Plus, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useCategoryCatalog } from "@/features/categories/useCategoryCatalog";
 import { createVendorBusiness } from "@/features/business/vendorBusinessApi";
+import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
 
 function Label({ children }: { children: ReactNode }) {
   return (
@@ -29,6 +29,7 @@ function SelectField({
   value,
   onChange,
   disabled,
+  required,
 }: {
   label: ReactNode;
   children: ReactNode;
@@ -37,6 +38,7 @@ function SelectField({
   value?: string;
   onChange?: React.ChangeEventHandler<HTMLSelectElement>;
   disabled?: boolean;
+  required?: boolean;
 }) {
   const Extra = RightIcon;
   return (
@@ -47,6 +49,7 @@ function SelectField({
           value={value}
           onChange={onChange}
           disabled={disabled}
+          required={required}
           className={cn(
             "h-11 w-full appearance-none rounded-md border border-border-light bg-secondary/80 px-3 pr-10 text-sm text-foreground shadow-sm transition-shadow",
             Extra && "pr-12",
@@ -79,6 +82,7 @@ function DashedUpload({
   minHeight,
   multiple,
   onChange,
+  preview,
 }: {
   id: string;
   accept: string;
@@ -87,6 +91,7 @@ function DashedUpload({
   minHeight?: string;
   multiple?: boolean;
   onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  preview?: ReactNode;
 }) {
   return (
     <div
@@ -100,28 +105,32 @@ function DashedUpload({
           minHeight ?? "min-h-[168px]",
         )}
       >
-        <label
-          htmlFor={id}
-          className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 px-4 py-10 transition-colors hover:bg-neutral-100/60"
-        >
-          <input
-            id={id}
-            type="file"
-            accept={accept}
-            className="sr-only"
-            multiple={multiple}
-            onChange={onChange}
-          />
-          <span className="flex size-11 items-center justify-center rounded-full bg-neutral-200/80 text-foreground">
-            <Upload className="size-5" aria-hidden />
-          </span>
-          <span className="text-center text-sm font-semibold text-foreground font-inter">
-            {helper}
-          </span>
-          <span className="text-center text-xs text-muted-foreground font-inter">
-            {subhelper}
-          </span>
-        </label>
+        <input
+          id={id}
+          type="file"
+          accept={accept}
+          className="sr-only"
+          multiple={multiple}
+          onChange={onChange}
+        />
+        {preview ? (
+          <div className="h-full w-full">{preview}</div>
+        ) : (
+          <label
+            htmlFor={id}
+            className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 px-4 py-10 transition-colors hover:bg-neutral-100/60"
+          >
+            <span className="flex size-11 items-center justify-center rounded-full bg-neutral-200/80 text-foreground">
+              <Upload className="size-5" aria-hidden />
+            </span>
+            <span className="text-center text-sm font-semibold text-foreground font-inter">
+              {helper}
+            </span>
+            <span className="text-center text-xs text-muted-foreground font-inter">
+              {subhelper}
+            </span>
+          </label>
+        )}
       </div>
     </div>
   );
@@ -129,8 +138,11 @@ function DashedUpload({
 
 export default function ChoosePlanForm() {
   const navigate = useNavigate();
-  const { data: categories = [], isPending: categoriesLoading, isError: categoriesError } =
-    useCategoryCatalog();
+  const { data: formOptions, isPending: formOptionsLoading, isError: formOptionsError } =
+    useVendorBusinessFormOptions();
+  const categories = formOptions?.categories ?? [];
+  const locationTree = useMemo(() => normalizeLocationTree(formOptions?.locations), [formOptions?.locations]);
+  const locationOptions = useMemo(() => Object.keys(locationTree), [locationTree]);
   const [categoryId, setCategoryId] = useState("");
   const [location, setLocation] = useState("");
   const [state, setState] = useState("");
@@ -138,6 +150,8 @@ export default function ChoosePlanForm() {
   const [services, setServices] = useState<string[]>([""]);
   const [logo, setLogo] = useState<File | null>(null);
   const [coverPhotos, setCoverPhotos] = useState<File[]>([]);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [coverPreviewUrls, setCoverPreviewUrls] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const addService = () => setServices((s) => [...s, ""]);
@@ -147,6 +161,41 @@ export default function ChoosePlanForm() {
       next[index] = value;
       return next;
     });
+  const stateOptions = useMemo(() => {
+    if (!location) return [];
+    return Object.keys(locationTree[location] ?? {});
+  }, [location, locationTree]);
+  const cityOptions = useMemo(() => {
+    if (!location || !state) return [];
+    return locationTree[location]?.[state] ?? [];
+  }, [location, state, locationTree]);
+
+  useEffect(() => {
+    setState("");
+    setCity("");
+  }, [location]);
+
+  useEffect(() => {
+    setCity("");
+  }, [state]);
+
+  useEffect(() => {
+    if (!logo) {
+      setLogoPreviewUrl(null);
+      return;
+    }
+    const nextUrl = URL.createObjectURL(logo);
+    setLogoPreviewUrl(nextUrl);
+    return () => URL.revokeObjectURL(nextUrl);
+  }, [logo]);
+
+  useEffect(() => {
+    const urls = coverPhotos.map((file) => URL.createObjectURL(file));
+    setCoverPreviewUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [coverPhotos]);
 
   const createBusinessMutation = useMutation({
     mutationFn: createVendorBusiness,
@@ -162,6 +211,16 @@ export default function ChoosePlanForm() {
     e.preventDefault();
     setSubmitError(null);
     const formData = new FormData(e.currentTarget);
+    const normalizedServices = services.map((service) => service.trim()).filter(Boolean);
+
+    if (!categoryId || !location || !state || !city) {
+      setSubmitError("Please select category, location, state, and city.");
+      return;
+    }
+    if (normalizedServices.length === 0) {
+      setSubmitError("Please add at least one service.");
+      return;
+    }
 
     createBusinessMutation.mutate({
       category_id: categoryId,
@@ -170,7 +229,7 @@ export default function ChoosePlanForm() {
       state,
       city,
       business_description: String(formData.get("description") ?? ""),
-      services,
+      services: normalizedServices,
       phone: String(formData.get("phone") ?? ""),
       whatsapp: String(formData.get("whatsapp") ?? ""),
       website: String(formData.get("website") ?? ""),
@@ -220,12 +279,13 @@ export default function ChoosePlanForm() {
                 }
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                disabled={categoriesLoading || categoriesError}
+                disabled={formOptionsLoading || formOptionsError}
+                required
               >
                 <option value="">
-                  {categoriesLoading
+                  {formOptionsLoading
                     ? "Loading categories…"
-                    : categoriesError
+                    : formOptionsError
                       ? "Categories unavailable"
                       : "Select category"}
                 </option>
@@ -235,9 +295,10 @@ export default function ChoosePlanForm() {
                   </option>
                 ))}
               </SelectField>
-              {categoriesError ? (
+              {formOptionsError ? (
                 <p className="text-xs text-destructive">
-                  Categories could not be loaded (check <span className="font-mono">GET /public/categories</span> on the API).
+                  Form options failed to load. Check{" "}
+                  <span className="font-mono">GET /vendor/business/form-options</span>.
                 </p>
               ) : null}
             </div>
@@ -251,26 +312,52 @@ export default function ChoosePlanForm() {
               rightIcon={MapPin}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              disabled={formOptionsLoading || locationOptions.length === 0}
+              required
             >
-              <option value="">Select location</option>
-              <option>Lagos</option>
-              <option>Abuja</option>
-              <option>Port Harcourt</option>
+              <option value="">
+                {formOptionsLoading
+                  ? "Loading locations…"
+                  : locationOptions.length === 0
+                    ? "No locations"
+                    : "Select location"}
+              </option>
+              {locationOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
             </SelectField>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <SelectField label="State" value={state} onChange={(e) => setState(e.target.value)}>
+            <SelectField
+              label="State"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              disabled={!location || stateOptions.length === 0}
+              required
+            >
               <option value="">Select state</option>
-              <option>Lagos</option>
-              <option>Ogun</option>
-              <option>Oyo</option>
+              {stateOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
             </SelectField>
-            <SelectField label="City" value={city} onChange={(e) => setCity(e.target.value)}>
+            <SelectField
+              label="City"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              disabled={!state || cityOptions.length === 0}
+              required
+            >
               <option value="">Select city</option>
-              <option>Ikeja</option>
-              <option>Victoria Island</option>
-              <option>Lekki</option>
+              {cityOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
             </SelectField>
           </div>
 
@@ -375,10 +462,52 @@ export default function ChoosePlanForm() {
             subhelper="JPG, PNG up to 10MB each"
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
+              if (!file) {
+                setLogo(null);
+                return;
+              }
+              if (!isAcceptedImage(file)) {
+                setSubmitError("Logo must be JPG, PNG, or WebP.");
+                e.currentTarget.value = "";
+                setLogo(null);
+                return;
+              }
+              if (!isWithinSizeLimit(file, 10)) {
+                setSubmitError("Logo must be 10MB or smaller.");
+                e.currentTarget.value = "";
+                setLogo(null);
+                return;
+              }
+              setSubmitError(null);
               setLogo(file);
             }}
+            preview={
+              logoPreviewUrl ? (
+                <div className="relative h-full min-h-[168px] w-full overflow-hidden rounded-[10px]">
+                  <img src={logoPreviewUrl} alt="Logo preview" className="h-full w-full object-cover" />
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/55 px-3 py-2">
+                    <p className="max-w-[75%] truncate text-xs text-white">{logo?.name}</p>
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor="logo-upload"
+                        className="cursor-pointer rounded bg-white/20 px-2 py-1 text-xs text-white hover:bg-white/30"
+                      >
+                        Change
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setLogo(null)}
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/75"
+                        aria-label="Remove logo"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : undefined
+            }
           />
-          {logo ? <p className="mt-2 text-xs text-muted-foreground">{logo.name}</p> : null}
         </CardContent>
       </Card>
 
@@ -397,14 +526,66 @@ export default function ChoosePlanForm() {
             multiple
             onChange={(e) => {
               const files = Array.from(e.target.files ?? []);
-              setCoverPhotos(files.slice(0, 5));
+              if (files.length > 5) {
+                setSubmitError("You can upload up to 5 cover photos.");
+                setCoverPhotos(files.slice(0, 5));
+                return;
+              }
+              const hasBadType = files.some((file) => !isAcceptedImage(file));
+              if (hasBadType) {
+                setSubmitError("Cover photos must be JPG, PNG, or WebP.");
+                e.currentTarget.value = "";
+                setCoverPhotos([]);
+                return;
+              }
+              const hasBigFile = files.some((file) => !isWithinSizeLimit(file, 10));
+              if (hasBigFile) {
+                setSubmitError("Each cover photo must be 10MB or smaller.");
+                e.currentTarget.value = "";
+                setCoverPhotos([]);
+                return;
+              }
+              setSubmitError(null);
+              setCoverPhotos(files);
             }}
+            preview={
+              coverPhotos.length > 0 ? (
+                <div className="h-full min-h-[168px] space-y-3 p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">{coverPhotos.length} file(s) selected</p>
+                    <label
+                      htmlFor="cover-upload"
+                      className="cursor-pointer rounded border border-border-light bg-background px-2 py-1 text-xs text-foreground hover:bg-neutral-100"
+                    >
+                      Add/Change
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {coverPhotos.map((file, index) => (
+                      <div key={`${file.name}-${index}`} className="relative overflow-hidden rounded-lg border border-border-light">
+                        <img
+                          src={coverPreviewUrls[index]}
+                          alt={`Cover preview ${index + 1}`}
+                          className="h-28 w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCoverPhotos((prev) => prev.filter((_, prevIndex) => prevIndex !== index))
+                          }
+                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/75"
+                          aria-label={`Remove cover photo ${index + 1}`}
+                        >
+                          <X className="size-4" />
+                        </button>
+                        <p className="truncate px-2 py-1 text-[11px] text-muted-foreground">{file.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : undefined
+            }
           />
-          {coverPhotos.length > 0 ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {coverPhotos.length} file(s) selected
-            </p>
-          ) : null}
         </CardContent>
       </Card>
 
@@ -457,4 +638,88 @@ function getMessageFromUnknown(error: unknown): string {
   }
   if (error instanceof Error && error.message.trim()) return error.message;
   return "Could not create business profile.";
+}
+
+type LocationTree = Record<string, Record<string, string[]>>;
+
+function normalizeLocationTree(raw: unknown): LocationTree {
+  const out: LocationTree = {};
+
+  const setRow = (locationName: string, stateName: string, cityName: string) => {
+    const location = locationName.trim();
+    const state = stateName.trim();
+    const city = cityName.trim();
+    if (!location || !state || !city) return;
+    if (!out[location]) out[location] = {};
+    if (!out[location][state]) out[location][state] = [];
+    if (!out[location][state].includes(city)) out[location][state].push(city);
+  };
+
+  const parseNode = (node: unknown, inheritedLocation?: string, inheritedState?: string) => {
+    if (Array.isArray(node)) {
+      node.forEach((item) => parseNode(item, inheritedLocation, inheritedState));
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    const record = node as Record<string, unknown>;
+
+    const locationName =
+      readString(record.name) ??
+      readString(record.location) ??
+      readString(record.country) ??
+      inheritedLocation;
+    const stateName = readString(record.state) ?? inheritedState;
+
+    const citiesCandidate = record.cities ?? record.city;
+    if (Array.isArray(citiesCandidate) && locationName && stateName) {
+      citiesCandidate.forEach((city) => setRow(locationName, stateName, String(city)));
+    }
+
+    if (Array.isArray(record.states) && locationName) {
+      (record.states as unknown[]).forEach((stateNode) => parseNode(stateNode, locationName));
+    }
+
+    if (record.locations && Array.isArray(record.locations)) {
+      parseNode(record.locations);
+    }
+
+    Object.entries(record).forEach(([key, value]) => {
+      if (["states", "cities", "city", "locations"].includes(key)) return;
+
+      if (Array.isArray(value)) {
+        if (value.every((entry) => typeof entry === "string") && locationName) {
+          value.forEach((entry) => setRow(locationName, key, String(entry)));
+          return;
+        }
+        parseNode(value, locationName ?? key, stateName);
+        return;
+      }
+
+      if (value && typeof value === "object") {
+        parseNode(value, locationName ?? key, stateName);
+      }
+    });
+  };
+
+  parseNode(raw);
+
+  if (Object.keys(out).length === 0) {
+    out.Nigeria = {
+      Lagos: ["Ikeja", "Victoria Island", "Lekki"],
+    };
+  }
+
+  return out;
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function isAcceptedImage(file: File): boolean {
+  return ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+}
+
+function isWithinSizeLimit(file: File, maxMb: number): boolean {
+  return file.size <= maxMb * 1024 * 1024;
 }

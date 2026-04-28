@@ -92,6 +92,10 @@ export default function BusinessTable() {
     queryFn: fetchAdminBusinessInfo,
   });
   const businesses = listQuery.data ?? [];
+  const errorMessage =
+    listQuery.error instanceof Error && listQuery.error.message.trim()
+      ? listQuery.error.message
+      : "Failed to load business list.";
 
   const typeOptions = useMemo(() => Array.from(new Set(businesses.map((item) => item.type))), [businesses]);
   const categoryOptions = useMemo(
@@ -192,7 +196,11 @@ export default function BusinessTable() {
       </section>
       {listQuery.isError ? (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          Failed to load businesses from <span className="font-mono">GET /admin/business-info</span>.
+          {errorMessage}{" "}
+          <span className="font-mono">
+            (tried: POST /admin/business-info, POST /admin/businesses, POST /admin/businesses/list, GET
+            /admin/business-info)
+          </span>
         </div>
       ) : null}
 

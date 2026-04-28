@@ -3,7 +3,13 @@ import { Lock, PlugZap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-export function OrderSummaryCard() {
+export function OrderSummaryCard({
+  onConfirmPay,
+  isPaying,
+}: {
+  onConfirmPay: () => void;
+  isPaying?: boolean;
+}) {
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
@@ -46,9 +52,13 @@ export function OrderSummaryCard() {
           <span className="text-4xl font-bold text-brand-red">₦5,000.00</span>
         </div>
 
-        <Button className="w-full bg-brand-red text-white hover:bg-brand-red/90">
+        <Button
+          className="w-full bg-brand-red text-white hover:bg-brand-red/90"
+          onClick={onConfirmPay}
+          disabled={isPaying}
+        >
           <Lock className="size-4" />
-          Confirm & Pay
+          {isPaying ? "Processing..." : "Confirm & Pay"}
         </Button>
 
         <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">

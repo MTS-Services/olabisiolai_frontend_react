@@ -24,7 +24,9 @@ export function PaymentMethodsCard({
             </div>
             <div>
               <p className="font-inter font-semibold text-sm text-foreground">Pay with Card</p>
-              <p className="font-inter font-normal text-sm text-muted-foreground">Secure checkout via Paystack</p>
+              <p className="font-inter font-normal text-sm text-muted-foreground">
+                Secure checkout via Flutterwave
+              </p>
             </div>
           </div>
           {selectedMethod === "card" ? (

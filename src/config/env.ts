@@ -78,6 +78,8 @@ export const env = {
   isProd: import.meta.env.PROD,
   // Vite only exposes env vars to the client when prefixed with VITE_
   apiBaseUrl: required('VITE_API_BASE_URL'),
+  /** Flutterwave public key for client-side checkout (optional). */
+  flutterwavePublicKey: (import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY as string | undefined) ?? '',
   /**
    * `bearer_memory` — Passport returns `token` in JSON; see `bearerTokenPersistence`.
    * `http_only_cookie` — Backend sets HttpOnly session cookie; no Bearer in JS.

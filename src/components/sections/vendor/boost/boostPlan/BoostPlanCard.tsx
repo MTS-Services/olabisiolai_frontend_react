@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 import { type Plan } from "./boostPlanData";
 
@@ -59,9 +60,14 @@ const getSlotDotColor = (slotStatus: Plan["slotStatus"]) => {
 
 export function BoostPlanCard({ plan }: { plan: Plan }) {
   const navigate = useNavigate();
+  const [selectedOption, setSelectedOption] = useState(
+    plan.pricingOptions.length - 1,
+  );
 
   return (
-    <div className={`flex-1 flex flex-col rounded-2xl p-6 relative ${getBgClasses(plan.colorScheme)} ${plan.highlighted ? "mt-5 md:mt-0" : ""}`}>
+    <div
+      className={`flex-1 flex flex-col rounded-2xl p-6 relative ${getBgClasses(plan.colorScheme)} ${plan.highlighted ? "mt-5 md:mt-0" : ""}`}
+    >
       {/* Badge */}
       {plan.badge && (
         <div className="absolute -top-4 left-0 right-0 flex justify-center">
@@ -71,11 +77,15 @@ export function BoostPlanCard({ plan }: { plan: Plan }) {
         </div>
       )}
       <div className={`flex flex-col flex-1 ${plan.highlighted ? "pt-8" : ""}`}>
-        {/* Medal */}
-        <div className="flex flex-col items-center mb-5">
-          <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-b-[13px] border-l-transparent border-r-transparent border-b-blue-400" />
-          <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-b-[13px] border-l-transparent border-r-transparent border-b-blue-400 -mt-1" />
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${getMedalGradient(plan.colorScheme)} flex items-center justify-center text-white font-extrabold text-lg mt-0.5`}>
+        <div className="flex flex-col items-center mb-5 scale-90">
+          {" "}
+          <div className="relative flex items-center w-20 h-24 rounded-lg overflow-hidden">
+            <div className="absolute w-14 h-6 bg-[#4A90E2] transform rotate-45 -translate-x-0 translate-y-3 rounded-sm"></div>
+            <div className="absolute w-14 h-6 bg-[#357ABD] transform -rotate-45 translate-x-6 translate-y-3 rounded-sm"></div>
+          </div>
+          <div
+            className={`w-8 h-8 rounded-full bg-gradient-to-br ${getMedalGradient(plan.colorScheme)} flex items-center justify-center text-white font-bold text-sm -mt-4 z-20 shadow-md`}
+          >
             {plan.medal}
           </div>
         </div>
@@ -88,22 +98,35 @@ export function BoostPlanCard({ plan }: { plan: Plan }) {
         {/* Pricing Options */}
         <div className="flex flex-col gap-2 mb-4">
           {plan.pricingOptions.map((option, index) => (
-            <label key={index} className={`flex items-center gap-3 bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 cursor-pointer has-[:checked]:${getRadioBorder(plan.colorScheme)} has-[:checked]:bg-gray-50 transition-colors ${index === plan.pricingOptions.length - 1 ? `border-${plan.colorScheme === "yellow" ? "yellow-600" : "gray-700"} bg-gray-50` : ""}`}>
+            <label
+              key={index}
+              className={`flex items-center gap-3 bg-white border-2 rounded-xl px-4 py-2.5 cursor-pointer transition-colors ${
+                selectedOption === index
+                  ? `${getRadioBorder(plan.colorScheme)} bg-gray-50`
+                  : "border-gray-200"
+              }`}
+            >
               <input
                 type="radio"
                 name={plan.id}
                 className={`${getRadioAccent(plan.colorScheme)} w-4 h-4 shrink-0`}
-                defaultChecked={index === plan.pricingOptions.length - 1}
+                checked={selectedOption === index}
+                onChange={() => setSelectedOption(index)}
               />
               <span className="text-sm font-semibold text-gray-800">
-                {option.duration} – <span className="font-extrabold">{option.price}</span>
+                {option.duration} –{" "}
+                <span className="font-extrabold">{option.price}</span>
               </span>
             </label>
           ))}
         </div>
         {/* Slot Status */}
-        <p className={`flex items-center gap-2 font-semibold text-sm mb-4 ${getSlotColor(plan.slotStatus)}`}>
-          <span className={`w-2 h-2 rounded-full inline-block ${getSlotDotColor(plan.slotStatus)}`} />
+        <p
+          className={`flex items-center gap-2 font-semibold text-sm mb-4 ${getSlotColor(plan.slotStatus)}`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full inline-block ${getSlotDotColor(plan.slotStatus)}`}
+          />
           {getSlotText(plan.slotStatus)}
         </p>
         {/* Features */}
@@ -117,13 +140,24 @@ export function BoostPlanCard({ plan }: { plan: Plan }) {
               ) : (
                 <span className="text-gray-400 font-bold">✕</span>
               )}
-              <span className={plan.id === "gold" && index === plan.features.length - 1 ? "text-blue-600 font-semibold" : feature.checked ? "" : "text-gray-400"}>
+              <span
+                className={
+                  plan.id === "gold" && index === plan.features.length - 1
+                    ? "text-blue-600 font-semibold"
+                    : feature.checked
+                      ? ""
+                      : "text-gray-400"
+                }
+              >
                 {feature.text}
               </span>
             </li>
           ))}
         </ul>
-        <button onClick={() => navigate('/vendor/boost/review-pay')} className={`w-full ${getButtonClasses(plan.colorScheme)} active:scale-[0.98] transition-all text-white font-bold text-sm py-3.5 rounded-xl`}>
+        <button
+          onClick={() => navigate("/vendor/review-pay")}
+          className={`w-full ${getButtonClasses(plan.colorScheme)} active:scale-[0.98] transition-all text-white font-bold text-sm py-3.5 rounded-xl`}
+        >
           {plan.cta}
         </button>
       </div>

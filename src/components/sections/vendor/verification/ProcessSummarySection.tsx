@@ -24,7 +24,7 @@ export function ProcessSummarySection() {
       <div className="mt-auto">
         <Button 
           className="w-full bg-brand-red text-white hover:bg-brand-red/90 py-2.5 px-4 text-sm sm:py-3 sm:px-6 sm:text-base"
-         onClick={() => navigate("vendor/document-upload")}
+         onClick={() => navigate("/vendor/document-upload")}
         >
           <span>Continue</span>
           <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />

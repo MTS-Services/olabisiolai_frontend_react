@@ -34,7 +34,7 @@ export const vendorRoutes: RouteObject = {
     { path: "/vendor/verification", element: suspensePage(VendorVerification) },
     { path: "/vendor/boost", element: suspensePage(VendorBoost) },
     { path: "/vendor/boost/configure", element: suspensePage(VendorBoostConfigure) },
-    { path: "/vendor/boost/review-pay", element: suspensePage(VendorBoostReviewPay) },
+    { path: "/vendor/review-pay", element: suspensePage(VendorBoostReviewPay) },
     { path: "/vendor/analytics", element: suspensePage(VendorAnalytics) },
     { path: "/vendor/reviews", element: suspensePage(VendorReviews) },
     { path: "/vendor/payments", element: suspensePage(VendorPayments) },

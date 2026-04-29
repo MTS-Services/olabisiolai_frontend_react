@@ -1,9 +1,23 @@
 import { Lock, PlugZap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export function OrderSummaryCard() {
+  const navigate = useNavigate();
+
+const handleConfirmPay = () => {
+  const cameFromVerification = sessionStorage.getItem('paymentSource') === 'verification';
+  
+  sessionStorage.removeItem('paymentSource');
+  
+  if (cameFromVerification) {
+    navigate("/vendor/after-verification");
+  } else {
+    navigate("/vendor/boost");
+  }
+};
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
@@ -46,7 +60,10 @@ export function OrderSummaryCard() {
           <span className="text-4xl font-bold text-brand-red">₦5,000.00</span>
         </div>
 
-        <Button className="w-full bg-brand-red text-white hover:bg-brand-red/90">
+        <Button 
+          className="w-full bg-brand-red text-white hover:bg-brand-red/90"
+          onClick={handleConfirmPay}
+        >
           <Lock className="size-4" />
           Confirm & Pay
         </Button>

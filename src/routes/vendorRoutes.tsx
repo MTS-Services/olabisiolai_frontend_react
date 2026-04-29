@@ -5,6 +5,7 @@ import { VendorLayout } from "@/layouts/vendor/VendorLayout";
 import { RoleGate } from "@/routes/RoleGate";
 import { suspensePage } from "@/routes/routeUtils";
 
+const VendorDashboardWrapper = lazy(() => import("@/pages/vendor/VendorDashboardWrapper"));
 const VendorDashboard = lazy(() => import("@/pages/vendor/VendorDashboard"));
 const VendorProfile = lazy(() => import("@/pages/vendor/VendorProfile"));
 const VendorLeads = lazy(() => import("@/pages/vendor/VendorLeads"));
@@ -28,6 +29,7 @@ export const vendorRoutes: RouteObject = {
     </RoleGate>
   ),
   children: [
+    { path: "/vendor", element: suspensePage(VendorDashboardWrapper) },
     { path: "/vendor/dashboard", element: suspensePage(VendorDashboard) },
     { path: "/vendor/profile", element: suspensePage(VendorProfile) },
     { path: "/vendor/leads", element: suspensePage(VendorLeads) },
@@ -39,7 +41,7 @@ export const vendorRoutes: RouteObject = {
     { path: "/vendor/reviews", element: suspensePage(VendorReviews) },
     { path: "/vendor/payments", element: suspensePage(VendorPayments) },
     { path: "/vendor/settings", element: suspensePage(VendorSettings) },
-    { path: "/vendor/after-verification", element: suspensePage(AfterVerification) }, 
-    { path: "/vendor/document-upload", element: suspensePage(DocumentUpload) }, 
+    { path: "/vendor/after-verification", element: suspensePage(AfterVerification) },
+    { path: "/vendor/document-upload", element: suspensePage(DocumentUpload) },
   ],
 };

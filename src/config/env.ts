@@ -72,6 +72,11 @@ function refreshTokenConfigFromEnv() {
 
 const refreshTokenEnv = refreshTokenConfigFromEnv()
 
+function optionalViteString(name: string): string | undefined {
+  const v = (import.meta.env as Record<string, string | undefined>)[name]?.trim()
+  return v || undefined
+}
+
 export const env = {
   mode: import.meta.env.MODE,
   isDev: import.meta.env.DEV,
@@ -109,4 +114,6 @@ export const env = {
   authRefreshPath: refreshTokenEnv.path,
   /** JSON body field name for the refresh token (default `refresh_token`) */
   refreshTokenBodyKey: refreshTokenEnv.bodyKey,
+  /** Google Maps JS API key (Places + map). Optional until admin location map is used. */
+  googleMapsApiKey: optionalViteString('VITE_GOOGLE_MAPS_API_KEY'),
 }

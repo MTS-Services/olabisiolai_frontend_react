@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { ChevronDown, Plus, X } from "lucide-react";
 
+import { AdminLgaMapPicker } from "@/components/maps/AdminLgaMapPicker";
+import { env } from "@/config/env";
+import type { LgaMapPickResult } from "@/features/maps/lgaMapPickTypes";
+
 type LGA = { id: string; name: string; areas: string[] };
 type StateEntry = { id: string; name: string; lgas: LGA[] };
 
@@ -37,6 +41,7 @@ export default function LocationHierarchy() {
   const [newStateName, setNewStateName] = useState("");
   const [newLgaName, setNewLgaName] = useState("");
   const [newAreaName, setNewAreaName] = useState("");
+  const [mapPick, setMapPick] = useState<LgaMapPickResult | null>(null);
   const [openStates, setOpenStates] = useState<Set<string>>(new Set(initialData.map((s) => s.id)));
   const [openLgas, setOpenLgas] = useState<Set<string>>(
     new Set(initialData.flatMap((s) => s.lgas.map((l) => l.id)))
@@ -73,16 +78,39 @@ export default function LocationHierarchy() {
       setNewLgaName("");
       setNewAreaName("");
       setShowAddModal(false);
+      setMapPick(null);
     }
+  };
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setMapPick(null);
+  };
+
+  const handleMapPick = (pick: LgaMapPickResult) => {
+    setMapPick(pick);
+    setNewStateName((s) => s.trim() || pick.administrativeAreaLevel1 || s);
+    setNewLgaName(
+      (n) =>
+        n.trim() ||
+        pick.administrativeAreaLevel2 ||
+        pick.locality ||
+        pick.displayName ||
+        n,
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 font-sans text-sm">
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Locations</h1>
+      <h1 className="text-xl font-bold text-gray-900 mb-2">Locations</h1>
       {/* Top bar */}
       <div className="mb-4 flex justify-end">
         <button
-          onClick={() => setShowAddModal(true)}
+          type="button"
+          onClick={() => {
+            setMapPick(null);
+            setShowAddModal(true);
+          }}
           className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-4 py-2 text-xs font-medium text-white hover:bg-blue-600 active:scale-95 transition-all"
         >
           <Plus className="size-3.5" />
@@ -156,17 +184,45 @@ export default function LocationHierarchy() {
 
       {/* Add Location Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/10 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+        <div className="fixed inset-0 bg-black/10 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-lg">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Add Location</h2>
               <button
-                onClick={() => setShowAddModal(false)}
+                type="button"
+                onClick={closeAddModal}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="size-5" />
               </button>
             </div>
+
+            <div className="mb-4">
+              <p className="text-xs font-medium text-gray-700 mb-1.5">Search on map (Google)</p>
+              <AdminLgaMapPicker apiKey={env.googleMapsApiKey} onPick={handleMapPick} />
+            </div>
+
+            {mapPick && (
+              <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 space-y-0.5">
+                <p>
+                  <span className="font-medium text-gray-800">Place ID:</span> {mapPick.googlePlaceId}
+                </p>
+                <p>
+                  <span className="font-medium text-gray-800">Coords:</span> {mapPick.lat.toFixed(5)},{" "}
+                  {mapPick.lng.toFixed(5)}
+                </p>
+                <p>
+                  <span className="font-medium text-gray-800">Country / State / LGA²:</span>{" "}
+                  {[mapPick.country, mapPick.administrativeAreaLevel1, mapPick.administrativeAreaLevel2]
+                    .filter(Boolean)
+                    .join(" → ") || "—"}
+                </p>
+                <p className="text-[11px] text-gray-500 pt-1">
+                  Save these fields on the server (see API notes). Local Save below still uses the text fields.
+                </p>
+              </div>
+            )}
+
             <div className="mb-4">
               <label htmlFor="stateName" className="block text-sm font-medium text-gray-700 mb-1">
                 State Name
@@ -183,7 +239,7 @@ export default function LocationHierarchy() {
 
             <div className="mb-4">
               <label htmlFor="cityName" className="block text-sm font-medium text-gray-700 mb-1">
-                City Name
+                LGA / city name
               </label>
               <input
                 id="cityName"
@@ -197,7 +253,7 @@ export default function LocationHierarchy() {
 
             <div className="mb-4">
               <label htmlFor="areaName" className="block text-sm font-medium text-gray-700 mb-1">
-               Sub City (comma separated)
+                Sub City (comma separated)
               </label>
               <input
                 id="areaName"
@@ -211,12 +267,14 @@ export default function LocationHierarchy() {
 
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => setShowAddModal(false)}
+                type="button"
+                onClick={closeAddModal}
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={addLocation}
                 className="px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600"
               >

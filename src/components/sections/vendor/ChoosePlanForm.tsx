@@ -200,6 +200,7 @@ export default function ChoosePlanForm() {
   const createBusinessMutation = useMutation({
     mutationFn: createVendorBusiness,
     onSuccess: () => {
+      localStorage.setItem("vendorBusinessCreated", "true");
       navigate("/vendor/dashboard");
     },
     onError: (error: unknown) => {

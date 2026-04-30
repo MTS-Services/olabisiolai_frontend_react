@@ -13,7 +13,8 @@ const handleConfirmPay = () => {
   sessionStorage.removeItem('paymentSource');
   
   if (cameFromVerification) {
-    navigate("/vendor/after-verification");
+    // navigate("/vendor/after-verification");
+    navigate("/vendor/document-upload");
   } else {
     navigate("/vendor/boost");
   }
@@ -65,7 +66,7 @@ const handleConfirmPay = () => {
           onClick={handleConfirmPay}
         >
           <Lock className="size-4" />
-          Confirm & Pay
+          Pay Now
         </Button>
 
         <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">

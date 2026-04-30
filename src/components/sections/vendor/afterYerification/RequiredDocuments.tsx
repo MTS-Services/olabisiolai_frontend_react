@@ -1,5 +1,6 @@
 import { Upload, FileText, Home, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState, useRef } from "react";
 
 interface Document {
   id: string;
@@ -10,7 +11,7 @@ interface Document {
 }
 
 export function RequiredDocuments({ className }: { className?: string }) {
-  const documents: Document[] = [
+  const [documents, setDocuments] = useState<Document[]>([
     {
       id: "business-registration",
       title: "Business Registration",
@@ -32,7 +33,32 @@ export function RequiredDocuments({ className }: { className?: string }) {
       status: "missing",
       icon: <Home className={cn('h-5', 'w-5')} />,
     },
-  ];
+  ]);
+
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  const handleFileUpload = (documentId: string) => {
+    const fileInput = fileInputRefs.current[documentId];
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
+  const handleFileChange = (documentId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Update document status to "in_review" when file is uploaded
+      setDocuments(prevDocs => 
+        prevDocs.map(doc => 
+          doc.id === documentId 
+            ? { ...doc, status: "in_review" as const }
+            : doc
+        )
+      );
+      console.log(`File uploaded for ${documentId}:`, file.name);
+      // Here you would typically handle the actual file upload to your server
+    }
+  };
 
   const getStatusBadge = (status: Document["status"]) => {
     switch (status) {
@@ -90,10 +116,22 @@ export function RequiredDocuments({ className }: { className?: string }) {
                 <div className={cn('flex', 'flex-col', 'sm:flex-row', 'items-start', 'sm:items-center', 'gap-2', 'mt-2', 'sm:mt-0')}>
                   {getStatusBadge(doc.status)}
                   {doc.status === "missing" && (
-                    <button className={cn('flex', 'items-center', 'gap-2', 'px-3', 'py-1.5', 'text-xs', 'font-medium', 'text-primary', 'border', 'border-primary', 'rounded-md', 'hover:bg-primary/5', 'transition-colors')}>
-                      <Upload className={cn('h-3', 'w-3')} />
-                      Upload
-                    </button>
+                    <>
+                      <button 
+                        onClick={() => handleFileUpload(doc.id)}
+                        className={cn('flex', 'items-center', 'gap-2', 'px-3', 'py-1.5', 'text-xs', 'font-medium', 'text-primary', 'border', 'border-primary', 'rounded-md', 'hover:bg-primary/5', 'transition-colors')}
+                      >
+                        <Upload className={cn('h-3', 'w-3')} />
+                        Upload
+                      </button>
+                      <input
+                        ref={el => { fileInputRefs.current[doc.id] = el; }}
+                        type="file"
+                        onChange={(e) => handleFileChange(doc.id, e)}
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        style={{ display: 'none' }}
+                      />
+                    </>
                   )}
 
                   {doc.status === "in_review" && (

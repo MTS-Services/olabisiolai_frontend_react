@@ -1,6 +1,5 @@
 import { UploadCloudIcon, X, FileText } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 export default function File() {
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File[] }>({
@@ -53,7 +52,20 @@ export default function File() {
       [title]: prev[title].filter((_, i) => i !== index)
     }));
   };
-  const navigate = useNavigate();
+
+  // Cleanup object URLs on component unmount
+  useEffect(() => {
+    return () => {
+      Object.values(previewUrls).forEach(urls => {
+        urls.forEach(url => {
+          if (url) {
+            URL.revokeObjectURL(url);
+          }
+        });
+      });
+    };
+  }, [previewUrls]);
+ 
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 ">
@@ -120,15 +132,6 @@ export default function File() {
             )}
           </div>
         ))}
-      </div>
-
-      <div className="flex justify-center my-10">
-        <button  onClick={() => {
-          sessionStorage.setItem('paymentSource', 'verification');
-          navigate("/vendor/review-pay");
-        }} className="bg-red-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-600 transition-colors">
-          Submit Documents
-        </button>
       </div>
     </div>
   );

@@ -15,6 +15,54 @@ type Props = {
   showDemoVendorCluster?: boolean
 }
 
+function extractComponent(
+  components: google.maps.GeocoderAddressComponent[] | undefined,
+  type: string,
+): string | null {
+  if (!components?.length) return null
+  const found = components.find((c) => c.types.includes(type))
+  return found?.long_name ?? null
+}
+
+function pickFromGeocoderResult(
+  result: google.maps.GeocoderResult,
+  location: google.maps.LatLngLiteral,
+): LgaMapPickResult {
+  const viewportBounds = result.geometry?.viewport ?? null
+  const viewport = viewportBounds
+    ? {
+      north: viewportBounds.getNorthEast().lat(),
+      east: viewportBounds.getNorthEast().lng(),
+      south: viewportBounds.getSouthWest().lat(),
+      west: viewportBounds.getSouthWest().lng(),
+    }
+    : null
+
+  const components = result.address_components ?? []
+  const addressComponentsJson = JSON.stringify(
+    components.map((c) => ({
+      longText: c.long_name,
+      shortText: c.short_name,
+      types: c.types,
+    })),
+  )
+
+  return {
+    googlePlaceId: result.place_id || `latlng:${location.lat.toFixed(6)},${location.lng.toFixed(6)}`,
+    resourceName: undefined,
+    displayName: result.formatted_address ?? null,
+    formattedAddress: result.formatted_address ?? null,
+    lat: location.lat,
+    lng: location.lng,
+    country: extractComponent(components, 'country'),
+    administrativeAreaLevel1: extractComponent(components, 'administrative_area_level_1'),
+    administrativeAreaLevel2: extractComponent(components, 'administrative_area_level_2'),
+    locality: extractComponent(components, 'locality'),
+    viewport,
+    addressComponentsJson,
+  }
+}
+
 function randomDemoMarkers(center: google.maps.LatLngLiteral, count: number): google.maps.Marker[] {
   const markers: google.maps.Marker[] = []
   for (let i = 0; i < count; i++) {
@@ -34,6 +82,8 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
   const mapHostRef = useRef<HTMLDivElement>(null)
   const clustererRef = useRef<MarkerClusterer | null>(null)
   const mapRef = useRef<google.maps.Map | null>(null)
+  const selectedMarkerRef = useRef<google.maps.Marker | null>(null)
+  const selectedInfoRef = useRef<google.maps.InfoWindow | null>(null)
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -45,6 +95,21 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
       if (!map) return
 
       const center = { lat: pick.lat, lng: pick.lng }
+      if (selectedMarkerRef.current) {
+        selectedMarkerRef.current.setPosition(center)
+        selectedMarkerRef.current.setVisible(true)
+        selectedMarkerRef.current.setAnimation(google.maps.Animation.BOUNCE)
+        window.setTimeout(() => {
+          selectedMarkerRef.current?.setAnimation(null)
+        }, 650)
+      }
+      if (selectedInfoRef.current && map) {
+        selectedInfoRef.current.setContent(
+          `<div style="font-size:12px;font-weight:600;">Selected point</div><div style="font-size:11px;color:#555;">${pick.lat.toFixed(5)}, ${pick.lng.toFixed(5)}</div>`,
+        )
+        selectedInfoRef.current.setPosition(center)
+        selectedInfoRef.current.open(map)
+      }
       const vp = pick.viewport
       if (vp) {
         map.fitBounds(
@@ -53,8 +118,10 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
             { lat: vp.north, lng: vp.east },
           ),
         )
-      } else {
-        map.setCenter(center)
+      }
+      // Always keep the selected marker location centered on map.
+      map.panTo(center)
+      if (!vp) {
         map.setZoom(12)
       }
 
@@ -78,6 +145,7 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
     let cancelled = false
     let autocompleteEl: google.maps.places.PlaceAutocompleteElement | null = null
     let selectListener: ((e: Event) => void) | null = null
+    let mapClickListener: google.maps.MapsEventListener | null = null
 
     setStatus('loading')
     setErrorMessage(null)
@@ -98,8 +166,21 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: true,
+          draggableCursor: 'crosshair',
         })
         mapRef.current = map
+        selectedMarkerRef.current = new google.maps.Marker({
+          map,
+          clickable: false,
+          visible: false,
+          title: 'Selected location',
+          zIndex: 1000,
+          animation: google.maps.Animation.DROP,
+        })
+        selectedInfoRef.current = new google.maps.InfoWindow({
+          content: '<div style="font-size:12px;font-weight:600;">Selected point</div>',
+        })
+        const geocoder = new google.maps.Geocoder()
 
         const clusterer = new MarkerClusterer({ map, markers: [] })
         clustererRef.current = clusterer
@@ -128,6 +209,25 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
           if (parsed) applyPick(parsed)
         }
 
+        const onMapPick = async (latLng: google.maps.LatLng) => {
+          const location = { lat: latLng.lat(), lng: latLng.lng() }
+          try {
+            const response = await geocoder.geocode({ location })
+            const first = response.results[0]
+            if (!first) return
+            selectedMarkerRef.current?.setVisible(true)
+            const parsed = pickFromGeocoderResult(first, location)
+            applyPick(parsed)
+          } catch {
+            // Keep silent and continue map interaction; autocomplete still works.
+          }
+        }
+
+        mapClickListener = map.addListener('click', (ev: google.maps.MapMouseEvent) => {
+          if (!ev.latLng) return
+          void onMapPick(ev.latLng)
+        })
+
         const onSelectEvent = (e: Event) => {
           void onSelect(e as google.maps.places.PlacePredictionSelectEvent)
         }
@@ -155,10 +255,16 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
       if (autocompleteEl && selectListener) {
         autocompleteEl.removeEventListener('gmp-select', selectListener)
       }
+      mapClickListener?.remove()
+      mapClickListener = null
       autocompleteEl = null
       selectListener = null
       clustererRef.current?.clearMarkers()
       clustererRef.current = null
+      selectedMarkerRef.current?.setMap(null)
+      selectedMarkerRef.current = null
+      selectedInfoRef.current?.close()
+      selectedInfoRef.current = null
       mapRef.current = null
       acHost.innerHTML = ''
       mapHost.innerHTML = ''

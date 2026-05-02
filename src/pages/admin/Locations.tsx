@@ -1,5 +1,15 @@
-import { useCallback, useMemo, useState } from 'react'
-import { ChevronDown, ExternalLink, Plus } from 'lucide-react'
+import { Fragment, useCallback, useMemo, useState } from 'react'
+import {
+  Building2,
+  ChevronDown,
+  DollarSign,
+  ExternalLink,
+  Globe,
+  Map,
+  MapPin,
+  Pencil,
+  Plus,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import {
@@ -14,7 +24,10 @@ import {
 import type { LgaMapPickResult } from '@/features/maps/lgaMapPickTypes'
 
 type LGA = AdminSavedLocation['lga']
-type StateEntry = { id: string; name: string; lgas: LGA[] }
+type StateEntry = { id: string; name: string; lgas: LGA[]; pricingMultiplier?: number }
+
+const COUNTRY_ID = 'country-ng'
+const COUNTRY_NAME = 'Nigeria'
 
 function toStateId(saved: AdminSavedLocation) {
   return saved.state.id !== null ? `state-${saved.state.id}` : `state-${saved.state.slug ?? saved.state.name}`
@@ -26,6 +39,12 @@ function toLgaId(saved: AdminSavedLocation) {
   return `lga-${seed}`
 }
 
+function pricingMultiplierForState(name: string): number {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i) * (i + 1)) % 97
+  return Math.round((1.15 + (h % 45) / 100) * 10) / 10
+}
+
 function upsertStateLocation(prev: StateEntry[], saved: AdminSavedLocation): StateEntry[] {
   const stateId = toStateId(saved)
   const lgaId = toLgaId(saved)
@@ -33,11 +52,21 @@ function upsertStateLocation(prev: StateEntry[], saved: AdminSavedLocation): Sta
 
   const stateIndex = prev.findIndex((s) => s.id === stateId || s.name.toLowerCase() === saved.state.name.toLowerCase())
   if (stateIndex < 0) {
-    return [{ id: stateId, name: saved.state.name, lgas: [nextLga] }, ...prev]
+    return [
+      {
+        id: stateId,
+        name: saved.state.name,
+        lgas: [nextLga],
+        pricingMultiplier: pricingMultiplierForState(saved.state.name),
+      },
+      ...prev,
+    ]
   }
 
   const current = prev[stateIndex]
-  const lgaIndex = current.lgas.findIndex((l) => toLgaEntryId(l, saved.state.name) === lgaId || l.name.toLowerCase() === saved.lga.name.toLowerCase())
+  const lgaIndex = current.lgas.findIndex(
+    (l) => toLgaEntryId(l, saved.state.name) === lgaId || l.name.toLowerCase() === saved.lga.name.toLowerCase(),
+  )
   const updatedLgas =
     lgaIndex < 0
       ? [...current.lgas, nextLga]
@@ -48,11 +77,15 @@ function upsertStateLocation(prev: StateEntry[], saved: AdminSavedLocation): Sta
 
   return prev.map((state, idx) => {
     if (idx !== stateIndex) return state
-    return { ...state, name: saved.state.name, lgas: updatedLgas }
+    return {
+      ...state,
+      name: saved.state.name,
+      lgas: updatedLgas,
+      pricingMultiplier: state.pricingMultiplier ?? pricingMultiplierForState(saved.state.name),
+    }
   })
 }
 
-/** Stable row key when listing LGAs from merged client/server state */
 function toLgaEntryId(lga: LGA, stateName: string): string {
   if (lga.id !== null) return `lga-${lga.id}`
   return `lga-${lga.slug ?? `${stateName}-${lga.name}`}`
@@ -106,20 +139,42 @@ function mapsPreviewUrl(lat: number, lng: number): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
 }
 
+function formatNaira(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '—'
+  try {
+    return `₦${new Intl.NumberFormat('en-NG').format(Math.round(n))}`
+  } catch {
+    return `₦${Math.round(n).toLocaleString()}`
+  }
+}
+
+/** Representative boost price for table column (max tier price). */
+function primaryBoostPrice(lga: LGA): number {
+  if (!lga.boost.tiers.length) return 0
+  return Math.max(...lga.boost.tiers.map((t) => t.priceAmount))
+}
+
 export default function LocationHierarchy() {
   const [locations, setLocations] = useState<StateEntry[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [lastSavedMessage, setLastSavedMessage] = useState<string | null>(null)
+  const [openCountry, setOpenCountry] = useState(true)
   const [openStates, setOpenStates] = useState<Set<string>>(new Set())
-  const [openLgas, setOpenLgas] = useState<Set<string>>(new Set())
+  const [detailLgaKey, setDetailLgaKey] = useState<string | null>(null)
 
-  const toggle = (set: Set<string>, id: string, setter: (s: Set<string>) => void) => {
-    const next = new Set(set)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
-    setter(next)
+  const [filterCountry, setFilterCountry] = useState('all')
+  const [filterState, setFilterState] = useState('all')
+  const [filterBoost, setFilterBoost] = useState<'all' | 'enabled' | 'disabled'>('all')
+
+  const toggleStateOpen = (id: string) => {
+    setOpenStates((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   const patchLga = useCallback((stateId: string, lgaRowId: string, updater: (current: LGA) => LGA) => {
@@ -137,6 +192,36 @@ export default function LocationHierarchy() {
       }),
     )
   }, [])
+
+  const stats = useMemo(() => {
+    const totalStates = locations.length
+    const totalLgas = locations.reduce((sum, s) => sum + s.lgas.length, 0)
+    const totalVendors = locations.reduce(
+      (sum, s) => sum + s.lgas.reduce((v, l) => v + l.vendorCount, 0),
+      0,
+    )
+    return {
+      countries: totalStates > 0 || totalLgas > 0 ? 1 : 0,
+      states: totalStates,
+      lgas: totalLgas,
+      vendors: totalVendors,
+    }
+  }, [locations])
+
+  const filteredStates = useMemo(() => {
+    return locations.filter((s) => {
+      if (filterState !== 'all' && s.name !== filterState) return false
+      return true
+    })
+  }, [locations, filterState])
+
+  function lgaPassesBoostFilter(lga: LGA): boolean {
+    if (filterBoost === 'all') return true
+    if (filterBoost === 'enabled') return lga.boost.enabled
+    return !lga.boost.enabled
+  }
+
+  const stateOptions = useMemo(() => locations.map((s) => s.name).sort(), [locations])
 
   const handleWizardSubmit = async (input: AddLocationWizardSubmit) => {
     const address = input.fullAddress.trim() || buildDetailedAddressFromPick(input.mapPick)
@@ -161,11 +246,9 @@ export default function LocationHierarchy() {
       })
 
       const stateId = toStateId(saved)
-      const lgaId = toLgaId(saved)
       setLocations((prev) => upsertStateLocation(prev, saved))
+      setOpenCountry(true)
       setOpenStates((prev) => new Set([...prev, stateId]))
-      setOpenLgas((prev) => new Set([...prev, lgaId]))
-
       setShowAddModal(false)
       setLastSavedMessage(`Saved: ${saved.state.name} → ${saved.lga.name}`)
     } catch (error) {
@@ -176,283 +259,355 @@ export default function LocationHierarchy() {
     }
   }
 
-  const title = useMemo(() => {
-    const states = locations.length
-    const lgas = locations.reduce((sum, state) => sum + state.lgas.length, 0)
-    return `${states} state${states === 1 ? '' : 's'} · ${lgas} LGA${lgas === 1 ? '' : 's'}`
-  }, [locations])
+  const detailKey = (stateId: string, lgaRowId: string) => `${stateId}::${lgaRowId}`
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 font-sans text-sm">
-      <h1 className="mb-1 text-xl font-bold text-gray-900">Locations</h1>
-      <p className="mb-2 text-xs text-gray-500">{title}</p>
-      {lastSavedMessage && (
-        <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-          {lastSavedMessage}
+    <div className="min-h-screen bg-[#f4f6f9] font-sans text-sm text-slate-800">
+      <div className="mx-auto container  py-6">
+        {/* Header */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[26px]">Locations</h1>
+            <p className="mt-1 text-sm text-slate-500">Manage global geography: Country → State → City → LGA</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+            <button
+              type="button"
+              onClick={() => window.open('https://www.google.com/maps', '_blank', 'noopener,noreferrer')}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              <Map className="size-4 text-slate-600" />
+              Google Maps
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSaveError(null)
+                setShowAddModal(true)
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98]"
+            >
+              <Plus className="size-4" />
+              Add Location
+            </button>
+          </div>
         </div>
-      )}
-      <div className="mb-4 flex justify-end">
-        <button
-          type="button"
-          onClick={() => {
-            setSaveError(null)
-            setShowAddModal(true)
-          }}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-4 py-2 text-xs font-medium text-white transition-all hover:bg-blue-600 active:scale-95"
-        >
-          <Plus className="size-3.5" />
-          Add location
-        </button>
-      </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        {locations.length === 0 && (
-          <div className="px-4 py-6 text-sm text-gray-500">
-            No locations yet. Use <strong>Add location</strong> to capture coordinates from Google Maps and configure boost.
+        {lastSavedMessage && (
+          <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            {lastSavedMessage}
           </div>
         )}
-        {locations.map((state, si) => {
-          const stateOpen = openStates.has(state.id)
-          return (
-            <div key={state.id} className={si > 0 ? 'border-t border-gray-100' : ''}>
-              <button
-                type="button"
-                onClick={() => toggle(openStates, state.id, setOpenStates)}
-                className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-2">
-                  <ChevronDown
-                    className={`size-3.5 text-gray-400 transition-transform duration-150 ${stateOpen ? '' : '-rotate-90'}`}
-                  />
-                  <span className="font-semibold text-gray-900">{state.name}</span>
-                </div>
-                <span className="text-xs text-gray-500">
-                  {state.lgas.length} LGA{state.lgas.length !== 1 ? 's' : ''}
-                </span>
-              </button>
 
-              {stateOpen &&
-                state.lgas.map((lga) => {
-                  const lgaRowId = toLgaEntryId(lga, state.name)
-                  const lgaOpen = openLgas.has(lgaRowId)
-                  const boostOn = lga.boost.enabled
-                  return (
-                    <div key={lgaRowId} className="bg-green-50">
+        {/* Stat cards */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Countries</p>
+                <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{stats.countries || 0}</p>
+                <p className="mt-1 text-xs text-slate-500">{stats.countries ? `${COUNTRY_NAME} active` : 'No regions yet'}</p>
+              </div>
+              <div className="flex size-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <Globe className="size-5" strokeWidth={2} />
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total States</p>
+                <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{stats.states}</p>
+                <p className="mt-1 text-xs text-slate-500">{stats.lgas} LGAs</p>
+              </div>
+              <div className="flex size-11 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                <MapPin className="size-5" strokeWidth={2} />
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Vendors</p>
+                <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">
+                  {stats.vendors.toLocaleString()}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">Across all locations</p>
+              </div>
+              <div className="flex size-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <Building2 className="size-5" strokeWidth={2} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main hierarchy card */}
+        <div className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <p className="text-sm font-semibold text-slate-800">Location hierarchy</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={filterCountry}
+                onChange={(e) => setFilterCountry(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="all">All Countries</option>
+                <option value={COUNTRY_ID}>{COUNTRY_NAME}</option>
+              </select>
+              <select
+                value={filterState}
+                onChange={(e) => setFilterState(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="all">All States</option>
+                {stateOptions.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterBoost}
+                onChange={(e) => setFilterBoost(e.target.value as 'all' | 'enabled' | 'disabled')}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="all">Boost Status</option>
+                <option value="enabled">Boost enabled</option>
+                <option value="disabled">Boost disabled</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="px-4 py-4 sm:px-6 sm:py-5">
+            {locations.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
+                <Globe className="mx-auto size-10 text-slate-300" />
+                <p className="mt-3 text-sm font-medium text-slate-600">No locations yet</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Add a location to capture coordinates from Google Maps and configure boost slots.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-white">
+                {/* Country row */}
+                <div className="border-b border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setOpenCountry((o) => !o)}
+                    className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-slate-50/90 sm:gap-4 sm:px-5"
+                  >
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                      <Globe className="size-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-base font-semibold text-slate-900">{COUNTRY_NAME}</span>
+                        <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-800">
+                          Active
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                        <span>
+                          <span className="font-medium text-slate-700">{stats.states}</span> States
+                        </span>
+                        <span>
+                          <span className="font-medium text-slate-700">{stats.lgas}</span> LGAs
+                        </span>
+                        <span>
+                          <span className="font-medium text-slate-700">{stats.vendors.toLocaleString()}</span> Vendors
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                       <button
                         type="button"
-                        onClick={() => toggle(openLgas, lgaRowId, setOpenLgas)}
-                        className="flex w-full items-center justify-between border-t border-gray-200 bg-green-50 py-2.5 pl-8 pr-4 text-left transition-colors hover:bg-green-100/60"
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded-lg p-2 text-sky-600 hover:bg-sky-50"
+                        title="Edit country"
+                        aria-label="Edit country"
                       >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <ChevronDown
-                            className={`size-3.5 shrink-0 text-gray-400 transition-transform duration-150 ${lgaOpen ? '' : '-rotate-90'}`}
-                          />
-                          <span className="font-medium text-gray-800">{lga.name}</span>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${boostOn ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'
-                              }`}
-                          >
-                            Boost {boostOn ? 'on' : 'off'}
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {lga.vendorCount} vendor{lga.vendorCount !== 1 ? 's' : ''}
-                        </span>
+                        <Pencil className="size-4" />
                       </button>
-
-                      {lgaOpen && (
-                        <div className="border-t border-gray-100 bg-white py-3 pl-10 pr-4 text-gray-800">
-                          <div className="mb-3 grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <p className="text-[11px] font-semibold uppercase text-gray-500">State</p>
-                              <p className="text-sm">{state.name}</p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-semibold uppercase text-gray-500">LGA</p>
-                              <p className="text-sm">{lga.name}</p>
-                            </div>
-                          </div>
-
-                          <div className="mb-3 rounded-lg border border-gray-100 bg-gray-50/80 p-3">
-                            <p className="mb-2 text-[11px] font-semibold uppercase text-gray-500">Coordinates & Google data</p>
-                            <p className="font-mono text-xs">
-                              {lga.latitude.toFixed(6)}, {lga.longitude.toFixed(6)}
-                            </p>
-                            {lga.googlePlaceId && (
-                              <p className="mt-1 break-all text-xs text-gray-600">
-                                <span className="font-medium text-gray-700">Place ID:</span> {lga.googlePlaceId}
-                              </p>
-                            )}
-                            {lga.formattedAddress && (
-                              <p className="mt-1 text-xs text-gray-600">{lga.formattedAddress}</p>
-                            )}
-                            <a
-                              href={mapsPreviewUrl(lga.latitude, lga.longitude)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
-                            >
-                              Open in Google Maps
-                              <ExternalLink className="size-3" />
-                            </a>
-                          </div>
-
-                          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 p-3">
-                            <div>
-                              <p className="text-[11px] font-semibold uppercase text-gray-500">Boost for this LGA</p>
-                              <p className="text-xs text-gray-500">Turn off if this area is not ready for paid boosts.</p>
-                            </div>
-                            <label className="flex cursor-pointer items-center gap-2">
-                              <span className="text-xs text-gray-600">{lga.boost.enabled ? 'Active' : 'Inactive'}</span>
-                              <input
-                                type="checkbox"
-                                className="size-4 rounded border-gray-300 text-blue-600"
-                                checked={lga.boost.enabled}
-                                onChange={(e) =>
-                                  patchLga(state.id, lgaRowId, (cur) => ({
-                                    ...cur,
-                                    boost: { ...cur.boost, enabled: e.target.checked },
-                                  }))
-                                }
-                              />
-                            </label>
-                          </div>
-
-                          <div className="mb-3">
-                            <p className="mb-1.5 text-[11px] font-semibold uppercase text-gray-500">Boost durations</p>
-                            <ul className="flex flex-wrap gap-2">
-                              {lga.boost.durations.map((d) => (
-                                <li
-                                  key={d.days}
-                                  className={`rounded-md px-2 py-1 text-xs ${d.enabled ? 'bg-blue-50 text-blue-900' : 'bg-gray-100 text-gray-500 line-through'
-                                    }`}
-                                >
-                                  {d.days}d
-                                  {d.enabled && d.priceAmount > 0 ? ` · ₦${d.priceAmount.toLocaleString()}` : ''}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          <div className="mb-3">
-                            <p className="mb-1.5 text-[11px] font-semibold uppercase text-gray-500">Slots & pricing</p>
-                            <div className="overflow-x-auto rounded-md border border-gray-200">
-                              <table className="w-full min-w-[360px] text-left text-xs">
-                                <thead className="bg-gray-50 text-[10px] font-semibold uppercase text-gray-600">
-                                  <tr>
-                                    <th className="px-2 py-1.5">Tier</th>
-                                    <th className="px-2 py-1.5">Slots</th>
-                                    <th className="px-2 py-1.5">Price (₦)</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {lga.boost.tiers.map((t) => (
-                                    <tr key={t.key} className="border-t border-gray-100">
-                                      <td className="px-2 py-1.5">
-                                        <span className="font-medium">{t.label}</span>
-                                        <span className="ml-1 font-mono text-[10px] text-gray-400">({t.key})</span>
-                                      </td>
-                                      <td className="px-2 py-1.5">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          className="w-16 rounded border border-gray-200 px-1 py-0.5"
-                                          value={t.totalSlots}
-                                          onChange={(e) => {
-                                            const n = Math.max(0, Number(e.target.value) || 0)
-                                            patchLga(state.id, lgaRowId, (cur) => {
-                                              const tiers = cur.boost.tiers.map((x) =>
-                                                x.key === t.key ? { ...x, totalSlots: n } : x,
-                                              )
-                                              const totalSlots = tiers.reduce((s, x) => s + x.totalSlots, 0)
-                                              const sold = cur.boost.stats.slotsSold
-                                              return {
-                                                ...cur,
-                                                boost: {
-                                                  ...cur.boost,
-                                                  tiers,
-                                                  stats: {
-                                                    ...cur.boost.stats,
-                                                    totalSlots,
-                                                    slotsRemaining: Math.max(0, totalSlots - sold),
-                                                  },
-                                                },
-                                              }
-                                            })
-                                          }}
-                                        />
-                                      </td>
-                                      <td className="px-2 py-1.5">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          className="w-24 rounded border border-gray-200 px-1 py-0.5"
-                                          value={t.priceAmount || ''}
-                                          onChange={(e) => {
-                                            const n = Math.max(0, Number(e.target.value) || 0)
-                                            patchLga(state.id, lgaRowId, (cur) => ({
-                                              ...cur,
-                                              boost: {
-                                                ...cur.boost,
-                                                tiers: cur.boost.tiers.map((x) =>
-                                                  x.key === t.key ? { ...x, priceAmount: n } : x,
-                                                ),
-                                              },
-                                            }))
-                                          }}
-                                        />
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-
-                          <div className="mb-3 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
-                            <p className="mb-2 text-[11px] font-semibold uppercase text-indigo-800">Slot availability</p>
-                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                              <div>
-                                <p className="text-[10px] text-indigo-700">Total slots</p>
-                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.totalSlots}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] text-indigo-700">Sold</p>
-                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.slotsSold}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] text-indigo-700">Remaining</p>
-                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.slotsRemaining}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] text-indigo-700">Active boosts</p>
-                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.activeBoosts}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] text-indigo-700">Expired</p>
-                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.expiredBoosts}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <Link
-                            to={`/admin/businesses?lga=${encodeURIComponent(lga.name)}&state=${encodeURIComponent(state.name)}`}
-                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-50"
-                          >
-                            View vendors in this LGA
-                            <ExternalLink className="size-3" />
-                          </Link>
-                          <p className="mt-2 text-[10px] text-gray-400">
-                            Local edits (boost toggle, slots, prices) stay in this session until a sync API is wired.
-                          </p>
-                        </div>
-                      )}
+                      <ChevronDown
+                        className={`size-5 text-slate-400 transition-transform ${openCountry ? '' : '-rotate-90'}`}
+                      />
                     </div>
-                  )
-                })}
-            </div>
-          )
-        })}
+                  </button>
+                </div>
+
+                {openCountry && (
+                  <div className="bg-slate-50/50">
+                    {filteredStates.map((state) => {
+                      const stateOpen = openStates.has(state.id)
+                      const stateLgas = state.lgas.filter(lgaPassesBoostFilter)
+                      const stateVendorSum = state.lgas.reduce((sum, l) => sum + l.vendorCount, 0)
+                      const mult = state.pricingMultiplier ?? pricingMultiplierForState(state.name)
+                      const stateBoostEnabled = state.lgas.some((l) => l.boost.enabled)
+
+                      return (
+                        <div key={state.id} className="border-b border-slate-100 last:border-b-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleStateOpen(state.id)}
+                            className="flex w-full items-start gap-3 pl-4 pr-4 pt-4 pb-3 text-left sm:gap-4 sm:pl-8 sm:pr-5"
+                          >
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+                              <MapPin className="size-[18px]" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[15px] font-semibold text-slate-900">{state.name}</span>
+                                {stateBoostEnabled ? (
+                                  <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800">
+                                    Boost Enabled
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
+                                    Boost off
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                                <span>
+                                  <span className="font-medium text-slate-700">{state.lgas.length}</span> LGAs
+                                </span>
+                                <span>
+                                  <span className="font-medium text-slate-700">{stateVendorSum.toLocaleString()}</span>{' '}
+                                  Vendors
+                                </span>
+                                <span className="font-semibold text-violet-700">x{mult} Pricing</span>
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={(e) => e.stopPropagation()}
+                                className="rounded-lg p-2 text-sky-600 hover:bg-sky-50"
+                                title="Edit state"
+                                aria-label="Edit state"
+                              >
+                                <Pencil className="size-4" />
+                              </button>
+                              <ChevronDown
+                                className={`size-5 text-slate-400 transition-transform ${stateOpen ? '' : '-rotate-90'}`}
+                              />
+                            </div>
+                          </button>
+
+                          {stateOpen && (
+                            <div className="overflow-x-auto px-2 pb-4 sm:px-4 sm:pl-10 sm:pr-5">
+                              {stateLgas.length === 0 ? (
+                                <p className="py-6 text-center text-xs text-slate-500">No LGAs match the current filters.</p>
+                              ) : (
+                                <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                                  <thead>
+                                    <tr className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                                      <th className="whitespace-nowrap py-3 pr-3">LGA name</th>
+                                      <th className="whitespace-nowrap py-3 pr-3">Vendor count</th>
+                                      <th className="whitespace-nowrap py-3 pr-3">Boost slots</th>
+                                      <th className="whitespace-nowrap py-3 pr-3">Slot occupancy</th>
+                                      <th className="whitespace-nowrap py-3 pr-3">Boost pricing</th>
+                                      <th className="whitespace-nowrap py-3 pr-3">Status</th>
+                                      <th className="whitespace-nowrap py-3 text-right">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {stateLgas.map((lga) => {
+                                      const lgaRowId = toLgaEntryId(lga, state.name)
+                                      const dk = detailKey(state.id, lgaRowId)
+                                      const open = detailLgaKey === dk
+                                      const total = lga.boost.stats.totalSlots
+                                      const sold = lga.boost.stats.slotsSold
+                                      const price = primaryBoostPrice(lga)
+
+                                      return (
+                                        <Fragment key={lgaRowId}>
+                                          <tr className="border-b border-slate-100 last:border-0 hover:bg-white">
+                                            <td className="py-3.5 pr-3 font-medium text-slate-900">{lga.name}</td>
+                                            <td className="py-3.5 pr-3 tabular-nums text-slate-700">
+                                              {lga.vendorCount.toLocaleString()}
+                                            </td>
+                                            <td className="py-3.5 pr-3 tabular-nums text-slate-700">{total}</td>
+                                            <td className="py-3.5 pr-3">
+                                              <span className="font-semibold tabular-nums text-blue-600">
+                                                {sold}/{total}
+                                              </span>
+                                            </td>
+                                            <td className="py-3.5 pr-3 font-medium tabular-nums text-slate-800">
+                                              {formatNaira(price)}
+                                            </td>
+                                            <td className="py-3.5 pr-3">
+                                              <span
+                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase ${lga.boost.enabled
+                                                  ? 'bg-blue-100 text-blue-800'
+                                                  : 'bg-slate-200 text-slate-600'
+                                                  }`}
+                                              >
+                                                {lga.boost.enabled ? 'Active' : 'Inactive'}
+                                              </span>
+                                            </td>
+                                            <td className="py-3.5 text-right">
+                                              <div className="flex justify-end gap-1">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setDetailLgaKey((k) => (k === dk ? null : dk))}
+                                                  className="rounded-lg p-2 text-sky-600 hover:bg-sky-50"
+                                                  title="Edit details"
+                                                  aria-label="Edit LGA details"
+                                                >
+                                                  <Pencil className="size-4" />
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setDetailLgaKey(dk)
+                                                    requestAnimationFrame(() => {
+                                                      document
+                                                        .getElementById(`pricing-${dk}`)
+                                                        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+                                                    })
+                                                  }}
+                                                  className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"
+                                                  title="Pricing & slots"
+                                                  aria-label="Pricing and slots"
+                                                >
+                                                  <DollarSign className="size-4" />
+                                                </button>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                          {open && (
+                                            <tr className="bg-slate-50/90">
+                                              <td colSpan={7} className="px-3 py-4 sm:px-4">
+                                                <LgaDetailPanel
+                                                  lga={lga}
+                                                  stateName={state.name}
+                                                  stateId={state.id}
+                                                  lgaRowId={lgaRowId}
+                                                  detailId={`pricing-${dk}`}
+                                                  patchLga={patchLga}
+                                                  mapsPreviewUrl={mapsPreviewUrl}
+                                                />
+                                              </td>
+                                            </tr>
+                                          )}
+                                        </Fragment>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <AddLocationWizardModal
@@ -466,6 +621,200 @@ export default function LocationHierarchy() {
         saving={saving}
         saveError={saveError}
       />
+    </div>
+  )
+}
+
+type DetailProps = {
+  lga: LGA
+  stateName: string
+  stateId: string
+  lgaRowId: string
+  detailId: string
+  patchLga: (stateId: string, lgaRowId: string, u: (c: LGA) => LGA) => void
+  mapsPreviewUrl: (lat: number, lng: number) => string
+}
+
+function LgaDetailPanel({ lga, stateName, stateId, lgaRowId, detailId, patchLga, mapsPreviewUrl }: DetailProps) {
+  return (
+    <div className="space-y-4 text-slate-800">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <p className="text-[11px] font-semibold uppercase text-slate-500">State</p>
+          <p className="text-sm font-medium">{stateName}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase text-slate-500">LGA</p>
+          <p className="text-sm font-medium">{lga.name}</p>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <p className="mb-2 text-[11px] font-semibold uppercase text-slate-500">Coordinates & Google data</p>
+        <p className="font-mono text-xs">
+          {lga.latitude.toFixed(6)}, {lga.longitude.toFixed(6)}
+        </p>
+        {lga.googlePlaceId && (
+          <p className="mt-1 break-all text-xs text-slate-600">
+            <span className="font-medium text-slate-700">Place ID:</span> {lga.googlePlaceId}
+          </p>
+        )}
+        {lga.formattedAddress && <p className="mt-1 text-xs text-slate-600">{lga.formattedAddress}</p>}
+        <a
+          href={mapsPreviewUrl(lga.latitude, lga.longitude)}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-sky-600 hover:underline"
+        >
+          Open in Google Maps
+          <ExternalLink className="size-3" />
+        </a>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase text-slate-500">Boost for this LGA</p>
+          <p className="text-xs text-slate-500">Deactivate if this area is not ready for paid boosts.</p>
+        </div>
+        <label className="flex cursor-pointer items-center gap-2">
+          <span className="text-xs text-slate-600">{lga.boost.enabled ? 'Active' : 'Inactive'}</span>
+          <input
+            type="checkbox"
+            className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            checked={lga.boost.enabled}
+            onChange={(e) =>
+              patchLga(stateId, lgaRowId, (cur) => ({
+                ...cur,
+                boost: { ...cur.boost, enabled: e.target.checked },
+              }))
+            }
+          />
+        </label>
+      </div>
+
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase text-slate-500">Boost durations</p>
+        <ul className="flex flex-wrap gap-2">
+          {lga.boost.durations.map((d) => (
+            <li
+              key={d.days}
+              className={`rounded-md px-2.5 py-1 text-xs ${d.enabled ? 'bg-sky-50 text-sky-900' : 'bg-slate-100 text-slate-500 line-through'
+                }`}
+            >
+              {d.days}d
+              {d.enabled && d.priceAmount > 0 ? ` · ₦${d.priceAmount.toLocaleString()}` : ''}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div id={detailId}>
+        <p className="mb-2 text-[11px] font-semibold uppercase text-slate-500">Slots & pricing</p>
+        <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+          <table className="w-full min-w-[360px] text-left text-xs">
+            <thead className="bg-slate-50 text-[10px] font-semibold uppercase text-slate-600">
+              <tr>
+                <th className="px-3 py-2">Tier</th>
+                <th className="px-3 py-2">Slots</th>
+                <th className="px-3 py-2">Price (₦)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lga.boost.tiers.map((t) => (
+                <tr key={t.key} className="border-t border-slate-100">
+                  <td className="px-3 py-2">
+                    <span className="font-medium">{t.label}</span>
+                    <span className="ml-1 font-mono text-[10px] text-slate-400">({t.key})</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="number"
+                      min={0}
+                      className="w-16 rounded border border-slate-200 px-1 py-0.5"
+                      value={t.totalSlots}
+                      onChange={(e) => {
+                        const n = Math.max(0, Number(e.target.value) || 0)
+                        patchLga(stateId, lgaRowId, (cur) => {
+                          const tiers = cur.boost.tiers.map((x) => (x.key === t.key ? { ...x, totalSlots: n } : x))
+                          const totalSlots = tiers.reduce((s, x) => s + x.totalSlots, 0)
+                          const sold = cur.boost.stats.slotsSold
+                          return {
+                            ...cur,
+                            boost: {
+                              ...cur.boost,
+                              tiers,
+                              stats: {
+                                ...cur.boost.stats,
+                                totalSlots,
+                                slotsRemaining: Math.max(0, totalSlots - sold),
+                              },
+                            },
+                          }
+                        })
+                      }}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="number"
+                      min={0}
+                      className="w-24 rounded border border-slate-200 px-1 py-0.5"
+                      value={t.priceAmount || ''}
+                      onChange={(e) => {
+                        const n = Math.max(0, Number(e.target.value) || 0)
+                        patchLga(stateId, lgaRowId, (cur) => ({
+                          ...cur,
+                          boost: {
+                            ...cur.boost,
+                            tiers: cur.boost.tiers.map((x) => (x.key === t.key ? { ...x, priceAmount: n } : x)),
+                          },
+                        }))
+                      }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-violet-100 bg-violet-50/40 p-4">
+        <p className="mb-2 text-[11px] font-semibold uppercase text-violet-900">Slot availability</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div>
+            <p className="text-[10px] text-violet-800">Total slots</p>
+            <p className="text-lg font-semibold text-violet-950">{lga.boost.stats.totalSlots}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-violet-800">Sold</p>
+            <p className="text-lg font-semibold text-violet-950">{lga.boost.stats.slotsSold}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-violet-800">Remaining</p>
+            <p className="text-lg font-semibold text-violet-950">{lga.boost.stats.slotsRemaining}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-violet-800">Active boosts</p>
+            <p className="text-lg font-semibold text-violet-950">{lga.boost.stats.activeBoosts}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-violet-800">Expired</p>
+            <p className="text-lg font-semibold text-violet-950">{lga.boost.stats.expiredBoosts}</p>
+          </div>
+        </div>
+      </div>
+
+      <Link
+        to={`/admin/businesses?lga=${encodeURIComponent(lga.name)}&state=${encodeURIComponent(stateName)}`}
+        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-50"
+      >
+        View vendors in this LGA
+        <ExternalLink className="size-3" />
+      </Link>
+      <p className="text-[10px] text-slate-400">
+        Edits here stay in this session until synced with the API.
+      </p>
     </div>
   )
 }

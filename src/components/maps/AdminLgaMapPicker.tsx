@@ -273,9 +273,9 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
 
   if (!apiKey?.trim()) {
     return (
-      <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-        Set <code className="rounded bg-amber-100/80 px-1">VITE_GOOGLE_MAPS_API_KEY</code> in{' '}
-        <code className="rounded bg-amber-100/80 px-1">.env</code> and enable{' '}
+      <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+        Set <code className="rounded bg-blue-100/80 px-1">VITE_GOOGLE_MAPS_API_KEY</code> in{' '}
+        <code className="rounded bg-blue-100/80 px-1">.env</code> and enable{' '}
         <strong>Maps JavaScript API</strong> + <strong>Places API</strong> on the key. Restrict the key by HTTP referrer
         for this app.
       </div>

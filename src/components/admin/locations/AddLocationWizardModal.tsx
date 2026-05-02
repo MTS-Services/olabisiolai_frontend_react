@@ -145,10 +145,10 @@ export function AddLocationWizardModal({
               <div key={s.id} className="flex min-w-0 flex-1 items-center gap-2">
                 <div
                   className={`flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${active
-                      ? 'bg-blue-600 text-white'
-                      : done
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-gray-200 text-gray-600'
+                    ? 'bg-blue-600 text-white'
+                    : done
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-600'
                     }`}
                 >
                   {done ? '✓' : s.id}
@@ -176,7 +176,7 @@ export function AddLocationWizardModal({
               </p>
               <AdminLgaMapPicker apiKey={googleMapsApiKey} onPick={handleMapPick} showDemoVendorCluster={false} />
               {mapPick && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-xs text-emerald-900">
+                <div className="rounded-lg border border-blue-200 bg-blue-50/80 px-3 py-2 text-xs text-blue-900">
                   <p>
                     <span className="font-semibold">Place ID:</span> {mapPick.googlePlaceId}
                   </p>
@@ -253,7 +253,7 @@ export function AddLocationWizardModal({
                 />
               </div>
               {!canGoStep3 && (
-                <p className="text-xs text-amber-700">State and LGA are required to continue.</p>
+                <p className="text-xs text-blue-700">State and LGA are required to continue.</p>
               )}
             </div>
           )}

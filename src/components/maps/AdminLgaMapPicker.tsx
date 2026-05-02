@@ -296,7 +296,7 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
       />
       <div
         ref={mapHostRef}
-        className="h-[220px] w-full overflow-hidden rounded-md border border-gray-200 bg-gray-100"
+        className="h-[300px] w-full overflow-hidden rounded-md border border-gray-200 bg-gray-100"
         aria-label="Map preview"
       />
       {showDemoVendorCluster && status === 'ready' && (

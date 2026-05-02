@@ -1,18 +1,19 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ChevronDown, Plus, X } from 'lucide-react'
+import { ChevronDown, ExternalLink, Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
-import { AdminLgaMapPicker } from '@/components/maps/AdminLgaMapPicker'
+import {
+  AddLocationWizardModal,
+  type AddLocationWizardSubmit,
+} from '@/components/admin/locations/AddLocationWizardModal'
 import { env } from '@/config/env'
-import { adminStoreLocation, type AdminSavedLocation } from '@/features/maps/adminLocationsApi'
+import {
+  adminStoreLocation,
+  type AdminSavedLocation,
+} from '@/features/maps/adminLocationsApi'
 import type { LgaMapPickResult } from '@/features/maps/lgaMapPickTypes'
 
-type LGA = {
-  id: string
-  name: string
-  vendorCount: number
-  lat: number
-  lng: number
-}
+type LGA = AdminSavedLocation['lga']
 type StateEntry = { id: string; name: string; lgas: LGA[] }
 
 function toStateId(saved: AdminSavedLocation) {
@@ -28,14 +29,7 @@ function toLgaId(saved: AdminSavedLocation) {
 function upsertStateLocation(prev: StateEntry[], saved: AdminSavedLocation): StateEntry[] {
   const stateId = toStateId(saved)
   const lgaId = toLgaId(saved)
-
-  const nextLga: LGA = {
-    id: lgaId,
-    name: saved.lga.name,
-    vendorCount: saved.lga.vendorCount,
-    lat: saved.lga.latitude,
-    lng: saved.lga.longitude,
-  }
+  const nextLga = saved.lga
 
   const stateIndex = prev.findIndex((s) => s.id === stateId || s.name.toLowerCase() === saved.state.name.toLowerCase())
   if (stateIndex < 0) {
@@ -43,7 +37,7 @@ function upsertStateLocation(prev: StateEntry[], saved: AdminSavedLocation): Sta
   }
 
   const current = prev[stateIndex]
-  const lgaIndex = current.lgas.findIndex((l) => l.id === lgaId || l.name.toLowerCase() === saved.lga.name.toLowerCase())
+  const lgaIndex = current.lgas.findIndex((l) => toLgaEntryId(l, saved.state.name) === lgaId || l.name.toLowerCase() === saved.lga.name.toLowerCase())
   const updatedLgas =
     lgaIndex < 0
       ? [...current.lgas, nextLga]
@@ -56,6 +50,12 @@ function upsertStateLocation(prev: StateEntry[], saved: AdminSavedLocation): Sta
     if (idx !== stateIndex) return state
     return { ...state, name: saved.state.name, lgas: updatedLgas }
   })
+}
+
+/** Stable row key when listing LGAs from merged client/server state */
+function toLgaEntryId(lga: LGA, stateName: string): string {
+  if (lga.id !== null) return `lga-${lga.id}`
+  return `lga-${lga.slug ?? `${stateName}-${lga.name}`}`
 }
 
 type AddressComponentLike = {
@@ -102,15 +102,13 @@ function buildDetailedAddressFromPick(pick: LgaMapPickResult): string {
   return composed || pick.formattedAddress || ''
 }
 
+function mapsPreviewUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
+}
+
 export default function LocationHierarchy() {
   const [locations, setLocations] = useState<StateEntry[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newCountryName, setNewCountryName] = useState('Nigeria')
-  const [newStateName, setNewStateName] = useState('')
-  const [newCityName, setNewCityName] = useState('')
-  const [newLgaName, setNewLgaName] = useState('')
-  const [newFullAddress, setNewFullAddress] = useState('')
-  const [mapPick, setMapPick] = useState<LgaMapPickResult | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [lastSavedMessage, setLastSavedMessage] = useState<string | null>(null)
@@ -119,20 +117,30 @@ export default function LocationHierarchy() {
 
   const toggle = (set: Set<string>, id: string, setter: (s: Set<string>) => void) => {
     const next = new Set(set)
-    if (next.has(id)) {
-      next.delete(id)
-    } else {
-      next.add(id)
-    }
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
     setter(next)
   }
 
-  const addLocation = async () => {
-    if (!mapPick) {
-      setSaveError('Please pick a location from the Google map first.')
-      return
-    }
-    if (!newStateName.trim() || !newLgaName.trim()) {
+  const patchLga = useCallback((stateId: string, lgaRowId: string, updater: (current: LGA) => LGA) => {
+    setLocations((prev) =>
+      prev.map((s) => {
+        if (s.id !== stateId) return s
+        return {
+          ...s,
+          lgas: s.lgas.map((l) => {
+            const id = toLgaEntryId(l, s.name)
+            if (id !== lgaRowId) return l
+            return updater(l)
+          }),
+        }
+      }),
+    )
+  }, [])
+
+  const handleWizardSubmit = async (input: AddLocationWizardSubmit) => {
+    const address = input.fullAddress.trim() || buildDetailedAddressFromPick(input.mapPick)
+    if (!input.stateName.trim() || !input.lgaName.trim()) {
       setSaveError('State and LGA are required.')
       return
     }
@@ -143,12 +151,13 @@ export default function LocationHierarchy() {
 
     try {
       const saved = await adminStoreLocation({
-        countryName: newCountryName,
-        stateName: newStateName,
-        cityName: newCityName,
-        lgaName: newLgaName,
-        fullAddress: newFullAddress.trim() || buildDetailedAddressFromPick(mapPick),
-        mapPick,
+        countryName: input.countryName,
+        stateName: input.stateName,
+        cityName: input.cityName,
+        lgaName: input.lgaName,
+        fullAddress: address,
+        mapPick: input.mapPick,
+        boostConfig: input.boostConfig,
       })
 
       const stateId = toStateId(saved)
@@ -157,14 +166,8 @@ export default function LocationHierarchy() {
       setOpenStates((prev) => new Set([...prev, stateId]))
       setOpenLgas((prev) => new Set([...prev, lgaId]))
 
-      setNewStateName('')
-      setNewCityName('')
-      setNewLgaName('')
-      setNewFullAddress('')
-      setNewCountryName('Nigeria')
-      setMapPick(null)
       setShowAddModal(false)
-      setLastSavedMessage(`Saved: ${saved.state.name} -> ${saved.lga.name}`)
+      setLastSavedMessage(`Saved: ${saved.state.name} → ${saved.lga.name}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save location.'
       setSaveError(message)
@@ -172,22 +175,6 @@ export default function LocationHierarchy() {
       setSaving(false)
     }
   }
-
-  const closeAddModal = () => {
-    setShowAddModal(false)
-    setMapPick(null)
-    setSaveError(null)
-  }
-
-  const handleMapPick = useCallback((pick: LgaMapPickResult) => {
-    setMapPick(pick)
-    setSaveError(null)
-    setNewCountryName(pick.country || 'Nigeria')
-    setNewStateName(pick.administrativeAreaLevel1 || pick.country || '')
-    setNewCityName(pick.locality || '')
-    setNewLgaName(pick.administrativeAreaLevel2 || pick.locality || pick.displayName || '')
-    setNewFullAddress(buildDetailedAddressFromPick(pick))
-  }, [])
 
   const title = useMemo(() => {
     const states = locations.length
@@ -197,49 +184,45 @@ export default function LocationHierarchy() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 font-sans text-sm">
-      <h1 className="text-xl font-bold text-gray-900 mb-1">Locations</h1>
+      <h1 className="mb-1 text-xl font-bold text-gray-900">Locations</h1>
       <p className="mb-2 text-xs text-gray-500">{title}</p>
       {lastSavedMessage && (
         <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
           {lastSavedMessage}
         </div>
       )}
-      {/* Top bar */}
       <div className="mb-4 flex justify-end">
         <button
           type="button"
           onClick={() => {
-            setMapPick(null)
             setSaveError(null)
             setShowAddModal(true)
           }}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-4 py-2 text-xs font-medium text-white hover:bg-blue-600 active:scale-95 transition-all"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-4 py-2 text-xs font-medium text-white transition-all hover:bg-blue-600 active:scale-95"
         >
           <Plus className="size-3.5" />
-          Add Location
+          Add location
         </button>
       </div>
 
-      {/* Main card */}
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         {locations.length === 0 && (
           <div className="px-4 py-6 text-sm text-gray-500">
-            No locations saved yet. Click <strong>Add Location</strong> to create from Google map.
+            No locations yet. Use <strong>Add location</strong> to capture coordinates from Google Maps and configure boost.
           </div>
         )}
         {locations.map((state, si) => {
           const stateOpen = openStates.has(state.id)
           return (
-            <div key={state.id} className={si > 0 ? "border-t border-gray-100" : ""}>
-              {/* State row */}
+            <div key={state.id} className={si > 0 ? 'border-t border-gray-100' : ''}>
               <button
                 type="button"
                 onClick={() => toggle(openStates, state.id, setOpenStates)}
-                className="flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
+                className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-center gap-2">
                   <ChevronDown
-                    className={`size-3.5 text-gray-400 transition-transform duration-150 ${stateOpen ? "" : "-rotate-90"}`}
+                    className={`size-3.5 text-gray-400 transition-transform duration-150 ${stateOpen ? '' : '-rotate-90'}`}
                   />
                   <span className="font-semibold text-gray-900">{state.name}</span>
                 </div>
@@ -248,23 +231,29 @@ export default function LocationHierarchy() {
                 </span>
               </button>
 
-              {/* LGAs */}
               {stateOpen &&
                 state.lgas.map((lga) => {
-                  const lgaOpen = openLgas.has(lga.id)
+                  const lgaRowId = toLgaEntryId(lga, state.name)
+                  const lgaOpen = openLgas.has(lgaRowId)
+                  const boostOn = lga.boost.enabled
                   return (
-                    <div key={lga.id} className="bg-green-50">
-                      {/* LGA row */}
+                    <div key={lgaRowId} className="bg-green-50">
                       <button
                         type="button"
-                        onClick={() => toggle(openLgas, lga.id, setOpenLgas)}
-                        className="flex w-full items-center justify-between border-t border-gray-200 bg-green-50 py-2.5 pl-8 pr-4 text-left hover:bg-green-100/60 transition-colors"
+                        onClick={() => toggle(openLgas, lgaRowId, setOpenLgas)}
+                        className="flex w-full items-center justify-between border-t border-gray-200 bg-green-50 py-2.5 pl-8 pr-4 text-left transition-colors hover:bg-green-100/60"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <ChevronDown
-                            className={`size-3.5 text-gray-400 transition-transform duration-150 ${lgaOpen ? "" : "-rotate-90"}`}
+                            className={`size-3.5 shrink-0 text-gray-400 transition-transform duration-150 ${lgaOpen ? '' : '-rotate-90'}`}
                           />
                           <span className="font-medium text-gray-800">{lga.name}</span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${boostOn ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'
+                              }`}
+                          >
+                            Boost {boostOn ? 'on' : 'off'}
+                          </span>
                         </div>
                         <span className="text-xs text-gray-500">
                           {lga.vendorCount} vendor{lga.vendorCount !== 1 ? 's' : ''}
@@ -272,10 +261,190 @@ export default function LocationHierarchy() {
                       </button>
 
                       {lgaOpen && (
-                        <div className="border-t border-gray-100 bg-white py-2.5 pl-14 pr-4 text-gray-700">
-                          <span className="text-gray-500">
-                            Lat/Lng: {lga.lat.toFixed(5)}, {lga.lng.toFixed(5)}
-                          </span>
+                        <div className="border-t border-gray-100 bg-white py-3 pl-10 pr-4 text-gray-800">
+                          <div className="mb-3 grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase text-gray-500">State</p>
+                              <p className="text-sm">{state.name}</p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase text-gray-500">LGA</p>
+                              <p className="text-sm">{lga.name}</p>
+                            </div>
+                          </div>
+
+                          <div className="mb-3 rounded-lg border border-gray-100 bg-gray-50/80 p-3">
+                            <p className="mb-2 text-[11px] font-semibold uppercase text-gray-500">Coordinates & Google data</p>
+                            <p className="font-mono text-xs">
+                              {lga.latitude.toFixed(6)}, {lga.longitude.toFixed(6)}
+                            </p>
+                            {lga.googlePlaceId && (
+                              <p className="mt-1 break-all text-xs text-gray-600">
+                                <span className="font-medium text-gray-700">Place ID:</span> {lga.googlePlaceId}
+                              </p>
+                            )}
+                            {lga.formattedAddress && (
+                              <p className="mt-1 text-xs text-gray-600">{lga.formattedAddress}</p>
+                            )}
+                            <a
+                              href={mapsPreviewUrl(lga.latitude, lga.longitude)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
+                            >
+                              Open in Google Maps
+                              <ExternalLink className="size-3" />
+                            </a>
+                          </div>
+
+                          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 p-3">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase text-gray-500">Boost for this LGA</p>
+                              <p className="text-xs text-gray-500">Turn off if this area is not ready for paid boosts.</p>
+                            </div>
+                            <label className="flex cursor-pointer items-center gap-2">
+                              <span className="text-xs text-gray-600">{lga.boost.enabled ? 'Active' : 'Inactive'}</span>
+                              <input
+                                type="checkbox"
+                                className="size-4 rounded border-gray-300 text-blue-600"
+                                checked={lga.boost.enabled}
+                                onChange={(e) =>
+                                  patchLga(state.id, lgaRowId, (cur) => ({
+                                    ...cur,
+                                    boost: { ...cur.boost, enabled: e.target.checked },
+                                  }))
+                                }
+                              />
+                            </label>
+                          </div>
+
+                          <div className="mb-3">
+                            <p className="mb-1.5 text-[11px] font-semibold uppercase text-gray-500">Boost durations</p>
+                            <ul className="flex flex-wrap gap-2">
+                              {lga.boost.durations.map((d) => (
+                                <li
+                                  key={d.days}
+                                  className={`rounded-md px-2 py-1 text-xs ${d.enabled ? 'bg-blue-50 text-blue-900' : 'bg-gray-100 text-gray-500 line-through'
+                                    }`}
+                                >
+                                  {d.days}d
+                                  {d.enabled && d.priceAmount > 0 ? ` · ₦${d.priceAmount.toLocaleString()}` : ''}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div className="mb-3">
+                            <p className="mb-1.5 text-[11px] font-semibold uppercase text-gray-500">Slots & pricing</p>
+                            <div className="overflow-x-auto rounded-md border border-gray-200">
+                              <table className="w-full min-w-[360px] text-left text-xs">
+                                <thead className="bg-gray-50 text-[10px] font-semibold uppercase text-gray-600">
+                                  <tr>
+                                    <th className="px-2 py-1.5">Tier</th>
+                                    <th className="px-2 py-1.5">Slots</th>
+                                    <th className="px-2 py-1.5">Price (₦)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {lga.boost.tiers.map((t) => (
+                                    <tr key={t.key} className="border-t border-gray-100">
+                                      <td className="px-2 py-1.5">
+                                        <span className="font-medium">{t.label}</span>
+                                        <span className="ml-1 font-mono text-[10px] text-gray-400">({t.key})</span>
+                                      </td>
+                                      <td className="px-2 py-1.5">
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          className="w-16 rounded border border-gray-200 px-1 py-0.5"
+                                          value={t.totalSlots}
+                                          onChange={(e) => {
+                                            const n = Math.max(0, Number(e.target.value) || 0)
+                                            patchLga(state.id, lgaRowId, (cur) => {
+                                              const tiers = cur.boost.tiers.map((x) =>
+                                                x.key === t.key ? { ...x, totalSlots: n } : x,
+                                              )
+                                              const totalSlots = tiers.reduce((s, x) => s + x.totalSlots, 0)
+                                              const sold = cur.boost.stats.slotsSold
+                                              return {
+                                                ...cur,
+                                                boost: {
+                                                  ...cur.boost,
+                                                  tiers,
+                                                  stats: {
+                                                    ...cur.boost.stats,
+                                                    totalSlots,
+                                                    slotsRemaining: Math.max(0, totalSlots - sold),
+                                                  },
+                                                },
+                                              }
+                                            })
+                                          }}
+                                        />
+                                      </td>
+                                      <td className="px-2 py-1.5">
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          className="w-24 rounded border border-gray-200 px-1 py-0.5"
+                                          value={t.priceAmount || ''}
+                                          onChange={(e) => {
+                                            const n = Math.max(0, Number(e.target.value) || 0)
+                                            patchLga(state.id, lgaRowId, (cur) => ({
+                                              ...cur,
+                                              boost: {
+                                                ...cur.boost,
+                                                tiers: cur.boost.tiers.map((x) =>
+                                                  x.key === t.key ? { ...x, priceAmount: n } : x,
+                                                ),
+                                              },
+                                            }))
+                                          }}
+                                        />
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+
+                          <div className="mb-3 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
+                            <p className="mb-2 text-[11px] font-semibold uppercase text-indigo-800">Slot availability</p>
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                              <div>
+                                <p className="text-[10px] text-indigo-700">Total slots</p>
+                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.totalSlots}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-indigo-700">Sold</p>
+                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.slotsSold}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-indigo-700">Remaining</p>
+                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.slotsRemaining}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-indigo-700">Active boosts</p>
+                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.activeBoosts}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-indigo-700">Expired</p>
+                                <p className="text-lg font-semibold text-indigo-950">{lga.boost.stats.expiredBoosts}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Link
+                            to={`/admin/businesses?lga=${encodeURIComponent(lga.name)}&state=${encodeURIComponent(state.name)}`}
+                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-gray-50"
+                          >
+                            View vendors in this LGA
+                            <ExternalLink className="size-3" />
+                          </Link>
+                          <p className="mt-2 text-[10px] text-gray-400">
+                            Local edits (boost toggle, slots, prices) stay in this session until a sync API is wired.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -286,146 +455,17 @@ export default function LocationHierarchy() {
         })}
       </div>
 
-      {/* Add Location Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/10 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[98vh] overflow-y-auto shadow-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Add Location</h2>
-              <button
-                type="button"
-                onClick={closeAddModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-xs font-medium text-gray-700 mb-1.5">Search on map (Google)</p>
-              <AdminLgaMapPicker
-                apiKey={env.googleMapsApiKey}
-                onPick={handleMapPick}
-                showDemoVendorCluster={false}
-              />
-            </div>
-
-            {mapPick && (
-              <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 space-y-0.5">
-                <p>
-                  <span className="font-medium text-gray-800">Place ID:</span> {mapPick.googlePlaceId}
-                </p>
-                <p>
-                  <span className="font-medium text-gray-800">Coords:</span> {mapPick.lat.toFixed(5)},{" "}
-                  {mapPick.lng.toFixed(5)}
-                </p>
-                <p>
-                  <span className="font-medium text-gray-800">Country / State / LGA²:</span>{" "}
-                  {[mapPick.country, mapPick.administrativeAreaLevel1, mapPick.administrativeAreaLevel2]
-                    .filter(Boolean)
-                    .join(" → ") || "—"}
-                </p>
-                <p className="text-[11px] text-gray-500 pt-1">
-                  This will be submitted to backend `POST /api/v1/admin/locations/store`.
-                </p>
-              </div>
-            )}
-
-            <div className="mb-4">
-              <label htmlFor="countryName" className="block text-sm font-medium text-gray-700 mb-1">
-                Country Name
-              </label>
-              <input
-                id="countryName"
-                type="text"
-                value={newCountryName}
-                onChange={(e) => setNewCountryName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter country name"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="stateName" className="block text-sm font-medium text-gray-700 mb-1">
-                State Name
-              </label>
-              <input
-                id="stateName"
-                type="text"
-                value={newStateName}
-                onChange={(e) => setNewStateName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter state name"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="cityName" className="block text-sm font-medium text-gray-700 mb-1">
-                City Name
-              </label>
-              <input
-                id="cityName"
-                type="text"
-                value={newCityName}
-                onChange={(e) => setNewCityName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter city name"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="lgaName" className="block text-sm font-medium text-gray-700 mb-1">
-                LGA Name
-              </label>
-              <input
-                id="lgaName"
-                type="text"
-                value={newLgaName}
-                onChange={(e) => setNewLgaName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter LGA name"
-              />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="fullAddress" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Address
-              </label>
-              <textarea
-                id="fullAddress"
-                value={newFullAddress}
-                onChange={(e) => setNewFullAddress(e.target.value)}
-                rows={3}
-                dir="ltr"
-                className="w-full text-left px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Full address from map / manual edit"
-              />
-            </div>
-            {saveError && (
-              <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                {saveError}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeAddModal}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={addLocation}
-                disabled={saving}
-                className="px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AddLocationWizardModal
+        open={showAddModal}
+        onClose={() => {
+          setShowAddModal(false)
+          setSaveError(null)
+        }}
+        googleMapsApiKey={env.googleMapsApiKey}
+        onSubmit={handleWizardSubmit}
+        saving={saving}
+        saveError={saveError}
+      />
     </div>
   )
 }

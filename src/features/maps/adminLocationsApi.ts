@@ -1,8 +1,22 @@
 import { request } from '@/api/request'
 
+import {
+  defaultLgaBoostFormState,
+  type LgaBoostFormState,
+  type LgaBoostStats,
+  type LgaBoostTierForm,
+} from '@/features/maps/lgaBoostTypes'
 import type { LgaMapPickResult } from '@/features/maps/lgaMapPickTypes'
 
 type AnyRecord = Record<string, unknown>
+
+export type AdminSavedLgaBoost = {
+  enabled: boolean
+  tiers: LgaBoostTierForm[]
+  /** Duration pricing — amounts are major currency units (e.g. Naira). */
+  durations: { days: number; enabled: boolean; priceAmount: number }[]
+  stats: LgaBoostStats
+}
 
 export type AdminSavedLocation = {
   country: {
@@ -26,6 +40,9 @@ export type AdminSavedLocation = {
     latitude: number
     longitude: number
     vendorCount: number
+    googlePlaceId: string | null
+    formattedAddress: string | null
+    boost: AdminSavedLgaBoost
   }
 }
 
@@ -54,12 +71,117 @@ function asNullableId(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function asBoolean(value: unknown, fallback = false): boolean {
+  if (typeof value === 'boolean') return value
+  if (value === 1 || value === '1' || value === 'true') return true
+  if (value === 0 || value === '0' || value === 'false') return false
+  return fallback
+}
+
+const EMPTY_STATS: LgaBoostStats = {
+  totalSlots: 0,
+  slotsSold: 0,
+  slotsRemaining: 0,
+  activeBoosts: 0,
+  expiredBoosts: 0,
+}
+
+function parseBoostStats(raw: unknown): LgaBoostStats {
+  const o = asRecord(raw)
+  if (!o) return { ...EMPTY_STATS }
+  return {
+    totalSlots: asNumber(o.total_slots ?? o.totalSlots, 0),
+    slotsSold: asNumber(o.slots_sold ?? o.slotsSold, 0),
+    slotsRemaining: asNumber(o.slots_remaining ?? o.slotsRemaining, 0),
+    activeBoosts: asNumber(o.active_boosts ?? o.activeBoosts, 0),
+    expiredBoosts: asNumber(o.expired_boosts ?? o.expiredBoosts, 0),
+  }
+}
+
+function parseBoostTiers(raw: unknown): LgaBoostTierForm[] {
+  if (!Array.isArray(raw)) return []
+  const out: LgaBoostTierForm[] = []
+  for (const item of raw) {
+    const o = asRecord(item)
+    if (!o) continue
+    out.push({
+      key: asString(o.key ?? o.slug, `tier-${out.length}`),
+      label: asString(o.label ?? o.title ?? o.name, ''),
+      totalSlots: asNumber(o.total_slots ?? o.totalSlots, 0),
+      priceAmount: asNumber(o.price_amount ?? o.priceAmount ?? o.price, 0),
+    })
+  }
+  return out
+}
+
+function parseBoostDurations(raw: unknown): { days: number; enabled: boolean; priceAmount: number }[] {
+  if (!Array.isArray(raw)) return []
+  const out: { days: number; enabled: boolean; priceAmount: number }[] = []
+  for (const item of raw) {
+    const o = asRecord(item)
+    if (!o) continue
+    const days = asNumber(o.days ?? o.duration_days, 0)
+    if (!days) continue
+    out.push({
+      days,
+      enabled: asBoolean(o.enabled ?? o.is_active, true),
+      priceAmount: asNumber(o.price_amount ?? o.priceAmount ?? o.price, 0),
+    })
+  }
+  return out
+}
+
+function mergeBoostFromForm(saved: AdminSavedLocation, form: LgaBoostFormState): AdminSavedLocation {
+  const tierTotals = form.tiers.reduce((sum, t) => sum + Math.max(0, t.totalSlots), 0)
+  const stats: LgaBoostStats = {
+    ...EMPTY_STATS,
+    totalSlots: tierTotals,
+    slotsSold: 0,
+    slotsRemaining: tierTotals,
+    activeBoosts: 0,
+    expiredBoosts: 0,
+  }
+  return {
+    ...saved,
+    lga: {
+      ...saved.lga,
+      boost: {
+        enabled: form.enabled,
+        tiers: form.tiers.map((t) => ({ ...t })),
+        durations: form.durations.map((d) => ({
+          days: d.days,
+          enabled: d.enabled,
+          priceAmount: d.priceAmount,
+        })),
+        stats,
+      },
+    },
+  }
+}
+
 function asObjectArrayFromJsonString(value: string): unknown[] {
   try {
     const parsed = JSON.parse(value)
     return Array.isArray(parsed) ? parsed : []
   } catch {
     return []
+  }
+}
+
+function boostFormToApiPayload(form: LgaBoostFormState) {
+  return {
+    enabled: form.enabled,
+    tiers: form.tiers.map((t) => ({
+      key: t.key,
+      label: t.label,
+      total_slots: t.totalSlots,
+      price_amount: t.priceAmount,
+    })),
+    durations: form.durations.map((d) => ({
+      days: d.days,
+      enabled: d.enabled,
+      price_amount: d.priceAmount,
+    })),
   }
 }
 
@@ -70,11 +192,12 @@ function toApiPayload(
   lgaName: string,
   fullAddress: string | undefined,
   mapPick: LgaMapPickResult,
+  boostForm: LgaBoostFormState | undefined,
 ) {
   const city = cityName.trim()
   const country = countryName.trim()
   const address = fullAddress?.trim()
-  return {
+  const base = {
     country: {
       name: country || mapPick.country || 'Nigeria',
       iso_code: 'NG',
@@ -111,6 +234,11 @@ function toApiPayload(
       lga: mapPick.administrativeAreaLevel2 ?? mapPick.locality ?? mapPick.displayName ?? undefined,
     },
   }
+  if (!boostForm) return base
+  return {
+    ...base,
+    boost_config: boostFormToApiPayload(boostForm),
+  }
 }
 
 function parseSavedLocationResponse(body: unknown): AdminSavedLocation {
@@ -124,9 +252,38 @@ function parseSavedLocationResponse(body: unknown): AdminSavedLocation {
   const state = asRecord(inner.state)
   const city = asRecord(inner.city)
   const lga = asRecord(inner.lga)
+  const boostRoot = asRecord(inner.boost ?? lga?.boost)
 
   if (!country || !state || !lga) {
     throw new Error('Invalid location response from server.')
+  }
+
+  const defaults = defaultLgaBoostFormState()
+  let tiersFromApi = parseBoostTiers(boostRoot?.tiers ?? lga.boost_tiers)
+  if (!tiersFromApi.length) tiersFromApi = defaults.tiers
+  let durationsFromApi = parseBoostDurations(boostRoot?.durations ?? lga.boost_durations)
+  if (!durationsFromApi.length) {
+    durationsFromApi = defaults.durations.map((d) => ({
+      days: d.days,
+      enabled: d.enabled,
+      priceAmount: d.priceAmount,
+    }))
+  }
+  const statsFromApi = parseBoostStats(boostRoot?.stats ?? lga.boost_stats)
+  const enabledFromApi = asBoolean(
+    boostRoot?.enabled ?? lga.boost_enabled ?? lga.is_boost_active,
+    true,
+  )
+
+  const totalFromTiers = tiersFromApi.reduce((s, t) => s + t.totalSlots, 0)
+  const stats: LgaBoostStats = {
+    totalSlots: statsFromApi.totalSlots || totalFromTiers,
+    slotsSold: statsFromApi.slotsSold,
+    slotsRemaining:
+      statsFromApi.slotsRemaining ||
+      Math.max(0, (statsFromApi.totalSlots || totalFromTiers) - statsFromApi.slotsSold),
+    activeBoosts: statsFromApi.activeBoosts,
+    expiredBoosts: statsFromApi.expiredBoosts,
   }
 
   return {
@@ -153,6 +310,20 @@ function parseSavedLocationResponse(body: unknown): AdminSavedLocation {
       latitude: asNumber(lga.latitude),
       longitude: asNumber(lga.longitude),
       vendorCount: asNumber(lga.vendor_count),
+      googlePlaceId: asString(lga.google_place_id, '') || null,
+      formattedAddress: asString(lga.formatted_address ?? lga.full_address, '') || null,
+      boost: {
+        enabled: enabledFromApi,
+        tiers: tiersFromApi,
+        durations: durationsFromApi.length
+          ? durationsFromApi
+          : [
+            { days: 7, enabled: true, priceAmount: 0 },
+            { days: 14, enabled: true, priceAmount: 0 },
+            { days: 30, enabled: true, priceAmount: 0 },
+          ],
+        stats,
+      },
     },
   }
 }
@@ -164,6 +335,7 @@ export async function adminStoreLocation(params: {
   lgaName: string
   fullAddress?: string
   mapPick: LgaMapPickResult
+  boostConfig?: LgaBoostFormState
 }): Promise<AdminSavedLocation> {
   const payload = toApiPayload(
     params.countryName,
@@ -172,7 +344,20 @@ export async function adminStoreLocation(params: {
     params.lgaName,
     params.fullAddress,
     params.mapPick,
+    params.boostConfig,
   )
   const res = await request.post('/admin/locations/store', payload)
-  return parseSavedLocationResponse(res.data)
+  let parsed = parseSavedLocationResponse(res.data)
+  if (params.boostConfig) {
+    parsed = mergeBoostFromForm(parsed, params.boostConfig)
+  }
+  const fa = params.fullAddress?.trim() || params.mapPick.formattedAddress || null
+  return {
+    ...parsed,
+    lga: {
+      ...parsed.lga,
+      googlePlaceId: parsed.lga.googlePlaceId ?? params.mapPick.googlePlaceId ?? null,
+      formattedAddress: parsed.lga.formattedAddress ?? fa,
+    },
+  }
 }

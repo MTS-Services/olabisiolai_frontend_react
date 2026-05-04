@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Building2,
   ChevronDown,
@@ -9,6 +9,7 @@ import {
   MapPin,
   Pencil,
   Plus,
+  Trash2,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -19,9 +20,16 @@ import {
 import { env } from '@/config/env'
 import {
   adminStoreLocation,
+  adminListLocations,
+  adminUpdateLocationStatus,
+  adminUpdateBoostConfig,
+  adminDeleteLocation,
   type AdminSavedLocation,
 } from '@/features/maps/adminLocationsApi'
 import type { LgaMapPickResult } from '@/features/maps/lgaMapPickTypes'
+import {
+  type LgaBoostFormState,
+} from '@/features/maps/lgaBoostTypes'
 
 type LGA = AdminSavedLocation['lga']
 type StateEntry = { id: string; name: string; lgas: LGA[]; pricingMultiplier?: number }
@@ -164,6 +172,27 @@ export default function LocationHierarchy() {
   const [openStates, setOpenStates] = useState<Set<string>>(new Set())
   const [detailLgaKey, setDetailLgaKey] = useState<string | null>(null)
 
+  // Load locations on component mount
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const fetchedLocations = await adminListLocations()
+        let stateEntries: StateEntry[] = []
+
+        fetchedLocations.forEach((location) => {
+          stateEntries = upsertStateLocation(stateEntries, location)
+        })
+
+        setLocations(stateEntries)
+      } catch (error) {
+        console.error('Failed to load locations:', error)
+        setSaveError(error instanceof Error ? error.message : 'Failed to load locations.')
+      }
+    }
+
+    loadLocations()
+  }, [])
+
   const [filterCountry, setFilterCountry] = useState('all')
   const [filterState, setFilterState] = useState('all')
   const [filterBoost, setFilterBoost] = useState<'all' | 'enabled' | 'disabled'>('all')
@@ -177,7 +206,15 @@ export default function LocationHierarchy() {
     })
   }
 
-  const patchLga = useCallback((stateId: string, lgaRowId: string, updater: (current: LGA) => LGA) => {
+  const patchLga = useCallback(async (stateId: string, lgaRowId: string, updater: (current: LGA) => LGA) => {
+    // Find the current LGA to get its ID
+    const currentState = locations.find(s => s.id === stateId)
+    if (!currentState) return
+
+    const currentLga = currentState.lgas.find(l => toLgaEntryId(l, currentState.name) === lgaRowId)
+    if (!currentLga || !currentLga.id) return
+
+    // Apply the update locally first for immediate UI feedback
     setLocations((prev) =>
       prev.map((s) => {
         if (s.id !== stateId) return s
@@ -191,7 +228,58 @@ export default function LocationHierarchy() {
         }
       }),
     )
-  }, [])
+
+    try {
+      // Get the updated LGA after local state change
+      const updatedState = locations.find(s => s.id === stateId)
+      const updatedLga = updatedState?.lgas.find(l => toLgaEntryId(l, updatedState.name) === lgaRowId)
+      if (!updatedLga) return
+
+      // Check if this is a boost status change
+      const originalBoostEnabled = currentLga.boost.enabled
+      const updatedBoostEnabled = updatedLga.boost.enabled
+
+      if (originalBoostEnabled !== updatedBoostEnabled) {
+        // Update boost status via API
+        await adminUpdateLocationStatus({
+          lgaId: currentLga.id,
+          boostEnabled: updatedBoostEnabled,
+        })
+        setLastSavedMessage(`Updated boost status for ${updatedLga.name}`)
+      } else {
+        // Update boost config (tiers/pricing) via API
+        const boostConfig: LgaBoostFormState = {
+          enabled: updatedLga.boost.enabled,
+          tiers: updatedLga.boost.tiers,
+          durations: updatedLga.boost.durations.map(d => ({
+            ...d,
+            days: d.days as 7 | 14 | 30, // Cast to the expected type
+          })),
+        }
+        await adminUpdateBoostConfig({
+          lgaId: currentLga.id,
+          boostConfig,
+        })
+        setLastSavedMessage(`Updated boost configuration for ${updatedLga.name}`)
+      }
+    } catch (error) {
+      // Revert the local change on API failure
+      setLocations((prev) =>
+        prev.map((s) => {
+          if (s.id !== stateId) return s
+          return {
+            ...s,
+            lgas: s.lgas.map((l) => {
+              const id = toLgaEntryId(l, s.name)
+              if (id !== lgaRowId) return l
+              return currentLga // Revert to original
+            }),
+          }
+        }),
+      )
+      setSaveError(error instanceof Error ? error.message : 'Failed to update location.')
+    }
+  }, [locations])
 
   const stats = useMemo(() => {
     const totalStates = locations.length
@@ -256,6 +344,39 @@ export default function LocationHierarchy() {
       setSaveError(message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDeleteLocation = async (stateId: string, lgaRowId: string, lgaName: string) => {
+    if (!confirm(`Are you sure you want to delete "${lgaName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    const currentState = locations.find(s => s.id === stateId)
+    const currentLga = currentState?.lgas.find(l => toLgaEntryId(l, currentState.name) === lgaRowId)
+
+    if (!currentLga || !currentLga.id) {
+      setSaveError('Cannot delete location: missing ID')
+      return
+    }
+
+    try {
+      await adminDeleteLocation(currentLga.id)
+
+      // Remove from local state
+      setLocations((prev) =>
+        prev.map((s) => {
+          if (s.id !== stateId) return s
+          return {
+            ...s,
+            lgas: s.lgas.filter((l) => toLgaEntryId(l, s.name) !== lgaRowId),
+          }
+        }).filter((s) => s.lgas.length > 0) // Remove state if no LGAs left
+      )
+
+      setLastSavedMessage(`Deleted: ${lgaName}`)
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to delete location.')
     }
   }
 
@@ -573,6 +694,15 @@ export default function LocationHierarchy() {
                                                 >
                                                   <DollarSign className="size-4" />
                                                 </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleDeleteLocation(state.id, lgaRowId, lga.name)}
+                                                  className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                                                  title="Delete location"
+                                                  aria-label="Delete LGA"
+                                                >
+                                                  <Trash2 className="size-4" />
+                                                </button>
                                               </div>
                                             </td>
                                           </tr>
@@ -812,9 +942,6 @@ function LgaDetailPanel({ lga, stateName, stateId, lgaRowId, detailId, patchLga,
         View vendors in this LGA
         <ExternalLink className="size-3" />
       </Link>
-      <p className="text-[10px] text-slate-400">
-        Edits here stay in this session until synced with the API.
-      </p>
     </div>
   )
 }

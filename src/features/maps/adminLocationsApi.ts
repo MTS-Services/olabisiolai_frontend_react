@@ -197,55 +197,51 @@ function toApiPayload(
   const city = cityName.trim()
   const country = countryName.trim()
   const address = fullAddress?.trim()
-  const base = {
-    country: {
-      name: country || mapPick.country || 'Nigeria',
-      iso_code: 'NG',
-      is_active: true,
-      sort_order: 0,
-    },
-    state: {
-      name: stateName.trim(),
-    },
-    city: city || mapPick.locality
-      ? {
-        name: city || mapPick.locality,
-      }
-      : undefined,
-    lga: {
-      name: lgaName.trim(),
-      google_place_id: mapPick.googlePlaceId || undefined,
-      google_resource_name: mapPick.resourceName || undefined,
+
+  const payload = {
+    location: {
+      country_name: country || mapPick.country || 'Nigeria',
+      country_iso_code: 'NG',
+      state_name: stateName.trim(),
+      city_name: city || mapPick.locality || undefined,
+      lga_name: lgaName.trim(),
       latitude: mapPick.lat,
       longitude: mapPick.lng,
+      formatted_address: address || mapPick.formattedAddress || undefined,
+      google_place_id: mapPick.googlePlaceId || undefined,
+      google_resource_name: mapPick.resourceName || undefined,
       viewport: mapPick.viewport ?? undefined,
-      address_components_json: asObjectArrayFromJsonString(mapPick.addressComponentsJson),
+      address_components: asObjectArrayFromJsonString(mapPick.addressComponentsJson),
     },
-    map_pick: {
-      placeId: mapPick.googlePlaceId || undefined,
-      resourceName: mapPick.resourceName || undefined,
-      formattedAddress: address || mapPick.formattedAddress || undefined,
-      lat: mapPick.lat,
-      lng: mapPick.lng,
-      viewport: mapPick.viewport ?? undefined,
-      addressComponents: asObjectArrayFromJsonString(mapPick.addressComponentsJson),
-      country: mapPick.country ?? undefined,
-      state: mapPick.administrativeAreaLevel1 ?? undefined,
-      lga: mapPick.administrativeAreaLevel2 ?? mapPick.locality ?? mapPick.displayName ?? undefined,
-    },
+    is_boost_active: boostForm?.enabled ?? false,
+    boost_enabled: boostForm?.enabled ?? false,
+    boost_tiers: boostForm?.tiers.map((t) => ({
+      key: t.key,
+      label: t.label,
+      total_slots: t.totalSlots,
+      price_amount: t.priceAmount,
+    })),
+    boost_durations: boostForm?.durations.map((d) => ({
+      duration_days: d.days,
+      enabled: d.enabled,
+      price_amount: d.priceAmount,
+    })),
+    boost_config: boostForm ? boostFormToApiPayload(boostForm) : undefined,
   }
-  if (!boostForm) return base
-  return {
-    ...base,
-    boost_config: boostFormToApiPayload(boostForm),
-  }
+
+  return payload
 }
 
 function parseSavedLocationResponse(body: unknown): AdminSavedLocation {
   const root = asRecord(body)
   const inner = asRecord(root?.data)
+
   if (!root || root.success !== true || !inner) {
-    throw new Error(asString(root?.message, 'Location save failed.'))
+    const message = asString(root?.message || (root as any)?.error, 'Location save failed.')
+    const errors = (root as any)?.errors
+      ? ': ' + Object.values((root as any).errors).flat().join(', ')
+      : ''
+    throw new Error(`${message}${errors}`)
   }
 
   const country = asRecord(inner.country)
@@ -316,7 +312,7 @@ function parseSavedLocationResponse(body: unknown): AdminSavedLocation {
         enabled: enabledFromApi,
         tiers: tiersFromApi,
         durations: durationsFromApi.length
-          ? durationsFromApi
+          ? (durationsFromApi as any)
           : [
             { days: 7, enabled: true, priceAmount: 0 },
             { days: 14, enabled: true, priceAmount: 0 },
@@ -346,18 +342,85 @@ export async function adminStoreLocation(params: {
     params.mapPick,
     params.boostConfig,
   )
-  const res = await request.post('/admin/locations/store', payload)
-  let parsed = parseSavedLocationResponse(res.data)
-  if (params.boostConfig) {
-    parsed = mergeBoostFromForm(parsed, params.boostConfig)
+
+  try {
+    const res = await request.post('/admin/locations/store', payload)
+    let parsed = parseSavedLocationResponse(res.data)
+    if (params.boostConfig) {
+      parsed = mergeBoostFromForm(parsed, params.boostConfig)
+    }
+    const fa = params.fullAddress?.trim() || params.mapPick.formattedAddress || null
+    return {
+      ...parsed,
+      lga: {
+        ...parsed.lga,
+        googlePlaceId: parsed.lga.googlePlaceId ?? params.mapPick.googlePlaceId ?? null,
+        formattedAddress: parsed.lga.formattedAddress ?? fa,
+      },
+    }
+  } catch (error: any) {
+    if (error.response?.status === 422) {
+      const data = error.response.data
+      const message = data.message || 'Validation failed'
+      const errors = data.errors ? ': ' + Object.values(data.errors).flat().join(', ') : ''
+      throw new Error(`${message}${errors}`)
+    }
+    throw error
   }
-  const fa = params.fullAddress?.trim() || params.mapPick.formattedAddress || null
-  return {
-    ...parsed,
-    lga: {
-      ...parsed.lga,
-      googlePlaceId: parsed.lga.googlePlaceId ?? params.mapPick.googlePlaceId ?? null,
-      formattedAddress: parsed.lga.formattedAddress ?? fa,
-    },
+}
+
+export async function adminListLocations(): Promise<AdminSavedLocation[]> {
+  const res = await request.post('/admin/locations', {})
+  const root = asRecord(res.data)
+  if (!root || root.success !== true) {
+    throw new Error(asString(root?.message, 'Failed to load locations.'))
+  }
+
+  const data = asRecord(root.data)
+  const locations = data?.locations ?? data?.data ?? []
+
+  if (!Array.isArray(locations)) {
+    return []
+  }
+
+  return locations
+    .map((item) => {
+      try {
+        return parseSavedLocationResponse({ success: true, data: item })
+      } catch {
+        return null
+      }
+    })
+    .filter((item): item is AdminSavedLocation => item !== null)
+}
+
+export async function adminUpdateLocationStatus(params: {
+  lgaId: number
+  boostEnabled: boolean
+}): Promise<AdminSavedLocation> {
+  const res = await request.post('/admin/locations/update-status', {
+    lga_id: params.lgaId,
+    boost_enabled: params.boostEnabled,
+  })
+  return parseSavedLocationResponse(res.data)
+}
+
+export async function adminUpdateBoostConfig(params: {
+  lgaId: number
+  boostConfig: LgaBoostFormState
+}): Promise<AdminSavedLocation> {
+  const payload = boostFormToApiPayload(params.boostConfig)
+  const res = await request.post('/admin/locations/update-boost', {
+    lga_id: params.lgaId,
+    boost_config: payload,
+  })
+  return parseSavedLocationResponse(res.data)
+}
+
+export async function adminDeleteLocation(lgaId: number): Promise<void> {
+  const res = await request.post('/admin/locations/delete', { lga_id: lgaId })
+  const root = asRecord(res.data)
+  if (!root || root.success !== true) {
+    throw new Error(asString(root?.message, 'Failed to delete location.'))
   }
 }

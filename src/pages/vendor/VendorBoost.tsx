@@ -4,17 +4,18 @@ import { BoostPlanBenefits } from "@/components/sections/vendor/boost/boostPlan/
 import { BoostPlanCard } from "@/components/sections/vendor/boost/boostPlan/BoostPlanCard";
 import { BoostPlanHeader } from "@/components/sections/vendor/boost/boostPlan/BoostPlanHeader";
 import { oneTimePlans, subscriptionPlans } from "@/components/sections/vendor/boost/boostPlan/boostPlanData";
+import { cn } from "@/lib/utils";
 
 export default function VendorBoost() {
-  const [mode, setMode] = useState<"one-time" | "subscription">("one-time");
+  const [mode] = useState<"one-time" | "subscription">("one-time");
   const plans = useMemo(() => (mode === "one-time" ? oneTimePlans : subscriptionPlans), [mode]);
 
   return (
-    <div className="p-4 md:p-6">
+    <div className={cn('p-4', 'md:p-6')}>
       <section className="space-y-5">
-        <BoostPlanHeader mode={mode} onChange={setMode} />
+        <BoostPlanHeader  />
 
-        <div className="grid gap-8 xl:grid-cols-3">
+        <div className={cn('grid', 'gap-8', 'xl:grid-cols-3')}>
           {plans.map((plan) => (
             <BoostPlanCard key={plan.id} plan={plan} />
           ))}

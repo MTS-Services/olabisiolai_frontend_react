@@ -1,50 +1,91 @@
-import { BadgeCheck, Gem, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
+import { BadgeCheck, TrendingUp, Users, Zap } from "lucide-react";
+
+export type PricingOption = {
+  duration: string;
+  price: string;
+};
+
+export type Feature = {
+  text: string;
+  checked: boolean;
+};
 
 export type Plan = {
   id: string;
   title: string;
   subtitle: string;
-  price: string;
-  duration: string;
-  features: string[];
+  pricingOptions: PricingOption[];
+  slotStatus: "available" | "occupied";
+  features: Feature[];
   cta: string;
-  icon: React.ComponentType<{ className?: string }>;
+  colorScheme: "orange" | "gray" | "yellow";
+  medal: number;
+  badge?: string;
   highlighted?: boolean;
-  tone?: "default" | "soft";
 };
 
 export const oneTimePlans: Plan[] = [
   {
-    id: "basic",
-    title: "Basic Boost",
-    subtitle: "Perfect for short-term visibility",
-    price: "2,000",
-    duration: "1 week",
-    features: ["Top 10 placement", "Search highlighting", "Priority support"],
-    cta: "Select Basic",
-    icon: Zap,
+    id: "bronze",
+    title: "Top 5 Boost",
+    subtitle: "Affordable visibility for growing businesses",
+    pricingOptions: [
+      { duration: "7 Days", price: "₦3,000" },
+      { duration: "14 Days", price: "₦5,000" },
+      { duration: "30 Days", price: "₦10,000" },
+    ],
+    slotStatus: "available",
+    features: [
+      { text: "Appear in Top 5 in your LGA", checked: true },
+      { text: "Boost badge on listing", checked: true },
+      { text: "Increased visibility & enquiries", checked: true },
+      { text: "No exclusivity", checked: false },
+    ],
+    cta: "Boost with Bronze",
+    colorScheme: "orange",
+    medal: 3,
   },
   {
-    id: "pro",
-    title: "Pro Boost",
-    subtitle: "Balanced reach for active vendors",
-    price: "5,000",
-    duration: "2 weeks",
-    features: ["Top 10 placement", "Search highlighting", "Priority support"],
-    cta: "Get Started with Pro",
-    icon: Sparkles,
+    id: "silver",
+    title: "Top 3 Boost",
+    subtitle: "Higher visibility for competitive LGAs",
+    pricingOptions: [
+      { duration: "7 Days", price: "₦5,000" },
+      { duration: "14 Days", price: "₦8,000" },
+      { duration: "30 Days", price: "₦15,000" },
+    ],
+    slotStatus: "available",
+    features: [
+      { text: "Guaranteed Top 3 placement", checked: true },
+      { text: "Higher ranking than Bronze", checked: true },
+      { text: "Boost badge & strong visibility", checked: true },
+      { text: "No exclusivity", checked: false },
+    ],
+    cta: "Boost with Silver",
+    colorScheme: "gray",
+    medal: 2,
     highlighted: true,
+    badge: "Most Popular",
   },
   {
-    id: "premium",
-    title: "Premium Boost",
-    subtitle: "The ultimate visibility package",
-    price: "12,000",
-    duration: "1 month",
-    features: ["Top 10 placement", "Search highlighting", "Priority support"],
-    cta: "Go Premium",
-    icon: Gem,
-    tone: "soft",
+    id: "gold",
+    title: "Top 1 Exclusive",
+    subtitle: "The #1 spot — only one business per LGA",
+    pricingOptions: [
+      { duration: "7 Days", price: "₦10,000" },
+      { duration: "14 Days", price: "₦15,000" },
+      { duration: "30 Days", price: "₦20,000" },
+    ],
+    slotStatus: "occupied",
+    features: [
+      { text: "Guaranteed #1 position", checked: true },
+      { text: "Exclusive — one per LGA", checked: true },
+      { text: "Spotlight badge & 10X more reach", checked: true },
+      { text: "Premium vendors get first access", checked: true },
+    ],
+    cta: "Join Waiting List",
+    colorScheme: "yellow",
+    medal: 1,
   },
 ];
 
@@ -53,33 +94,48 @@ export const subscriptionPlans: Plan[] = [
     id: "starter-sub",
     title: "Starter Subscription",
     subtitle: "Consistent weekly exposure",
-    price: "6,000",
-    duration: "monthly",
-    features: ["Weekly boost slots", "Search highlighting", "Email support"],
+    pricingOptions: [{ duration: "Monthly", price: "₦6,000" }],
+    slotStatus: "available",
+    features: [
+      { text: "Weekly boost slots", checked: true },
+      { text: "Search highlighting", checked: true },
+      { text: "Email support", checked: true },
+    ],
     cta: "Start Starter Plan",
-    icon: Zap,
+    colorScheme: "orange",
+    medal: 3,
   },
   {
     id: "growth-sub",
     title: "Growth Subscription",
     subtitle: "For growing vendor storefronts",
-    price: "15,000",
-    duration: "monthly",
-    features: ["Priority placement", "Boost scheduling", "Priority support"],
+    pricingOptions: [{ duration: "Monthly", price: "₦15,000" }],
+    slotStatus: "available",
+    features: [
+      { text: "Priority placement", checked: true },
+      { text: "Boost scheduling", checked: true },
+      { text: "Priority support", checked: true },
+    ],
     cta: "Choose Growth",
-    icon: Sparkles,
+    colorScheme: "gray",
+    medal: 2,
     highlighted: true,
+    badge: "Most Popular",
   },
   {
     id: "elite-sub",
     title: "Elite Subscription",
     subtitle: "Maximum reach and premium placement",
-    price: "30,000",
-    duration: "monthly",
-    features: ["Premium boost slots", "Featured badge", "Dedicated manager"],
+    pricingOptions: [{ duration: "Monthly", price: "₦30,000" }],
+    slotStatus: "available",
+    features: [
+      { text: "Premium boost slots", checked: true },
+      { text: "Featured badge", checked: true },
+      { text: "Dedicated manager", checked: true },
+    ],
     cta: "Go Elite",
-    icon: Gem,
-    tone: "soft",
+    colorScheme: "yellow",
+    medal: 1,
   },
 ];
 

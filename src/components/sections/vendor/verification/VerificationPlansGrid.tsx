@@ -12,7 +12,7 @@ export function VerificationPlansGrid({
 }) {
   return (
     <div
-      className="grid gap-3 sm:gap-4 md:gap-5 lg:grid-cols-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3"
+      className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3"
       role="radiogroup"
       aria-label="Verification tier"
     >
@@ -46,7 +46,7 @@ export function VerificationPlansGrid({
               </div>
             </div>
 
-            <div className="mt-5 flex-1 space-y-2">
+            <div className="mt-5 flex-1 space-y-2 max-w-[230px]">
               <h2 className="text-xl font-bold text-slate-900 font-manrope md:text-2xl">{plan.title}</h2>
               <p className="text-sm leading-relaxed text-slate-600">{plan.description}</p>
             </div>
@@ -58,7 +58,7 @@ export function VerificationPlansGrid({
                     key={perk}
                     className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-vendor-header"
                   >
-                    <Check className="size-4 shrink-0 text-vendor-header" strokeWidth={2.5} aria-hidden />
+                    <Check className="size-4 shrink-0 text-white bg-[#0B1C30] rounded-full p-0.5" strokeWidth={3} aria-hidden />
                     {perk}
                   </p>
                 ))
@@ -68,7 +68,7 @@ export function VerificationPlansGrid({
                     key={perk}
                     className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-foreground"
                   >
-                    <Check className="size-3.5 shrink-0 text-foreground" strokeWidth={3} aria-hidden />
+                    <Check className="size-4 shrink-0 text-white bg-[#0B1C30] rounded-full p-0.5" strokeWidth={3} aria-hidden />
                     {perk}
                   </p>
                 ))

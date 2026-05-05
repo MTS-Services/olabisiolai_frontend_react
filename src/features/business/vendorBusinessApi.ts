@@ -6,6 +6,8 @@ export type CreateVendorBusinessPayload = {
   location: string;
   state: string;
   city: string;
+  lga: string;
+  full_address?: string;
   business_description: string;
   services: string[];
   phone: string;
@@ -29,11 +31,13 @@ export async function createVendorBusiness(payload: CreateVendorBusinessPayload)
   formData.append("location", payload.location.trim());
   formData.append("state", payload.state.trim());
   formData.append("city", payload.city.trim());
+  formData.append("lga", payload.lga.trim());
   formData.append("business_description", payload.business_description.trim());
   formData.append("phone", payload.phone.trim());
 
   appendIfTruthy(formData, "whatsapp", payload.whatsapp);
   appendIfTruthy(formData, "website", payload.website);
+  appendIfTruthy(formData, "full_address", payload.full_address);
 
   payload.services
     .map((service) => service.trim())

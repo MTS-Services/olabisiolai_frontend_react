@@ -1,57 +1,14 @@
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Flag, Star, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Eye, Flag, Loader2, Star, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ReviewDetailsModal } from "@/components/Modal/ReviewDetailsModal";
-import type { ReviewRow } from "@/components/Modal/ReviewDetailsModal.types";
-
-const TOTAL_TRANSACTIONS = 482;
-
-const reviews: ReviewRow[] = [
-  {
-    id: 1,
-    userName: "Chukwudi Okafor",
-    userDate: "Mar 28, 2024",
-    business: "Mama Put Restaurant",
-    rating: 5,
-    comment: "Excellent food and service! The jollof rice is amazing.",
-    flagged: false,
-    status: "approved",
-    dateTimeLong: "April 1, 2024 at 02:30 PM",
-  },
-  {
-    id: 2,
-    userName: "Aisha Mohammed",
-    userDate: "Mar 29, 2024",
-    business: "TechHub Solutions",
-    rating: 5,
-    comment: "Great work, delivered on time. Very professional team.",
-    flagged: false,
-    status: "approved",
-    dateTimeLong: "March 29, 2024 at 11:00 AM",
-  },
-  {
-    id: 3,
-    userName: "Ngozi Eze",
-    userDate: "Mar 30, 2024",
-    business: "Divine Salon & Spa",
-    rating: 2,
-    comment: "Service was poor and unprofessional. Not recommended.",
-    flagged: true,
-    status: "pending",
-    dateTimeLong: "March 30, 2024 at 04:15 PM",
-  },
-  {
-    id: 4,
-    userName: "Ibrahim Musa",
-    userDate: "Apr 1, 2024",
-    business: "Fresh Groceries Ltd",
-    rating: 5,
-    comment: "Fresh produce at good prices. Will definitely come back!",
-    flagged: false,
-    status: "approved",
-    dateTimeLong: "April 1, 2024 at 09:00 AM",
-  },
-];
+import {
+  adminDeleteReview,
+  adminGetStatistics,
+  adminListReviews,
+  adminUpdateReview,
+} from "@/features/reviews/adminReviewApi";
+import type { ReviewDto, ReviewPagination, ReviewStatistics } from "@/features/reviews/types";
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -67,30 +24,194 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-function statusBadge(status: ReviewRow["status"]) {
-  if (status === "approved") {
-    return (
-      <span className="inline-flex rounded-full bg-[rgb(27_175_93/0.1)] px-2.5 py-0.5 text-xs font-medium lowercase text-[#1baf5d]">
-        approved
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium lowercase text-amber-800">
-      pending
+function StatusBadge({ isApproved }: { isApproved: boolean }) {
+  return isApproved ? (
+    <span className="inline-flex rounded-full bg-[rgb(27_175_93/0.1)] px-2.5 py-0.5 text-xs font-medium lowercase text-[#1baf5d]">
+      approved
+    </span>
+  ) : (
+    <span className="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium lowercase text-red-700">
+      flagged
     </span>
   );
 }
 
+function FlagModal({
+  open,
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  open: boolean;
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+  loading: boolean;
+}) {
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (!open) setReason("");
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onCancel}
+      role="presentation"
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <h3 className="text-base font-semibold text-ink-heading">Flag Review</h3>
+        <p className="mt-1 text-sm text-body-secondary">Provide a reason for flagging this review.</p>
+        <textarea
+          className="mt-3 w-full resize-none rounded-lg border border-border-gray bg-muted px-3 py-2 text-sm text-ink placeholder:text-placeholder-text focus:outline-none focus:ring-1 focus:ring-chat-accent-ring"
+          rows={3}
+          placeholder="Reason for flagging…"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            disabled={loading || !reason.trim()}
+            onClick={() => onConfirm(reason.trim())}
+            className="flex h-9 flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+          >
+            {loading && <Loader2 className="size-4 animate-spin" />}
+            Flag
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-9 flex-1 rounded-lg border border-border-gray text-sm font-medium text-ink-heading hover:bg-muted"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Reviews() {
-  const [selectedReview, setSelectedReview] = useState<ReviewRow | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [reviews, setReviews] = useState<ReviewDto[]>([]);
+  const [stats, setStats] = useState<ReviewStatistics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState<ReviewPagination | null>(null);
+  const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"all" | "flagged">("all");
 
-  const visibleReviews = useMemo(() => {
-    if (activeTab === "all") return reviews;
-    return reviews.filter((review) => review.flagged);
-  }, [activeTab]);
+  const [selectedReview, setSelectedReview] = useState<ReviewDto | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [flagTargetId, setFlagTargetId] = useState<number | null>(null);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const data = await adminGetStatistics();
+      setStats(data);
+    } catch {
+      // non-fatal — stats stay null
+    }
+  }, []);
+
+  const loadReviews = useCallback(async (tab: "all" | "flagged", pg: number) => {
+    setLoading(true);
+    try {
+      const params = tab === "flagged" ? { is_flagged: true, page: pg } : { page: pg };
+      const result = await adminListReviews(params);
+      setReviews(result.data);
+      setPagination(result.pagination);
+    } catch {
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadStats();
+  }, [loadStats]);
+
+  useEffect(() => {
+    void loadReviews(activeTab, page);
+  }, [activeTab, page, loadReviews]);
+
+  const handleTabChange = (tab: "all" | "flagged") => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
+  const handleView = (review: ReviewDto) => {
+    setSelectedReview(review);
+    setModalOpen(true);
+  };
+
+  const handleApprove = async (review: ReviewDto) => {
+    setProcessingId(review.id);
+    try {
+      const updated = await adminUpdateReview(review.id, { is_approved: true });
+      setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      if (selectedReview?.id === updated.id) setSelectedReview(updated);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleFlag = async (flagReason: string) => {
+    if (!flagTargetId) return;
+    setProcessingId(flagTargetId);
+    try {
+      const updated = await adminUpdateReview(flagTargetId, {
+        is_approved: false,
+        flag_reason: flagReason,
+      });
+      setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      if (selectedReview?.id === updated.id) setSelectedReview(updated);
+    } finally {
+      setProcessingId(null);
+      setFlagTargetId(null);
+    }
+  };
+
+  const handleDelete = async (reviewId: number) => {
+    if (!window.confirm("Delete this review? This cannot be undone.")) return;
+    setProcessingId(reviewId);
+    try {
+      await adminDeleteReview(reviewId);
+      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      if (selectedReview?.id === reviewId) {
+        setModalOpen(false);
+        setSelectedReview(null);
+      }
+      if (stats) {
+        setStats({ ...stats, total_reviews: Math.max(0, stats.total_reviews - 1) });
+      }
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const totalPages = pagination?.last_page ?? 1;
+
+  const positivePercent =
+    stats && stats.total_reviews > 0
+      ? Math.round(((stats.rating_distribution["5_star"] + stats.rating_distribution["4_star"]) / stats.total_reviews) * 100)
+      : 0;
+  const neutralPercent =
+    stats && stats.total_reviews > 0
+      ? Math.round((stats.rating_distribution["3_star"] / stats.total_reviews) * 100)
+      : 0;
+  const negativePercent =
+    stats && stats.total_reviews > 0
+      ? Math.round(((stats.rating_distribution["2_star"] + stats.rating_distribution["1_star"]) / stats.total_reviews) * 100)
+      : 0;
 
   return (
     <div>
@@ -106,23 +227,33 @@ export default function Reviews() {
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Total Reviews</p>
-            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">18,432</p>
-            <p className="mt-1 text-xs font-medium text-success">+8%</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">
+              {stats ? stats.total_reviews.toLocaleString() : "—"}
+            </p>
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Average Rating</p>
-            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">4.3</p>
-            <p className="mt-1 text-xs font-medium text-amber-600">★★★★★</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">
+              {stats ? stats.average_rating.toFixed(1) : "—"}
+            </p>
+            <p className="mt-1 text-xs font-medium text-amber-600">
+              {stats ? "★".repeat(Math.round(stats.average_rating)) : ""}
+            </p>
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Flagged Reviews</p>
-            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">24</p>
-            <p className="mt-1 text-xs font-medium text-brand-red">Urgent</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">
+              {stats ? stats.flagged_reviews : "—"}
+            </p>
+            {stats && stats.flagged_reviews > 0 && (
+              <p className="mt-1 text-xs font-medium text-brand-red">Urgent</p>
+            )}
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Reviews Today</p>
-            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">156</p>
-            <p className="mt-1 text-xs font-medium text-success">+9%</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Approved Reviews</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">
+              {stats ? stats.approved_reviews : "—"}
+            </p>
           </article>
         </div>
       </section>
@@ -133,9 +264,12 @@ export default function Reviews() {
             <button
               key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${activeTab === tab ? "bg-chat-accent text-ice" : "bg-card text-body-secondary hover:bg-muted"
-                }`}
+              onClick={() => handleTabChange(tab)}
+              className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                activeTab === tab
+                  ? "bg-chat-accent text-ice"
+                  : "bg-card text-body-secondary hover:bg-muted"
+              }`}
             >
               {tab === "all" ? "All Reviews" : "Flagged / Reported"}
             </button>
@@ -156,122 +290,166 @@ export default function Reviews() {
               </tr>
             </thead>
             <tbody>
-              {visibleReviews.map((review) => (
-                <tr key={review.id} className="border-b border-border-light">
-                  <td className="px-4 py-4">
-                    <p className="text-base font-medium text-ink">{review.userName}</p>
-                    <p className="text-xs text-gray-500">{review.userDate}</p>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-ink">{review.business}</td>
-                  <td className="px-4 py-4">
-                    <StarRow rating={review.rating} />
-                  </td>
-                  <td className="max-w-sm px-4 py-4">
-                    <div className="flex items-start gap-2">
-                      <p className="text-sm leading-5 text-gray-600">{review.comment}</p>
-                      {review.flagged ? <Flag className="mt-0.5 size-4 shrink-0 text-brand-red" aria-label="Flagged" /> : null}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-xs text-body-secondary">{review.userDate}</td>
-                  <td className="px-4 py-4">{statusBadge(review.status)}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedReview(review);
-                          setModalOpen(true);
-                        }}
-                        className="inline-flex size-7 items-center justify-center rounded-xl hover:bg-muted"
-                        aria-label="View review"
-                      >
-                        <Eye className="size-4 text-emerald-600" strokeWidth={2} />
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-flex size-7 items-center justify-center rounded-xl hover:bg-muted"
-                        aria-label="Hide review"
-                      >
-                        <EyeOff className="size-4 text-amber-600" strokeWidth={2} />
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-flex size-7 items-center justify-center rounded-xl hover:bg-muted"
-                        aria-label="Delete review"
-                      >
-                        <Trash2 className="size-4 text-brand-red" strokeWidth={2} />
-                      </button>
-                    </div>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center">
+                    <Loader2 className="mx-auto size-6 animate-spin text-chat-accent" />
                   </td>
                 </tr>
-              ))}
-              {visibleReviews.length === 0 ? (
+              ) : reviews.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-sm text-chat-meta">
                     No reviews found for this filter.
                   </td>
                 </tr>
-              ) : null}
+              ) : (
+                reviews.map((review) => {
+                  const isProcessing = processingId === review.id;
+                  return (
+                    <tr key={review.id} className="border-b border-border-light">
+                      <td className="px-4 py-4">
+                        <p className="text-base font-medium text-ink">{review.display_name}</p>
+                        <p className="text-xs text-gray-500">{review.created_at}</p>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-ink">
+                        {review.business_info?.business_name ?? "—"}
+                      </td>
+                      <td className="px-4 py-4">
+                        <StarRow rating={review.rating} />
+                      </td>
+                      <td className="max-w-sm px-4 py-4">
+                        <div className="flex items-start gap-2">
+                          <p className="line-clamp-2 text-sm leading-5 text-gray-600">
+                            {review.review_text}
+                          </p>
+                          {review.is_flagged && (
+                            <Flag className="mt-0.5 size-4 shrink-0 text-brand-red" aria-label="Flagged" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-xs text-body-secondary">{review.created_at}</td>
+                      <td className="px-4 py-4">
+                        <StatusBadge isApproved={review.is_approved} />
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleView(review)}
+                            className="inline-flex size-7 items-center justify-center rounded-xl hover:bg-muted"
+                            aria-label="View review"
+                            disabled={isProcessing}
+                          >
+                            <Eye className="size-4 text-emerald-600" strokeWidth={2} />
+                          </button>
+
+                          {review.is_approved ? (
+                            <button
+                              type="button"
+                              onClick={() => setFlagTargetId(review.id)}
+                              className="inline-flex size-7 items-center justify-center rounded-xl hover:bg-muted"
+                              aria-label="Flag review"
+                              disabled={isProcessing}
+                            >
+                              {isProcessing ? (
+                                <Loader2 className="size-4 animate-spin text-amber-600" />
+                              ) : (
+                                <Flag className="size-4 text-amber-600" strokeWidth={2} />
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleApprove(review)}
+                              className="inline-flex size-7 items-center justify-center rounded-xl hover:bg-muted"
+                              aria-label="Approve review"
+                              disabled={isProcessing}
+                            >
+                              {isProcessing ? (
+                                <Loader2 className="size-4 animate-spin text-emerald-600" />
+                              ) : (
+                                <Eye className="size-4 text-emerald-600" strokeWidth={2} />
+                              )}
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(review.id)}
+                            className="inline-flex size-7 items-center justify-center rounded-xl hover:bg-muted"
+                            aria-label="Delete review"
+                            disabled={isProcessing}
+                          >
+                            {isProcessing ? (
+                              <Loader2 className="size-4 animate-spin text-brand-red" />
+                            ) : (
+                              <Trash2 className="size-4 text-brand-red" strokeWidth={2} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-tint-red/20 px-1 pb-0 pt-4">
-          <p className="text-xs font-medium text-stone-700">
-            Showing 1-10 of {TOTAL_TRANSACTIONS} transactions
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg opacity-30"
-              disabled
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="size-3.5 text-stone-700" />
-            </button>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg bg-brand-red text-xs font-semibold text-white"
-            >
-              1
-            </button>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg text-xs font-semibold text-stone-700 hover:bg-muted"
-            >
-              2
-            </button>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg text-xs font-semibold text-stone-700 hover:bg-muted"
-            >
-              3
-            </button>
-            <span className="px-1 text-base text-stone-700">...</span>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg text-xs font-semibold text-stone-700 hover:bg-muted"
-            >
-              49
-            </button>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg text-stone-700 hover:bg-muted"
-              aria-label="Next page"
-            >
-              <ChevronRight className="size-3.5" />
-            </button>
+        {pagination && totalPages > 1 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-tint-red/20 px-1 pb-0 pt-4">
+            <p className="text-xs font-medium text-stone-700">
+              Showing page {pagination.current_page} of {pagination.last_page} ({pagination.total} total)
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="flex size-8 items-center justify-center rounded-lg disabled:opacity-30"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="size-3.5 text-stone-700" />
+              </button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pg = i + 1;
+                return (
+                  <button
+                    key={pg}
+                    type="button"
+                    onClick={() => setPage(pg)}
+                    className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold ${
+                      page === pg
+                        ? "bg-brand-red text-white"
+                        : "text-stone-700 hover:bg-muted"
+                    }`}
+                  >
+                    {pg}
+                  </button>
+                );
+              })}
+              {totalPages > 5 && <span className="px-1 text-base text-stone-700">…</span>}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="flex size-8 items-center justify-center rounded-lg text-stone-700 hover:bg-muted disabled:opacity-30"
+                aria-label="Next page"
+              >
+                <ChevronRight className="size-3.5" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       <section className="mt-4 rounded-2xl border border-chat-border-subtle bg-card p-4">
         <h3 className="text-sm font-semibold text-ink">Sentiment Analysis</h3>
         <div className="mt-3 space-y-3">
           {[
-            { label: "Positive", value: 78, color: "bg-success" },
-            { label: "Neutral", value: 14, color: "bg-amber-500" },
-            { label: "Negative", value: 8, color: "bg-brand-red" },
+            { label: "Positive", value: positivePercent, color: "bg-success" },
+            { label: "Neutral", value: neutralPercent, color: "bg-amber-500" },
+            { label: "Negative", value: negativePercent, color: "bg-brand-red" },
           ].map((item) => (
             <div key={item.label}>
               <div className="mb-1 flex items-center justify-between text-xs">
@@ -286,7 +464,18 @@ export default function Reviews() {
         </div>
       </section>
 
-      <ReviewDetailsModal open={modalOpen} onClose={() => setModalOpen(false)} review={selectedReview} />
+      <ReviewDetailsModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        review={selectedReview}
+      />
+
+      <FlagModal
+        open={flagTargetId !== null}
+        loading={processingId === flagTargetId}
+        onConfirm={handleFlag}
+        onCancel={() => setFlagTargetId(null)}
+      />
     </div>
   );
 }

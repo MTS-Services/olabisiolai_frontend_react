@@ -1,70 +1,16 @@
 import FiltersSection from "@/components/sections/filters/FiltersSection";
 import ServiceCard from "@/components/sections/filters/ServiceCard";
 import { useCategoryCatalog } from "@/features/categories/useCategoryCatalog";
-import { ChevronLeft, Map, SlidersHorizontal, X } from "lucide-react";
+import { fetchPublicBusinesses, type PublicBusiness } from "@/features/business/publicBusinessApi";
+import { ChevronLeft, Loader2, Map, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-interface BusinessType {
-  id: number;
-  name: string;
-  category: string;
-  location: string;
-  rating: number;
-  reviews: number;
-  description: string;
-  image: string;
-  verified: boolean;
-}
-
-const MOCK_FEATURED_BUSINESSES: BusinessType[] = [
-  {
-    id: 1,
-    name: "Premium Plumbing Services",
-    category: "Plumbing",
-    location: "Lagos, Ikeja",
-    rating: 4.8,
-    reviews: 127,
-    description:
-      "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
-    image: "/images/feature/1.jpg",
-    verified: true,
-  },
-  {
-    id: 2,
-    name: "Sparkle Clean Services",
-    category: "Cleaning",
-    location: "Lagos, Surulere",
-    rating: 4.9,
-    reviews: 203,
-    description:
-      "Professional cleaning services for homes and offices. Eco-friendly products available.",
-    image: "/images/feature/1-1.jpg",
-    verified: true,
-  },
-  {
-    id: 3,
-    name: "Elite Electrical Solutions",
-    category: "Electrical",
-    location: "Lagos, Victoria Island",
-    rating: 4.6,
-    reviews: 89,
-    description:
-      "Certified electricians providing safe and reliable electrical installations and repairs.",
-    image: "/images/feature/1-2.jpg",
-    verified: true,
-  },
-  {
-    id: 4,
-    name: "Glamour Beauty Spa",
-    category: "Beauty & Spa",
-    location: "Lagos, Lekki",
-    rating: 4.7,
-    reviews: 156,
-    description: "Luxury spa and beauty treatments in a relaxing environment.",
-    image: "/images/feature/1-3.jpg",
-    verified: true,
-  },
+const FALLBACK_BUSINESSES: PublicBusiness[] = [
+  { id: 1, name: "Premium Plumbing Services", category: "Plumbing", location: "Lagos, Ikeja", rating: 4.8, reviews: 127, description: "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.", image: "/images/feature/1.jpg", verified: true },
+  { id: 2, name: "Sparkle Clean Services", category: "Cleaning", location: "Lagos, Surulere", rating: 4.9, reviews: 203, description: "Professional cleaning services for homes and offices. Eco-friendly products available.", image: "/images/feature/1-1.jpg", verified: true },
+  { id: 3, name: "Elite Electrical Solutions", category: "Electrical", location: "Lagos, Victoria Island", rating: 4.6, reviews: 89, description: "Certified electricians providing safe and reliable electrical installations and repairs.", image: "/images/feature/1-2.jpg", verified: true },
+  { id: 4, name: "Glamour Beauty Spa", category: "Beauty & Spa", location: "Lagos, Lekki", rating: 4.7, reviews: 156, description: "Luxury spa and beauty treatments in a relaxing environment.", image: "/images/feature/1-3.jpg", verified: true },
 ];
 
 export default function Filters() {
@@ -78,6 +24,25 @@ export default function Filters() {
   const categoryFilterLabels = useMemo(() => ["All", ...categoryNames], [categoryNames]);
 
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [businesses, setBusinesses] = useState<PublicBusiness[]>([]);
+  const [businessesLoading, setBusinessesLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setBusinessesLoading(true);
+    fetchPublicBusinesses()
+      .then((data) => {
+        if (cancelled) return;
+        setBusinesses(data.length > 0 ? data : FALLBACK_BUSINESSES);
+      })
+      .catch(() => {
+        if (!cancelled) setBusinesses(FALLBACK_BUSINESSES);
+      })
+      .finally(() => {
+        if (!cancelled) setBusinessesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!paramCategory) return;
@@ -94,9 +59,9 @@ export default function Filters() {
   };
 
   const visibleBusinesses = useMemo(() => {
-    if (selectedCategory === "All") return MOCK_FEATURED_BUSINESSES;
-    return MOCK_FEATURED_BUSINESSES.filter((b) => b.category === selectedCategory);
-  }, [selectedCategory]);
+    if (selectedCategory === "All") return businesses;
+    return businesses.filter((b) => b.category === selectedCategory);
+  }, [selectedCategory, businesses]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -220,19 +185,28 @@ export default function Filters() {
         {/* Business Cards Section */}
         <div className="w-full lg:w-3/6 min-w-0">
           <div className="mt-0 lg:mt-4 space-y-4">
-            {visibleBusinesses.map((business) => (
-              <ServiceCard
-                key={business.id}
-                name={business.name}
-                category={business.category}
-                location={business.location}
-                rating={business.rating}
-                reviews={business.reviews}
-                description={business.description}
-                image={business.image}
-                verified={business.verified}
-              />
-            ))}
+            {businessesLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="size-8 animate-spin text-primary" />
+              </div>
+            ) : visibleBusinesses.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">No businesses found.</p>
+            ) : (
+              visibleBusinesses.map((business) => (
+                <ServiceCard
+                  key={business.id}
+                  id={business.id}
+                  name={business.name}
+                  category={business.category}
+                  location={business.location}
+                  rating={business.rating}
+                  reviews={business.reviews}
+                  description={business.description}
+                  image={business.image}
+                  verified={business.verified}
+                />
+              ))
+            )}
           </div>
 
           {/* Pagination */}

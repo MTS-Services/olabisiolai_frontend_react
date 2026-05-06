@@ -4,6 +4,7 @@ import { Heart, MapPin, Star, CheckCircle, MessageCircle } from "lucide-react";
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 
 interface ServiceCardProps {
+  id: number;
   name: string;
   category: string;
   location: string;
@@ -15,6 +16,7 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({
+  id,
   name,
   category,
   location,
@@ -28,7 +30,7 @@ export default function ServiceCard({
   const { pathname } = useLocation();
 
   const goToService = () => {
-    navigate("/service", { state: { from: pathname } });
+    navigate("/service", { state: { from: pathname, business_id: id } });
   };
 
   return (

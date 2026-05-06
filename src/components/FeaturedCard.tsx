@@ -10,6 +10,7 @@ import {
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 
 interface FeaturedCardProps {
+  id: number;
   name: string;
   category: string;
   location: string;
@@ -22,6 +23,7 @@ interface FeaturedCardProps {
 }
 
 export function FeaturedCard({
+  id,
   name,
   category,
   location,
@@ -36,7 +38,7 @@ export function FeaturedCard({
   const navigate = useNavigate();
 
   const goToService = () => {
-    navigate(serviceRoute, { state: { from: pathname } });
+    navigate(serviceRoute, { state: { from: pathname, business_id: id } });
   };
 
   return (

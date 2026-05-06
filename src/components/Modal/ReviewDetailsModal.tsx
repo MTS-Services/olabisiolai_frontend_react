@@ -1,17 +1,37 @@
-import { Star, X } from "lucide-react";
+import { Flag, Star, X } from "lucide-react";
 
-import type { ReviewRow } from "@/components/Modal/ReviewDetailsModal.types";
+import type { ReviewDto } from "@/features/reviews/types";
 
-export type { ReviewRow } from "@/components/Modal/ReviewDetailsModal.types";
+export type { ReviewDto as ReviewRow } from "@/features/reviews/types";
 
 type ReviewDetailsModalProps = {
   open: boolean;
   onClose: () => void;
-  review: ReviewRow | null;
+  review: ReviewDto | null;
 };
+
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-1 pt-1" aria-label={`${rating} out of 5 stars`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          className={`size-4 ${i < rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`}
+          strokeWidth={1.5}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModalProps) {
   if (!open || !review) return null;
+
+  const businessName = review.business_info?.business_name ?? "—";
+  const statusLabel = review.is_approved ? "Approved" : "Flagged";
+  const statusClass = review.is_approved
+    ? "inline-flex rounded-full bg-[rgb(27_175_93/0.1)] px-2 py-0.5 text-xs font-medium text-[#1baf5d]"
+    : "inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700";
 
   return (
     <div
@@ -40,38 +60,79 @@ export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModal
           </button>
         </div>
 
-        <div className="flex flex-col gap-4 px-6 pb-6 pt-6">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-body-secondary">User</p>
-            <p className="text-base font-normal leading-6 text-ink">{review.userName}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-body-secondary">Business</p>
-            <p className="text-base font-normal leading-6 text-ink">{review.business}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-body-secondary">Rating</p>
-            <div className="flex items-center gap-1 pt-1" aria-label={`${review.rating} out of 5 stars`}>
-              {Array.from({ length: 5 }, (_, i) => (
-                <Star
-                  key={i}
-                  className={`size-4 ${i < review.rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`}
-                  strokeWidth={1.5}
-                />
-              ))}
+        <div className="flex max-h-[80vh] flex-col gap-4 overflow-y-auto px-6 pb-6 pt-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold text-body-secondary">Reviewer</p>
+              <p className="text-base font-normal leading-6 text-ink">{review.display_name}</p>
+              {!review.is_anonymous && review.user && (
+                <p className="text-xs text-body-secondary">{review.user.email}</p>
+              )}
             </div>
+            <span className={statusClass}>{statusLabel}</span>
           </div>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-body-secondary">Comment</p>
+
+          <div className="space-y-0.5">
+            <p className="text-sm font-semibold text-body-secondary">Business</p>
+            <p className="text-base font-normal leading-6 text-ink">{businessName}</p>
+            {review.business_info?.category && (
+              <p className="text-xs text-body-secondary">{review.business_info.category.name}</p>
+            )}
+          </div>
+
+          <div className="space-y-0.5">
+            <p className="text-sm font-semibold text-body-secondary">Rating</p>
+            <StarRow rating={review.rating} />
+          </div>
+
+          <div className="space-y-0.5">
+            <p className="text-sm font-semibold text-body-secondary">Review</p>
             <div className="pt-1">
               <p className="inline-block max-w-full rounded-xl bg-[rgb(27_175_93/0.1)] px-3 py-2 text-sm font-medium leading-relaxed text-[#1baf5d]">
-                {review.comment}
+                {review.review_text}
               </p>
             </div>
           </div>
-          <div className="space-y-1">
+
+          {review.is_flagged && review.flag_reason && (
+            <div className="space-y-0.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+              <p className="inline-flex items-center gap-1 text-xs font-semibold text-red-700">
+                <Flag className="size-3.5" />
+                Flag Reason
+              </p>
+              <p className="text-sm text-red-800">{review.flag_reason}</p>
+            </div>
+          )}
+
+          {review.images.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-semibold text-body-secondary">Images</p>
+              <div className="flex flex-wrap gap-2">
+                {review.images.map((img) => (
+                  <a
+                    key={img.id}
+                    href={img.image_path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block h-16 w-16 overflow-hidden rounded-lg border border-border-gray bg-muted"
+                  >
+                    <img
+                      src={img.image_path}
+                      alt={img.original_filename}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-0.5">
             <p className="text-sm font-medium text-body-secondary">Date &amp; Time</p>
-            <p className="text-base font-normal leading-6 text-ink">{review.dateTimeLong}</p>
+            <p className="text-base font-normal leading-6 text-ink">{review.created_at}</p>
           </div>
         </div>
       </div>

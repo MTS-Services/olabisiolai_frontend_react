@@ -102,6 +102,7 @@ export default function Featured() {
             {featuredBusinesses.map((business) => (
               <FeaturedCard
                 key={business.id}
+                id={business.id}
                 name={business.name}
                 category={business.category}
                 location={business.location}

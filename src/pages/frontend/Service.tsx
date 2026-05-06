@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { fetchPublicBusinessById } from "@/features/business/publicBusinessApi";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -89,7 +90,20 @@ function StarRow({ className }: { className?: string }) {
 
 export default function Service() {
   const [photosOpen, setPhotosOpen] = useState(false);
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
+  const businessId = (location.state as { from?: string; business_id?: number } | null)?.business_id;
+
+  const [businessName, setBusinessName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!businessId) return;
+    let cancelled = false;
+    fetchPublicBusinessById(businessId).then((b) => {
+      if (!cancelled && b) setBusinessName(b.name);
+    });
+    return () => { cancelled = true; };
+  }, [businessId]);
 
   return (
     <div className="bg-bg-section font-sans text-ink">
@@ -131,7 +145,7 @@ export default function Service() {
               <div className="flex flex-col gap-10">
                 <div className="space-y-4 pt-10 sm:pt-12">
                   <h1 className="font-heading text-4xl font-bold tracking-tight text-ink md:text-5xl lg:text-6xl lg:leading-[4.25rem]">
-                    Plumbing king
+                    {businessName ?? "Plumbing king"}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-950">
@@ -411,7 +425,7 @@ export default function Service() {
             </h2>
             <Link
               to="/reviews"
-              state={{ from: pathname }}
+              state={{ from: pathname, business_id: businessId }}
               className="border-b-2 border-accent-foreground/20 pb-0.5 text-base font-semibold text-accent-foreground hover:opacity-90"
             >
               Write a review

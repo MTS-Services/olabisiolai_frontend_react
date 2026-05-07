@@ -1,53 +1,28 @@
 export type ReviewImage = {
   id: number;
-  image_path: string;
+  url: string;
   original_filename: string;
   mime_type: string;
   file_size: number;
-  created_at: string;
 };
 
-export type ReviewUser = {
-  id: number;
-  first_name: string;
-  last_name: string;
-  name: string;
-  email: string;
-  phone: string;
-};
-
-export type ReviewBusinessInfo = {
+export type ReviewBusiness = {
   id: number;
   business_name: string;
-  vendor?: {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-  };
-  category?: {
-    id: number;
-    name: string;
-  };
 };
 
 export type ReviewDto = {
   id: number;
-  display_name: string;
-  full_name: string;
+  reviewer_name: string;
   is_anonymous: boolean;
   rating: number;
-  rating_label: string;
   review_text: string;
   is_approved: boolean;
-  is_flagged: boolean;
-  flag_reason: string | null;
-  user: ReviewUser | null;
-  business_info: ReviewBusinessInfo;
+  is_flagged?: boolean;
+  flag_reason?: string | null;
+  business: ReviewBusiness;
   images: ReviewImage[];
   created_at: string;
-  updated_at: string;
 };
 
 export type ReviewPagination = {

@@ -28,7 +28,7 @@ export async function adminViewReview(id: number): Promise<ReviewDto> {
 }
 
 export type ApprovePayload = { is_approved: true };
-export type FlagPayload = { is_approved: false; flag_reason: string };
+export type FlagPayload = { is_approved: false; flag_reason?: string };
 export type UpdatePayload = ApprovePayload | FlagPayload;
 
 export async function adminUpdateReview(id: number, payload: UpdatePayload): Promise<ReviewDto> {

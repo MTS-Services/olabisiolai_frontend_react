@@ -27,7 +27,7 @@ function StarRow({ rating }: { rating: number }) {
 export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModalProps) {
   if (!open || !review) return null;
 
-  const businessName = review.business_info?.business_name ?? "—";
+  const businessName = review.business?.business_name ?? "—";
   const statusLabel = review.is_approved ? "Approved" : "Flagged";
   const statusClass = review.is_approved
     ? "inline-flex rounded-full bg-[rgb(27_175_93/0.1)] px-2 py-0.5 text-xs font-medium text-[#1baf5d]"
@@ -64,10 +64,7 @@ export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModal
           <div className="flex items-center justify-between gap-2">
             <div className="space-y-0.5">
               <p className="text-sm font-semibold text-body-secondary">Reviewer</p>
-              <p className="text-base font-normal leading-6 text-ink">{review.display_name}</p>
-              {!review.is_anonymous && review.user && (
-                <p className="text-xs text-body-secondary">{review.user.email}</p>
-              )}
+              <p className="text-base font-normal leading-6 text-ink">{review.reviewer_name}</p>
             </div>
             <span className={statusClass}>{statusLabel}</span>
           </div>
@@ -75,9 +72,6 @@ export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModal
           <div className="space-y-0.5">
             <p className="text-sm font-semibold text-body-secondary">Business</p>
             <p className="text-base font-normal leading-6 text-ink">{businessName}</p>
-            {review.business_info?.category && (
-              <p className="text-xs text-body-secondary">{review.business_info.category.name}</p>
-            )}
           </div>
 
           <div className="space-y-0.5">
@@ -94,7 +88,7 @@ export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModal
             </div>
           </div>
 
-          {review.is_flagged && review.flag_reason && (
+          {review.is_flagged && review.flag_reason != null && (
             <div className="space-y-0.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
               <p className="inline-flex items-center gap-1 text-xs font-semibold text-red-700">
                 <Flag className="size-3.5" />
@@ -111,13 +105,13 @@ export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModal
                 {review.images.map((img) => (
                   <a
                     key={img.id}
-                    href={img.image_path}
+                    href={img.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block h-16 w-16 overflow-hidden rounded-lg border border-border-gray bg-muted"
                   >
                     <img
-                      src={img.image_path}
+                      src={img.url}
                       alt={img.original_filename}
                       className="h-full w-full object-cover"
                       onError={(e) => {

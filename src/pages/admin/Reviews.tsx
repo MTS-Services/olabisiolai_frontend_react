@@ -308,11 +308,11 @@ export default function Reviews() {
                   return (
                     <tr key={review.id} className="border-b border-border-light">
                       <td className="px-4 py-4">
-                        <p className="text-base font-medium text-ink">{review.display_name}</p>
+                        <p className="text-base font-medium text-ink">{review.reviewer_name}</p>
                         <p className="text-xs text-gray-500">{review.created_at}</p>
                       </td>
                       <td className="px-4 py-4 text-sm text-ink">
-                        {review.business_info?.business_name ?? "—"}
+                        {review.business?.business_name ?? "—"}
                       </td>
                       <td className="px-4 py-4">
                         <StarRow rating={review.rating} />

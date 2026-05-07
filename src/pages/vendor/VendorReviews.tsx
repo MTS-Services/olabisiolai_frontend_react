@@ -147,10 +147,10 @@ export default function VendorReviews() {
               <CardContent className="space-y-3 p-4 md:p-5">
                 <div className="flex items-center gap-3">
                   <div className="flex size-9 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                    {getInitials(review.display_name)}
+                    {getInitials(review.reviewer_name)}
                   </div>
                   <div>
-                    <p className="font-semibold">{review.display_name}</p>
+                    <p className="font-semibold">{review.reviewer_name}</p>
                     <p className="text-xs text-muted-foreground">{review.created_at}</p>
                   </div>
                 </div>
@@ -164,13 +164,13 @@ export default function VendorReviews() {
                     {review.images.map((img) => (
                       <a
                         key={img.id}
-                        href={img.image_path}
+                        href={img.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block h-14 w-14 overflow-hidden rounded-lg border border-border-gray bg-muted"
                       >
                         <img
-                          src={img.image_path}
+                          src={img.url}
                           alt={img.original_filename}
                           className="h-full w-full object-cover"
                           onError={(e) => {

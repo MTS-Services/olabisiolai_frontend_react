@@ -6,9 +6,11 @@ import {
   MapPin,
   CheckCircle,
 } from "lucide-react";
+import { useState } from "react";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 import { encryptId } from "@/lib/encryptId";
+import { toggleFavorite } from "@/api/favorites";
 
 interface FeaturedCardProps {
   id: number;
@@ -20,6 +22,7 @@ interface FeaturedCardProps {
   description: string;
   image: string;
   verified: boolean;
+  favorited?: boolean;
 }
 
 export function FeaturedCard({
@@ -32,9 +35,12 @@ export function FeaturedCard({
   description,
   image,
   verified,
+  favorited = false,
 }: FeaturedCardProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const [isFavorited, setIsFavorited] = useState(favorited);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const goToService = () => {
     navigate(`/businesses/${encryptId(id)}`, {
@@ -43,6 +49,21 @@ export function FeaturedCard({
         business: { id, name, category, location, rating, reviews, description, image, verified },
       },
     });
+  };
+
+  const handleFavorite = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (favoriteLoading) return;
+
+    setFavoriteLoading(true);
+    try {
+      const response = await toggleFavorite(id);
+      setIsFavorited(response.data.favorited);
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+    } finally {
+      setFavoriteLoading(false);
+    }
   };
 
   return (
@@ -70,9 +91,19 @@ export function FeaturedCard({
             <CheckCircle className="w-3 h-3 mr-1" /> VERIFIED
           </div>
         )}
-        <div className="absolute top-4 right-4 bg-transparent rounded-full p-2 shadow-md">
-          <Heart className="w-5 h-5 text-text-white" />
-        </div>
+        <button
+          onClick={handleFavorite}
+          disabled={favoriteLoading}
+          className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-md hover:bg-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Heart
+            className={`w-5 h-5 transition-colors duration-200 ${isFavorited
+                ? "fill-red-500 text-red-500"
+                : "text-gray-600 hover:text-red-500"
+              }`}
+          />
+        </button>
       </div>
       <div className="p-6 flex flex-col flex-1">
         <h3 className="text-lg font-inter font-semibold text-text-primary mb-1">
@@ -99,7 +130,7 @@ export function FeaturedCard({
         <p className="font-normal font-inter text-sm text-text-secondary mb-6 flex-1 line-clamp-2">
           {description}
         </p>
-        <ShowPhoneNumberReveal  
+        <ShowPhoneNumberReveal
           className="mb-3 flex w-full items-center justify-center rounded-lg bg-destructive py-2 font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90"
           iconClassName="size-5 shrink-0"
         />

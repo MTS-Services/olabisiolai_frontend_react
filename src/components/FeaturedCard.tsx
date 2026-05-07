@@ -52,7 +52,7 @@ export function FeaturedCard({
           goToService();
         }
       }}
-      className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+      className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 h-130 flex flex-col"
     >
       <div className="relative">
         <img
@@ -70,7 +70,7 @@ export function FeaturedCard({
           <Heart className="w-5 h-5 text-text-white" />
         </div>
       </div>
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-1">
         <h3 className="text-lg font-inter font-semibold text-text-primary mb-1">
           {name}
         </h3>
@@ -92,10 +92,10 @@ export function FeaturedCard({
             ({reviews})
           </span>
         </div>
-        <p className="font-normal font-inter text-sm text-text-secondary mb-6">
+        <p className="font-normal font-inter text-sm text-text-secondary mb-6 flex-1 line-clamp-2">
           {description}
         </p>
-        <ShowPhoneNumberReveal
+        <ShowPhoneNumberReveal  
           className="mb-3 flex w-full items-center justify-center rounded-lg bg-destructive py-2 font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90"
           iconClassName="size-5 shrink-0"
         />

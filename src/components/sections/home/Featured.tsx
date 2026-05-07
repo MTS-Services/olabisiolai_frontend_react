@@ -1,121 +1,85 @@
-import { FeaturedCard } from "@/components/FeaturedCard";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { FeaturedCard } from "@/components/FeaturedCard";
+import { fetchPublicBusinesses } from "@/features/business/publicBusinessApi";
 
-interface BusinessType {
-  id: number;
-  name: string;
-  category: string;
-  location: string;
-  rating: number;
-  reviews: number;
-  description: string;
-  image: string;
-  verified: boolean;
+function SkeletonCard() {
+  return (
+    <div className="bg-card rounded-lg shadow-md overflow-hidden animate-pulse h-150 flex flex-col">
+      <div className="w-full h-48 bg-muted" />
+      <div className="p-6 space-y-3 flex flex-col flex-1">
+        <div className="h-4 bg-muted rounded w-3/4" />
+        <div className="h-3 bg-muted rounded w-1/3" />
+        <div className="h-3 bg-muted rounded w-1/2" />
+        <div className="h-3 bg-muted rounded w-1/4" />
+        <div className="h-12 bg-muted rounded" />
+        <div className="h-10 bg-muted rounded" />
+        <div className="h-10 bg-muted rounded" />
+      </div>
+    </div>
+  );
 }
 
 export default function Featured() {
-  const featuredBusinesses: BusinessType[] = [
-    {
-      id: 1,
-      name: "Premium Plumbing Services",
-      category: "Plumbing",
-      location: "Lagos, Ikeja",
-      rating: 4.8,
-      reviews: 127,
-      description:
-        "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
-      image: "/images/feature/1.jpg",
-      verified: true,
-    },
-    {
-      id: 2,
-      name: "Sparkle Clean Services",
-      category: "Cleaning",
-      location: "Lagos, Surulere",
-      rating: 4.9,
-      reviews: 203,
-      description:
-        "Professional cleaning services for homes and offices. Eco-friendly products available.",
-      image: "/images/feature/1-1.jpg",
-      verified: true,
-    },
-    {
-      id: 3,
-      name: "Elite Electrical Solutions",
-      category: "Electrical",
-      location: "Lagos, Victoria Island",
-      rating: 4.6,
-      reviews: 89,
-      description:
-        "Certified electricians providing safe and reliable electrical installations and repairs.",
-      image: "/images/feature/1-2.jpg",
-      verified: true,
-    },
-    {
-      id: 4,
-      name: "Glamour Beauty Spa",
-      category: "Beauty & Spa",
-      location: "Lagos, Lekki",
-      rating: 4.7,
-      reviews: 156,
-      description:
-        "Luxury spa and beauty treatments in a relaxing environment.",
-      image: "/images/feature/1-3.jpg",
-      verified: true,
-    },
-    {
-      id: 5,
-      name: "Royal Catering & Events",
-      category: "Catering",
-      location: "Lagos, Lekki",
-      rating: 4.9,
-      reviews: 178,
-      description:
-        "Full-service catering for weddings, corporate events, and private parties with local and international cuisines.",
-      image: "/images/feature/1-5.jpg",
-      verified: true,
-    },
-    {
-      id: 6,
-      name: "Master Builders Ltd",
-      category: "Construction",
-      location: "Abuja, Wuse",
-      rating: 4.5,
-      reviews: 92,
-      description:
-        "Complete construction services from foundation to finishing. Licensed and insured.",
-      image: "/images/feature/1-4.jpg",
-      verified: true,
-    },
-  ];
+  const {
+    data: businesses,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["businesses", "home"],
+    queryFn: () => fetchPublicBusinesses(),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
+  const list = businesses ?? [];
 
   return (
     <div className="lg:mb-20 mb-12 bg-bg-section">
       <div className="container mx-auto px-4 lg:py-24 py-12">
-        <div className="">
-          <h2 className="lg:text-3xl text-2xl font-inter font-bold text-text-primary">
-            Featured & Verified Businesses
-          </h2>
-        </div>
+        <h2 className="lg:text-3xl text-2xl font-inter font-bold text-text-primary">
+          Featured & Verified Businesses
+        </h2>
+
         <div className="mt-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {featuredBusinesses.map((business) => (
-              <FeaturedCard
-                key={business.id}
-                id={business.id}
-                name={business.name}
-                category={business.category}
-                location={business.location}
-                rating={business.rating}
-                reviews={business.reviews}
-                description={business.description}
-                image={business.image}
-                verified={business.verified}
-                serviceRoute="/service"
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : isError ? (
+            <p className="text-center text-destructive font-inter py-12">
+              {import.meta.env.DEV
+                ? `Failed to load businesses: ${(error as Error)?.message ?? "Unknown error"}`
+                : "Unable to load businesses. Please try again later."}
+            </p>
+          ) : list.length === 0 ? (
+            <p className="text-center text-text-secondary font-inter py-12">
+              No businesses available at the moment.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+              {list.slice(0, 6).map((business) => (
+                <FeaturedCard
+                  key={business.id}
+                  id={business.id}
+                  name={business.name}
+                  category={business.category}
+                  location={business.location}
+                  rating={business.rating}
+                  reviews={business.reviews}
+                  description={business.description}
+                  image={business.image}
+                  verified={business.verified}
+                  serviceRoute="/service"
+                />
+              ))}
+            </div>
+          )}
         </div>
+
         <div className="mt-8 text-center">
           <Link
             to="/filters"

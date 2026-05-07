@@ -73,7 +73,6 @@ export default function Featured() {
                   description={business.description}
                   image={business.image}
                   verified={business.verified}
-                  serviceRoute="/service"
                 />
               ))}
             </div>

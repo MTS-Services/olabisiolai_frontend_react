@@ -170,6 +170,14 @@ export async function fetchPublicBusinesses(params?: {
 export async function fetchPublicBusinessById(id: number): Promise<PublicBusiness | null> {
   const endpoints: Array<{ label: string; fn: () => Promise<unknown> }> = [
     {
+      // confirmed response: { data: { business: {...} } }
+      label: `GET /businesses/${id}`,
+      fn: () =>
+        request
+          .get(`/businesses/${id}`, { skipAuthRedirect: true })
+          .then((r) => r.data),
+    },
+    {
       label: `GET /public/businesses/${id}`,
       fn: () =>
         request
@@ -183,13 +191,6 @@ export async function fetchPublicBusinessById(id: number): Promise<PublicBusines
           .get(`/public/business-info/${id}`, { skipAuthRedirect: true })
           .then((r) => r.data),
     },
-    {
-      label: `GET /businesses/${id}`,
-      fn: () =>
-        request
-          .get(`/businesses/${id}`, { skipAuthRedirect: true })
-          .then((r) => r.data),
-    },
   ];
 
   for (const { label, fn } of endpoints) {
@@ -198,8 +199,10 @@ export async function fetchPublicBusinessById(id: number): Promise<PublicBusines
       if (import.meta.env.DEV) {
         console.debug('[publicBusinessApi] single response from', label, data);
       }
+      // Unwrap { data: { business: {...} } } or { data: {...} } or raw object
       const r = rec(data);
-      const inner = r?.data ?? data;
+      const dataObj = rec(r?.data);
+      const inner = dataObj?.business ?? r?.data ?? data;
       const parsed = parseBusiness(inner, 0);
       if (parsed) return parsed;
     } catch (err) {

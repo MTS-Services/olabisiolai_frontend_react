@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
+import { encryptId } from "@/lib/encryptId";
 
 interface FeaturedCardProps {
   id: number;
@@ -19,7 +20,6 @@ interface FeaturedCardProps {
   description: string;
   image: string;
   verified: boolean;
-  serviceRoute?: string;
 }
 
 export function FeaturedCard({
@@ -32,13 +32,17 @@ export function FeaturedCard({
   description,
   image,
   verified,
-  serviceRoute = "/service",
 }: FeaturedCardProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
   const goToService = () => {
-    navigate(serviceRoute, { state: { from: pathname, business_id: id } });
+    navigate(`/businesses/${encryptId(id)}`, {
+      state: {
+        from: pathname,
+        business: { id, name, category, location, rating, reviews, description, image, verified },
+      },
+    });
   };
 
   return (

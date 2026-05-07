@@ -44,6 +44,7 @@ export const publicRoutes: RouteObject = {
     { path: "/filters", element: suspensePage(Filters) },
     { path: "/trade", element: suspensePage(Trade) },
     { path: "/service", element: suspensePage(Service) },
+    { path: "/businesses/:slug", element: suspensePage(Service) },
     { path: "/messages", element: suspensePage(DirectMessage) },
     { path: "/reviews", element: suspensePage(GiveReview) },
     { path: "/about", element: suspensePage(About) },

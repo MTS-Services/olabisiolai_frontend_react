@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPublicBusinessById } from "@/features/business/publicBusinessApi";
+import { fetchBusinessReviews } from "@/features/reviews/publicReviewApi";
 import { decryptId } from "@/lib/encryptId";
 import {
   ArrowLeft,
@@ -94,6 +95,8 @@ interface StateBusinessData {
 
 export default function Service() {
   const [photosOpen, setPhotosOpen] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const reviewsRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const { pathname } = location;
   const { slug } = useParams<{ slug: string }>();
@@ -107,14 +110,24 @@ export default function Service() {
     queryFn: () => fetchPublicBusinessById(businessId!),
     enabled: businessId !== null,
     staleTime: 5 * 60 * 1000,
-    // Show card data instantly while the API fetches fresh details
     initialData: stateData ?? undefined,
   });
+
+  const { data: reviewsResult } = useQuery({
+    queryKey: ["reviews", businessId, reviewPage],
+    queryFn: () => fetchBusinessReviews(businessId!, reviewPage),
+    enabled: businessId !== null,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+
+  const reviewsList = reviewsResult?.data ?? [];
+  const pagination = reviewsResult?.pagination ?? { current_page: 1, last_page: 1, total: 0 };
 
   const name = business?.name ?? stateData?.name ?? "";
   const description = business?.description ?? stateData?.description ?? "";
   const rating = business?.rating ?? stateData?.rating ?? 0;
-  const reviews = business?.reviews ?? stateData?.reviews ?? 0;
+  const reviewCount = business?.reviews ?? stateData?.reviews ?? 0;
   const locationText = business?.location ?? stateData?.location ?? "";
   const logo = business?.image ?? stateData?.image ?? IMAGES.avatar;
   const verified = business?.verified ?? stateData?.verified ?? false;
@@ -170,7 +183,7 @@ export default function Service() {
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-ink md:text-base">
                     <StarRow rating={rating} />
-                    <span>{rating > 0 ? `${rating} (${reviews} Reviews)` : "No reviews yet"}</span>
+                    <span>{rating > 0 ? `${rating} (${reviewCount} Reviews)` : "No reviews yet"}</span>
                     {verified && (
                       <>
                         <span className="text-stat-muted" aria-hidden>•</span>
@@ -351,9 +364,13 @@ export default function Service() {
           </div>
         </section>
 
-        <section className="mt-12 space-y-8">
+        <section ref={reviewsRef} className="mt-12 space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-heading text-3xl font-semibold tracking-tight text-ink md:text-4xl">Reviews</h2>
+            <h2 className="font-heading text-3xl font-semibold tracking-tight text-ink md:text-4xl">
+              Reviews{pagination.total > 0 && (
+                <span className="ml-2 text-2xl text-stat-muted">({pagination.total})</span>
+              )}
+            </h2>
             <Link
               to="/reviews"
               state={{ from: pathname, business_id: businessId }}
@@ -362,45 +379,114 @@ export default function Service() {
               Write a review
             </Link>
           </div>
-          <div className="space-y-10">
-            <article className="flex gap-6">
-              <AspectCover src={IMAGES.review1} className="size-14 shrink-0 rounded-full ring-2 ring-border-light md:size-16" />
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold text-ink">Sarah Jenkins</p>
-                  <p className="text-sm text-stat-muted">Oct 2023</p>
-                </div>
-                <StarRow className="scale-90 origin-left" />
-                <p className="text-base leading-relaxed text-body-secondary">
-                  Absolutely impeccable. The team arrived on time, were incredibly respectful of my home office space, and the attention to detail on the glass surfaces was beyond what I expected.
-                </p>
+
+          {reviewsList.length === 0 ? (
+            <p className="text-base text-body-secondary">No reviews yet. Be the first to write one!</p>
+          ) : (
+            <>
+              <div className="space-y-10">
+                {reviewsList.map((review) => {
+                  const initials = review.reviewer_name
+                    .split(" ")
+                    .map((w: string) => w[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2);
+                  const date = review.created_at
+                    ? new Date(review.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "";
+                  return (
+                    <article key={review.id} className="flex gap-6">
+                      <div className="size-14 shrink-0 rounded-full ring-2 ring-border-light md:size-16 bg-primary/10 flex items-center justify-center">
+                        <span className="text-base font-bold text-primary">{initials}</span>
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-semibold text-ink">{review.reviewer_name}</p>
+                          <p className="text-sm text-stat-muted">{date}</p>
+                        </div>
+                        <StarRow rating={review.rating} className="scale-90 origin-left" />
+                        <p className="text-base leading-relaxed text-body-secondary">{review.review_text}</p>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-            </article>
-            <article className="flex gap-6 opacity-70">
-              <AspectCover src={IMAGES.review2} className="size-14 shrink-0 rounded-full ring-2 ring-border-light md:size-16" />
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold text-ink">Marcus Thorne</p>
-                  <p className="text-sm text-stat-muted">Sept 2023</p>
+
+              {pagination.last_page > 1 && (
+                <div className="flex items-center justify-between gap-4 border-t border-border-light pt-6">
+                  <p className="text-sm text-stat-muted">
+                    Page {pagination.current_page} of {pagination.last_page} &middot; {pagination.total} reviews
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={pagination.current_page === 1}
+                      onClick={() => {
+                        setReviewPage((p) => p - 1);
+                        reviewsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      className="rounded-lg border border-border-light px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-soft disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Prev
+                    </button>
+
+                    {Array.from({ length: pagination.last_page }, (_, i) => i + 1)
+                      .filter(
+                        (p) =>
+                          p === 1 ||
+                          p === pagination.last_page ||
+                          Math.abs(p - pagination.current_page) <= 1,
+                      )
+                      .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && (arr[idx - 1] as number) + 1 < p) acc.push("…");
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((item, idx) =>
+                        item === "…" ? (
+                          <span key={`ellipsis-${idx}`} className="px-2 text-stat-muted">
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => {
+                              setReviewPage(item);
+                              reviewsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            className={cn(
+                              "rounded-lg border px-3 py-1.5 text-sm font-medium",
+                              item === pagination.current_page
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border-light text-ink hover:bg-surface-soft",
+                            )}
+                          >
+                            {item}
+                          </button>
+                        ),
+                      )}
+
+                    <button
+                      type="button"
+                      disabled={pagination.current_page === pagination.last_page}
+                      onClick={() => {
+                        setReviewPage((p) => p + 1);
+                        reviewsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      className="rounded-lg border border-border-light px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-soft disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-0.5">
-                  {[0, 1, 2, 3].map((i) => (
-                    <Star key={i} className="size-5 shrink-0 fill-brand-red text-brand-red" aria-hidden />
-                  ))}
-                  <Star className="size-5 shrink-0 text-brand-red" aria-hidden />
-                </div>
-                <p className="text-base leading-relaxed text-body-secondary">
-                  Great service for maintenance. They fixed a plumbing issue and cleaned the HVAC filters in one visit. Highly recommend for busy professionals.
-                </p>
-              </div>
-            </article>
-          </div>
-          <div className="flex items-center justify-center gap-2 pt-4">
-            <span className="size-2 rounded-full bg-stat-muted" aria-hidden />
-            <span className="size-2 rounded-full bg-stat-muted/50" aria-hidden />
-            <span className="size-2 rounded-full bg-stat-muted/20" aria-hidden />
-            <span className="pl-2 text-xs font-semibold uppercase tracking-widest text-stat-muted">Loading more...</span>
-          </div>
+              )}
+            </>
+          )}
         </section>
       </div>
 

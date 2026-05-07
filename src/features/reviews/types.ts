@@ -11,6 +11,14 @@ export type ReviewBusiness = {
   business_name: string;
 };
 
+export type ReviewReply = {
+  id: number;
+  reply_text: string;
+  created_at: string;
+  created_at_human?: string;
+  updated_at?: string;
+};
+
 export type ReviewDto = {
   id: number;
   reviewer_name: string;
@@ -22,7 +30,11 @@ export type ReviewDto = {
   flag_reason?: string | null;
   business: ReviewBusiness;
   images: ReviewImage[];
+  replies: ReviewReply[];
+  replies_count: number;
   created_at: string;
+  created_at_human?: string;
+  updated_at?: string;
 };
 
 export type ReviewPagination = {

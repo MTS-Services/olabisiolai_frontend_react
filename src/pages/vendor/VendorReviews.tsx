@@ -1,8 +1,9 @@
-import { Loader2, Star } from "lucide-react";
+import { Loader2, Star, MessageSquare, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { fetchPublicReviews } from "@/features/reviews/publicReviewApi";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import type { ReviewDto } from "@/features/reviews/types";
 import { request } from "@/api/request";
 
@@ -27,13 +28,43 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-async function fetchVendorBusinessId(): Promise<number | null> {
+
+async function fetchVendorReviews(): Promise<{ data: ReviewDto[]; pagination: { total: number } }> {
   try {
-    const res = await request.get("/vendor/business");
-    const body = res.data as { data?: { id?: number; business_id?: number } };
-    return body.data?.id ?? body.data?.business_id ?? null;
+    const res = await request.get("/vendor/reviews");
+    const body = res.data as {
+      success: boolean;
+      data: ReviewDto[];
+      pagination?: { total: number; current_page: number; last_page: number; per_page: number }
+    };
+
+    // Handle the response structure shown in the image
+    if (body.success && Array.isArray(body.data)) {
+      return {
+        data: body.data,
+        pagination: body.pagination || { total: body.data.length }
+      };
+    }
+
+    return {
+      data: [],
+      pagination: { total: 0 }
+    };
   } catch {
-    return null;
+    return {
+      data: [],
+      pagination: { total: 0 }
+    };
+  }
+}
+
+async function sendReviewReply(reviewId: number, replyText: string): Promise<boolean> {
+  try {
+    await request.post(`/vendor/reviews/${reviewId}/reply`, { reply_text: replyText });
+    return true;
+  } catch (error) {
+    console.error(`Failed to send reply for review ${reviewId}:`, error);
+    return false;
   }
 }
 
@@ -43,29 +74,59 @@ export default function VendorReviews() {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
+  const [replyLoading, setReplyLoading] = useState<number | null>(null);
+  const [replyTexts, setReplyTexts] = useState<Record<number, string>>({});
+  const [replyError, setReplyError] = useState<string | null>(null);
+  const [showReplyInput, setShowReplyInput] = useState<Record<number, boolean>>({});
 
   const loadReviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const businessId = await fetchVendorBusinessId();
-      if (!businessId) {
-        setError("No business found. Please set up your business profile first.");
-        return;
-      }
-      const result = await fetchPublicReviews({ business_id: businessId, per_page: 50 });
+      const result = await fetchVendorReviews();
+      console.log('API Response:', result);
+      console.log('Reviews count:', result.data.length);
       setReviews(result.data);
       setTotalCount(result.pagination.total);
       if (result.data.length > 0) {
-        const avg = result.data.reduce((sum, r) => sum + r.rating, 0) / result.data.length;
+        const avg = result.data.reduce((sum: number, r: ReviewDto) => sum + r.rating, 0) / result.data.length;
         setAvgRating(Math.round(avg * 10) / 10);
       }
-    } catch {
+    } catch (error) {
+      console.error('Error loading reviews:', error);
       setError("Failed to load reviews. Please try again.");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const handleReply = async (reviewId: number) => {
+    const replyText = replyTexts[reviewId]?.trim();
+    if (!replyText) {
+      setReplyError("Please enter a reply message.");
+      return;
+    }
+
+    setReplyLoading(reviewId);
+    setReplyError(null);
+
+    try {
+      const success = await sendReviewReply(reviewId, replyText);
+      if (success) {
+        // Clear the reply text for this review
+        setReplyTexts(prev => ({ ...prev, [reviewId]: "" }));
+        // Reload reviews to show the new reply
+        await loadReviews();
+      } else {
+        setReplyError("Failed to send reply. Please try again.");
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      setReplyError("Failed to send reply. Please try again.");
+    } finally {
+      setReplyLoading(null);
+    }
+  };
 
   useEffect(() => {
     void loadReviews();
@@ -179,6 +240,77 @@ export default function VendorReviews() {
                         />
                       </a>
                     ))}
+                  </div>
+                )}
+
+                {/* Display existing replies */}
+                {review.replies && review.replies.length > 0 && (
+                  <div className="space-y-2 rounded-lg bg-muted/50 p-3">
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <MessageSquare className="size-4" />
+                      {review.replies_count} {review.replies_count === 1 ? 'Reply' : 'Replies'}
+                    </div>
+                    {review.replies.map((reply) => (
+                      <div key={reply.id} className="rounded-lg bg-white p-3 text-sm">
+                        <div className="mb-1 font-medium text-muted-foreground">Vendor Response</div>
+                        <p className="text-foreground">{reply.reply_text}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{reply.created_at_human}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Reply input form - only show if no replies exist (one-time reply constraint) */}
+                {(!review.replies || review.replies.length === 0) && (
+                  <div className="space-y-2">
+                    {showReplyInput[review.id] ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <MessageSquare className="size-4" />
+                          Reply to this review
+                        </div>
+                        <div className="flex gap-2">
+                          <Textarea
+                            placeholder="Write your response..."
+                            value={replyTexts[review.id] || ""}
+                            onChange={(e) => setReplyTexts(prev => ({ ...prev, [review.id]: e.target.value }))}
+                            className="min-h-20 resize-none"
+                            disabled={replyLoading === review.id}
+                          />
+                          <Button
+                            onClick={() => handleReply(review.id)}
+                            disabled={replyLoading === review.id || !replyTexts[review.id]?.trim()}
+                            className="self-end"
+                          >
+                            {replyLoading === review.id ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Send className="size-4" />
+                            )}
+                          </Button>
+                        </div>
+                        {replyError && (
+                          <p className="text-sm text-red-600">{replyError}</p>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowReplyInput(prev => ({ ...prev, [review.id]: false }))}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowReplyInput(prev => ({ ...prev, [review.id]: true }))}
+                        className="flex items-center gap-2"
+                      >
+                        <MessageSquare className="size-4" />
+                        Reply
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>

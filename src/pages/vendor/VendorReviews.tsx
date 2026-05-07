@@ -68,6 +68,32 @@ async function sendReviewReply(reviewId: number, replyText: string): Promise<boo
   }
 }
 
+async function fetchReviewStatistics(): Promise<{
+  total_reviews: number;
+  average_rating: number;
+  replied_reviews: number;
+  unreplied_reviews: number;
+  rating_distribution: {
+    '5_star': number;
+    '4_star': number;
+    '3_star': number;
+    '2_star': number;
+    '1_star': number;
+  };
+} | null> {
+  try {
+    const res = await request.get("/vendor/reviews/statistics");
+    const body = res.data as { success: boolean; data: any };
+    if (body.success && body.data) {
+      return body.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch review statistics:', error);
+    return null;
+  }
+}
+
 export default function VendorReviews() {
   const [reviews, setReviews] = useState<ReviewDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,14 +104,25 @@ export default function VendorReviews() {
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({});
   const [replyError, setReplyError] = useState<string | null>(null);
   const [showReplyInput, setShowReplyInput] = useState<Record<number, boolean>>({});
+  const [statistics, setStatistics] = useState<{
+    total_reviews: number;
+    average_rating: number;
+    replied_reviews: number;
+    unreplied_reviews: number;
+    rating_distribution: {
+      '5_star': number;
+      '4_star': number;
+      '3_star': number;
+      '2_star': number;
+      '1_star': number;
+    };
+  } | null>(null);
 
   const loadReviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const result = await fetchVendorReviews();
-      console.log('API Response:', result);
-      console.log('Reviews count:', result.data.length);
       setReviews(result.data);
       setTotalCount(result.pagination.total);
       if (result.data.length > 0) {
@@ -99,6 +136,24 @@ export default function VendorReviews() {
       setLoading(false);
     }
   }, []);
+
+  const loadStatistics = useCallback(async () => {
+    try {
+      const stats = await fetchReviewStatistics();
+      if (stats) {
+        setStatistics(stats);
+        setTotalCount(stats.total_reviews);
+        setAvgRating(Math.round(stats.average_rating * 10) / 10);
+      }
+    } catch (error) {
+      console.error('Error loading statistics:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadReviews();
+    void loadStatistics();
+  }, [loadReviews, loadStatistics]);
 
   const handleReply = async (reviewId: number) => {
     const replyText = replyTexts[reviewId]?.trim();
@@ -115,8 +170,8 @@ export default function VendorReviews() {
       if (success) {
         // Clear the reply text for this review
         setReplyTexts(prev => ({ ...prev, [reviewId]: "" }));
-        // Reload reviews to show the new reply
-        await loadReviews();
+        // Reload reviews + statistics in parallel to reduce waiting time
+        await Promise.all([loadReviews(), loadStatistics()]);
       } else {
         setReplyError("Failed to send reply. Please try again.");
       }
@@ -128,22 +183,21 @@ export default function VendorReviews() {
     }
   };
 
-  useEffect(() => {
-    void loadReviews();
-  }, [loadReviews]);
-
-  const ratingCounts = [5, 4, 3, 2, 1].map((stars) => ({
-    stars,
-    count: reviews.filter((r) => r.rating === stars).length,
-    percent:
-      reviews.length > 0
-        ? Math.round((reviews.filter((r) => r.rating === stars).length / reviews.length) * 100)
-        : 0,
-  }));
+  const ratingCounts = [5, 4, 3, 2, 1].map((stars) => {
+    const count = statistics?.rating_distribution[`${stars}_star` as keyof typeof statistics.rating_distribution] || 0;
+    return {
+      stars,
+      count,
+      percent:
+        statistics?.total_reviews && statistics.total_reviews > 0
+          ? Math.round((count / statistics.total_reviews) * 100)
+          : 0,
+    };
+  });
 
   if (loading) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center">
+      <div className="flex min-h-75 items-center justify-center">
         <Loader2 className="size-8 animate-spin text-chat-accent" />
       </div>
     );

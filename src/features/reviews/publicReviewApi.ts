@@ -98,7 +98,8 @@ export async function fetchPublicReviews(params: FetchReviewsParams): Promise<Fe
 export async function submitReview(payload: SubmitReviewPayload): Promise<ReviewDto> {
   const formData = new FormData();
   formData.append('business_id', String(payload.business_id));
-  formData.append('full_name', payload.is_anonymous ? 'Anonymous' : payload.full_name.trim());
+  // Send actual name — API uses is_anonymous flag to decide display
+  formData.append('full_name', payload.full_name.trim() || 'Anonymous');
   formData.append('is_anonymous', payload.is_anonymous ? '1' : '0');
   formData.append('rating', String(payload.rating));
   formData.append('review_text', payload.review_text.trim());

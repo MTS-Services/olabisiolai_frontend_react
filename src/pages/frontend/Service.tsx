@@ -373,7 +373,7 @@ export default function Service() {
             </h2>
             <Link
               to="/reviews"
-              state={{ from: pathname, business_id: businessId }}
+              state={{ from: pathname, business_id: businessId, business_name: name }}
               className="border-b-2 border-accent-foreground/20 pb-0.5 text-base font-semibold text-accent-foreground hover:opacity-90"
             >
               Write a review

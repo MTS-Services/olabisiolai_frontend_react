@@ -12,7 +12,7 @@ import { submitReview } from "@/features/reviews/publicReviewApi";
 
 const MAX_STARS = 5;
 
-type LocationState = { from?: string; business_id?: number } | null;
+type LocationState = { from?: string; business_id?: number; business_name?: string } | null;
 
 export default function GiveReview() {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ export default function GiveReview() {
   const state = location.state as LocationState;
   const from = state?.from;
   const businessId = state?.business_id;
+  const businessName = state?.business_name ?? null;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagesId = useId();
@@ -155,7 +156,14 @@ export default function GiveReview() {
           onSubmit={handleSubmit}
           className="mt-8 rounded-2xl border border-border-light/80 bg-card p-6 shadow-md sm:p-8"
         >
-          <h1 className="text-xl font-semibold leading-7 text-ink-heading">Reviews</h1>
+          <h1 className="text-xl font-semibold leading-7 text-ink-heading">
+            {businessName ? `Review for ${businessName}` : "Write a Review"}
+          </h1>
+          {!businessId && (
+            <p className="mt-3 rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
+              No business selected. Please go back and try again.
+            </p>
+          )}
 
           {error && (
             <p className="mt-4 rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
@@ -199,16 +207,15 @@ export default function GiveReview() {
 
           <div className="mt-4 space-y-2 rounded-2xl p-4">
             <label htmlFor="review-full-name" className="text-sm font-medium text-ink-heading">
-              Your Full Name
+              Your Full Name {anonymous && <span className="text-stat-muted font-normal">(hidden from public)</span>}
             </label>
             <Input
               id="review-full-name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Enter your name"
+              placeholder={anonymous ? "Optional — won't be shown publicly" : "Enter your name"}
               autoComplete="name"
-              disabled={anonymous}
-              className="h-auto rounded-[10px] border-transparent bg-muted px-3 py-4 text-sm text-ink placeholder:text-placeholder-text focus-visible:ring-chat-accent-ring disabled:opacity-60"
+              className="h-auto rounded-[10px] border-transparent bg-muted px-3 py-4 text-sm text-ink placeholder:text-placeholder-text focus-visible:ring-chat-accent-ring"
             />
             {fieldErrors.full_name && (
               <p className="text-xs text-red-600">{fieldErrors.full_name[0]}</p>

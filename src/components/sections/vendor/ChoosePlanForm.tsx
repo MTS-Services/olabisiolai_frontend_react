@@ -153,8 +153,7 @@ export default function ChoosePlanForm() {
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [coverPreviewUrls, setCoverPreviewUrls] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [showLocationSection, setShowLocationSection] = useState(false);
-  const [locationBoostSlots, setLocationBoostSlots] = useState<{ available: number; total: number } | null>(null);
+  const showLocationSection = true;
 
   const addService = () => setServices((s) => [...s, ""]);
   const setServiceAt = (index: number, value: string) =>
@@ -190,24 +189,6 @@ export default function ChoosePlanForm() {
     setLogoPreviewUrl(nextUrl);
     return () => URL.revokeObjectURL(nextUrl);
   }, [logo]);
-
-  // Auto-expand location section when boost slots are available
-  useEffect(() => {
-    if (location && state && city) {
-      // Mock boost slot check - replace with actual API call
-      const hasBoostSlots = Math.random() > 0.5; // Simulate 50% chance of boost slots
-      if (hasBoostSlots) {
-        setLocationBoostSlots({ available: Math.floor(Math.random() * 10) + 1, total: 20 });
-        if (!showLocationSection) {
-          setShowLocationSection(true);
-        }
-      } else {
-        setLocationBoostSlots(null);
-      }
-    } else {
-      setLocationBoostSlots(null);
-    }
-  }, [location, state, city, showLocationSection]);
 
   useEffect(() => {
     const urls = coverPhotos.map((file) => URL.createObjectURL(file));
@@ -307,7 +288,7 @@ export default function ChoosePlanForm() {
                 }
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                disabled={formOptionsLoading || formOptionsError}
+                disabled={formOptionsLoading || categories.length === 0}
                 required
               >
                 <option value="">
@@ -358,123 +339,58 @@ export default function ChoosePlanForm() {
             </SelectField>
           </div>
 
-          {/* Collapsible Location Details Section */}
-          <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
-            <CardHeader
-              className="border-b border-border-light px-6 py-4 cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => setShowLocationSection(!showLocationSection)}
+          <div className="grid gap-5 sm:grid-cols-2">
+            <SelectField
+              label="State"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              disabled={!location || stateOptions.length === 0}
+              required={showLocationSection}
             >
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold text-foreground font-manrope flex items-center gap-2">
-                  <MapPin className="size-5 text-sky-600" />
-                  Location Details {locationBoostSlots && <span className="text-amber-600">& Boost Available</span>}
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {showLocationSection
-                      ? "Click to collapse"
-                      : locationBoostSlots
-                        ? "Boost slots available - click to activate"
-                        : "Click to expand (optional)"
-                    }
-                  </span>
-                  <ChevronRight
-                    className={`size-4 text-muted-foreground transition-transform ${showLocationSection ? 'rotate-90' : ''} ${locationBoostSlots ? 'text-amber-600' : ''}`}
-                  />
-                </div>
-              </div>
-              {!showLocationSection && locationBoostSlots && (
-                <div className="mt-2 flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Available boost slots:</span>
-                    <span className="font-semibold text-amber-600">
-                      {locationBoostSlots.available}/{locationBoostSlots.total}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </CardHeader>
+              <option value="">Select state</option>
+              {stateOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              label="City"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              disabled={!state || cityOptions.length === 0}
+              required={showLocationSection}
+            >
+              <option value="">Select city</option>
+              {cityOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </SelectField>
+          </div>
 
-            {showLocationSection && (
-              <CardContent className="space-y-5 p-6">
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <SelectField
-                    label="State"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    disabled={!location || stateOptions.length === 0}
-                    required={showLocationSection}
-                  >
-                    <option value="">Select state</option>
-                    {stateOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </SelectField>
-                  <SelectField
-                    label="City"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    disabled={!state || cityOptions.length === 0}
-                    required={showLocationSection}
-                  >
-                    <option value="">Select city</option>
-                    {cityOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </SelectField>
-                </div>
+          <div>
+            <Label>
+              LGA (Local Government Area) <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              name="lga"
+              placeholder="Enter your local government area"
+              className="h-11 border-border-light bg-secondary/80 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
+              required
+            />
+          </div>
 
-                <div>
-                  <Label>
-                    LGA (Local Government Area) {showLocationSection && <span className="text-destructive">*</span>}
-                  </Label>
-                  <Input
-                    name="lga"
-                    placeholder="Enter your local government area"
-                    className="h-11 border-border-light bg-secondary/80 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
-                    required={showLocationSection}
-                  />
-                </div>
-
-                <div>
-                  <Label>Full address</Label>
-                  <Textarea
-                    name="fullAddress"
-                    placeholder="Enter your complete business address (street number, building name, landmark, etc.)"
-                    rows={3}
-                    className="min-h-20 resize-y border-border-light bg-secondary/80 text-sm leading-relaxed shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
-                  />
-                </div>
-
-                {/* Boost Slots Information */}
-                {locationBoostSlots && (
-                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-amber-900">🚀 Boost Slots Available</p>
-                        <p className="text-xs text-amber-700 mt-1">
-                          Activate boost to increase your business visibility
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-amber-600">
-                          {locationBoostSlots.available}
-                        </p>
-                        <p className="text-xs text-amber-700">
-                          of {locationBoostSlots.total} slots
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-              </CardContent>
-            )}
-          </Card>
+          <div>
+            <Label>Full address</Label>
+            <Textarea
+              name="fullAddress"
+              placeholder="Enter your complete business address (street number, building name, landmark, etc.)"
+              rows={3}
+              className="min-h-20 resize-y border-border-light bg-secondary/80 text-sm leading-relaxed shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
+            />
+          </div>
 
           <div>
             <Label>

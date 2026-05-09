@@ -89,7 +89,7 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const applyPick = useCallback(
-    (pick: LgaMapPickResult) => {
+    (pick: LgaMapPickResult, opts?: { preserveMapView?: boolean }) => {
       onPick(pick)
       const map = mapRef.current
       if (!map) return
@@ -110,19 +110,21 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
         selectedInfoRef.current.setPosition(center)
         selectedInfoRef.current.open(map)
       }
-      const vp = pick.viewport
-      if (vp) {
-        map.fitBounds(
-          new google.maps.LatLngBounds(
-            { lat: vp.south, lng: vp.west },
-            { lat: vp.north, lng: vp.east },
-          ),
-        )
-      }
-      // Always keep the selected marker location centered on map.
-      map.panTo(center)
-      if (!vp) {
-        map.setZoom(12)
+      if (!opts?.preserveMapView) {
+        const vp = pick.viewport
+        if (vp) {
+          map.fitBounds(
+            new google.maps.LatLngBounds(
+              { lat: vp.south, lng: vp.west },
+              { lat: vp.north, lng: vp.east },
+            ),
+          )
+        }
+        // Keep the selected marker location centered when adjusting the map (search / default framing).
+        map.panTo(center)
+        if (!vp) {
+          map.setZoom(12)
+        }
       }
 
       clustererRef.current?.clearMarkers()
@@ -217,7 +219,7 @@ export function AdminLgaMapPicker({ apiKey, onPick, showDemoVendorCluster = true
             if (!first) return
             selectedMarkerRef.current?.setVisible(true)
             const parsed = pickFromGeocoderResult(first, location)
-            applyPick(parsed)
+            applyPick(parsed, { preserveMapView: true })
           } catch {
             // Keep silent and continue map interaction; autocomplete still works.
           }

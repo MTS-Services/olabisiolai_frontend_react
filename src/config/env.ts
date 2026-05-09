@@ -95,10 +95,10 @@ export const env = {
    * `local` = cross-tab until logout. `memory` = never survives reload.
    */
   bearerTokenPersistence: bearerTokenPersistenceFromEnv(),
-  /** Laravel `UserManagementController@me` — path after `VITE_API_BASE_URL` (e.g. `/me`) */
-  authMePath: import.meta.env.VITE_AUTH_ME_PATH ?? '/me',
-  /** Optional: POST to clear server session + cookies (e.g. `/logout`) */
-  authLogoutPath: import.meta.env.VITE_AUTH_LOGOUT_PATH ?? '/logout',
+  /** Profile endpoint path (Laravel12 auth routes commonly use `/auth/profile`). */
+  authMePath: import.meta.env.VITE_AUTH_ME_PATH ?? '/auth/profile',
+  /** Logout endpoint path (Laravel12 auth routes commonly use `/auth/logout`). */
+  authLogoutPath: import.meta.env.VITE_AUTH_LOGOUT_PATH ?? '/auth/logout',
   /** Role parsing: `single` uses `user.role`, `multi` uses `user.roles` (array) */
   roleMode: roleModeFromEnv(),
   /** Optional JSON overrides for role policy (fallback/dashboard mappings). */

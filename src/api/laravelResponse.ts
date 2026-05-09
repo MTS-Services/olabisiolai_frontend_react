@@ -75,6 +75,12 @@ export function extractUserFromAuthPayload(body: unknown): AuthUser | null {
     if ('id' in u || 'email' in u) return u as unknown as AuthUser
   }
 
+  // Admin login often returns: { data: { admin: {...} } }
+  if ('admin' in o && o.admin && typeof o.admin === 'object') {
+    const a = o.admin as Record<string, unknown>
+    if ('id' in a || 'email' in a) return a as unknown as AuthUser
+  }
+
   // Sometimes: { data: {...user fields...} }
   if ('id' in o || 'email' in o) return o as unknown as AuthUser
   return null

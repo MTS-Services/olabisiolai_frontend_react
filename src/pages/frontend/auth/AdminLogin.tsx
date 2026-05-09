@@ -9,8 +9,6 @@ import { getAuthErrorMessage, getAuthFieldErrors } from "@/features/auth/errorMe
 import { Input } from "@/components/ui/input";
 import { loginAdmin } from "@/features/auth/service";
 
-const DEFAULT_ADMIN_ROLE = "admin" as const;
-
 export default function AdminLogin() {
   const navigate = useNavigate();
   const { setToken, setUser, refreshSession, resetAuthState, authStrategy } = useAuth();
@@ -30,7 +28,7 @@ export default function AdminLogin() {
 
     try {
       await loginAdmin(
-        { email, password, role: DEFAULT_ADMIN_ROLE },
+        { email, password },
         { authStrategy, setToken, setUser, refreshSession, resetAuthState },
       );
 

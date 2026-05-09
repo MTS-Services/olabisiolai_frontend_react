@@ -9,7 +9,6 @@ export type LoginPayload = {
 export type AdminLoginPayload = {
   email: string
   password: string
-  role: 'admin'
 }
 
 export type RegisterPayload = {

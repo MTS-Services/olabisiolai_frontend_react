@@ -5,12 +5,20 @@ import { type AuthUser } from '@/auth/types'
 
 /** GET current user — Laravel Passport Bearer or cookie session. */
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
-  try {
-    const res = await api.get<unknown>(env.authMePath, {
-      skipAuthRedirect: true,
-    })
-    return extractUserFromAuthPayload(res.data)
-  } catch {
-    return null
+  const pathCandidates = Array.from(
+    new Set([env.authMePath, '/auth/profile', '/me'].filter(Boolean)),
+  )
+
+  for (const path of pathCandidates) {
+    try {
+      const res = await api.get<unknown>(path, {
+        skipAuthRedirect: true,
+      })
+      const user = extractUserFromAuthPayload(res.data)
+      if (user) return user
+    } catch {
+      // try next candidate path
+    }
   }
+  return null
 }

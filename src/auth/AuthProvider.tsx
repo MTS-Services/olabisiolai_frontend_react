@@ -110,12 +110,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = React.useCallback(async () => {
     resetAuthState()
     try {
+      const logoutPathCandidates: string[] = []
       if (env.logoutMode === 'multi') {
         const roles = getUserRoles(user)
         const roleLogout = roles.map((r) => getRoleLogoutPath(r)).find(Boolean)
-        await api.post(roleLogout ?? env.authLogoutPath)
-      } else {
-        await api.post(env.authLogoutPath)
+        if (roleLogout) logoutPathCandidates.push(roleLogout)
+      }
+      logoutPathCandidates.push(env.authLogoutPath, '/auth/logout', '/logout')
+
+      const uniquePaths = Array.from(new Set(logoutPathCandidates.filter(Boolean)))
+      for (const path of uniquePaths) {
+        try {
+          await api.post(path)
+          break
+        } catch {
+          // try the next logout endpoint
+        }
       }
     } catch {
       // Session may already be invalid; still clear client state

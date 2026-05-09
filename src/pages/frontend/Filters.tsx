@@ -7,10 +7,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 const FALLBACK_BUSINESSES: PublicBusiness[] = [
-  { id: 1, name: "Premium Plumbing Services", category: "Plumbing", location: "Lagos, Ikeja", rating: 4.8, reviews: 127, description: "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.", image: "/images/feature/1.jpg", verified: true },
-  { id: 2, name: "Sparkle Clean Services", category: "Cleaning", location: "Lagos, Surulere", rating: 4.9, reviews: 203, description: "Professional cleaning services for homes and offices. Eco-friendly products available.", image: "/images/feature/1-1.jpg", verified: true },
-  { id: 3, name: "Elite Electrical Solutions", category: "Electrical", location: "Lagos, Victoria Island", rating: 4.6, reviews: 89, description: "Certified electricians providing safe and reliable electrical installations and repairs.", image: "/images/feature/1-2.jpg", verified: true },
-  { id: 4, name: "Glamour Beauty Spa", category: "Beauty & Spa", location: "Lagos, Lekki", rating: 4.7, reviews: 156, description: "Luxury spa and beauty treatments in a relaxing environment.", image: "/images/feature/1-3.jpg", verified: true },
+  { id: 1, name: "Premium Plumbing Services", category: "Plumbing", location: "Lagos, Ikeja", rating: 4.8, reviews: 127, description: "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.", image: "/images/feature/1.jpg", verified: true, isFavorite: false },
+  { id: 2, name: "Sparkle Clean Services", category: "Cleaning", location: "Lagos, Surulere", rating: 4.9, reviews: 203, description: "Professional cleaning services for homes and offices. Eco-friendly products available.", image: "/images/feature/1-1.jpg", verified: true, isFavorite: false },
+  { id: 3, name: "Elite Electrical Solutions", category: "Electrical", location: "Lagos, Victoria Island", rating: 4.6, reviews: 89, description: "Certified electricians providing safe and reliable electrical installations and repairs.", image: "/images/feature/1-2.jpg", verified: true, isFavorite: false },
+  { id: 4, name: "Glamour Beauty Spa", category: "Beauty & Spa", location: "Lagos, Lekki", rating: 4.7, reviews: 156, description: "Luxury spa and beauty treatments in a relaxing environment.", image: "/images/feature/1-3.jpg", verified: true, isFavorite: false },
 ];
 
 export default function Filters() {

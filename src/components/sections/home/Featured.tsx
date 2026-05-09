@@ -73,6 +73,7 @@ export default function Featured() {
                   description={business.description}
                   image={business.image}
                   verified={business.verified}
+                  favorited={business.isFavorite}
                 />
               ))}
             </div>

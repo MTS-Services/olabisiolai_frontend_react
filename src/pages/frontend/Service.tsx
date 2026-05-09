@@ -61,22 +61,38 @@ function AspectCover({ src, className }: { src: string; className?: string }) {
   );
 }
 
-function StarRow({ rating = 5, className }: { rating?: number; className?: string }) {
-  const filled = Math.round(rating);
+function StarRow({ rating = 0, className }: { rating?: number; className?: string }) {
+  const clamped = Math.min(5, Math.max(0, rating));
   return (
-    <div className={cn("flex items-center gap-0.5", className)}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={cn(
-            "size-5 shrink-0",
-            i <= filled
-              ? "fill-brand-red text-brand-red"
-              : "fill-brand-red/20 text-brand-red/40",
-          )}
-          aria-hidden
-        />
-      ))}
+    <div
+      className={cn("flex items-center gap-0.5", className)}
+      aria-label={`${clamped.toFixed(1)} out of 5 stars`}
+    >
+      {[1, 2, 3, 4, 5].map((i) => {
+        const diff = clamped - (i - 1);
+        if (diff >= 1) {
+          return (
+            <Star key={i} className="size-5 shrink-0 fill-brand-red text-brand-red" aria-hidden />
+          );
+        }
+        if (diff > 0) {
+          const pct = Math.round(diff * 100);
+          return (
+            <span key={i} className="relative inline-flex size-5 shrink-0">
+              <Star className="size-5 fill-brand-red/20 text-brand-red/40" aria-hidden />
+              <span
+                className="absolute left-0 top-0 h-full overflow-hidden"
+                style={{ width: `${pct}%` }}
+              >
+                <Star className="size-5 fill-brand-red text-brand-red" aria-hidden />
+              </span>
+            </span>
+          );
+        }
+        return (
+          <Star key={i} className="size-5 shrink-0 fill-brand-red/20 text-brand-red/40" aria-hidden />
+        );
+      })}
     </div>
   );
 }
@@ -91,6 +107,7 @@ interface StateBusinessData {
   description: string;
   image: string;
   verified: boolean;
+  isFavorite?: boolean;
 }
 
 export default function Service() {
@@ -110,7 +127,7 @@ export default function Service() {
     queryFn: () => fetchPublicBusinessById(businessId!),
     enabled: businessId !== null,
     staleTime: 5 * 60 * 1000,
-    initialData: stateData ?? undefined,
+    placeholderData: stateData ?? undefined,
   });
 
   const { data: reviewsResult } = useQuery({
@@ -128,6 +145,12 @@ export default function Service() {
   const description = business?.description ?? stateData?.description ?? "";
   const rating = business?.rating ?? stateData?.rating ?? 0;
   const reviewCount = business?.reviews ?? stateData?.reviews ?? 0;
+  const ratingLabel =
+    rating > 0
+      ? `${Number.isInteger(rating) ? rating : rating.toFixed(1)} (${reviewCount} Reviews)`
+      : reviewCount > 0
+        ? `${reviewCount} ${reviewCount === 1 ? "Review" : "Reviews"}`
+        : "No reviews yet";
   const locationText = business?.location ?? stateData?.location ?? "";
   const logo = business?.image ?? stateData?.image ?? IMAGES.avatar;
   const verified = business?.verified ?? stateData?.verified ?? false;
@@ -163,7 +186,7 @@ export default function Service() {
               </div>
               <div className="absolute -bottom-1 left-4 z-20 overflow-hidden rounded-xl border border-stat-muted bg-card shadow-sm sm:left-8 md:left-12">
                 <AspectCover
-                  src={IMAGES.avatar}
+                  src={logo}
                   className="size-20 sm:size-24 md:h-[90px] md:w-[110px] md:max-w-[110px]"
                 />
               </div>
@@ -183,7 +206,7 @@ export default function Service() {
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-ink md:text-base">
                     <StarRow rating={rating} />
-                    <span>{rating > 0 ? `${rating} (${reviewCount} Reviews)` : "No reviews yet"}</span>
+                    <span>{ratingLabel}</span>
                     {verified && (
                       <>
                         <span className="text-stat-muted" aria-hidden>•</span>
@@ -394,9 +417,9 @@ export default function Service() {
                     .slice(0, 2);
                   const date = review.created_at
                     ? new Date(review.created_at).toLocaleDateString("en-US", {
-                        month: "short",
-                        year: "numeric",
-                      })
+                      month: "short",
+                      year: "numeric",
+                    })
                     : "";
                   return (
                     <article key={review.id} className="flex gap-6">

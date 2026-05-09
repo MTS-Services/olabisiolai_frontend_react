@@ -1,17 +1,21 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowUpRight,
-  CheckCircle2,
   Heart,
   ListFilter,
-  MapPin,
-  MessageCircle,
-  Star,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
+import {
+  fetchUserFavorites,
+  USER_FAVORITES_DEFAULT_PER_PAGE,
+  type UserFavoriteBusiness,
+} from "@/api/favorites";
+import { FavoriteBusinessCard } from "@/components/partials/user/FavoriteBusinessCard";
 import { UserShell } from "@/components/partials/user/UserShell";
 import { Button } from "@/components/ui/button";
+import { userFavoriteImage, userFavoriteLocationLabel } from "@/lib/userFavoriteDisplay";
 
 const LOGO_FOOTER = "/images/landing/gidira-logo-footer.svg";
 
@@ -41,103 +45,33 @@ const footerColumns = [
   },
 ] as const;
 
-const favorites = [
-  {
-    title: "Premium Plumbing Services",
-    category: "Plumbing",
-    location: "Lagos, Ikeja",
-    rating: "4.8",
-    reviews: 127,
-    description:
-      "Professional plumbing services for residential and commercial properties. Available 24/7 for emergencies.",
-    image: "/images/favorites/premium-plumbing.jpg",
-  },
-  {
-    title: "Sparkle Clean Services",
-    category: "Cleaning",
-    location: "Lagos, Surulere",
-    rating: "4.6",
-    reviews: 207,
-    description:
-      "Professional cleaning services for homes and offices. Eco-friendly products available.",
-    image: "/images/favorites/sparkle-clean.jpg",
-  },
-  {
-    title: "PremiumElite Electrical SolutionsPlumbing Services",
-    category: "Plumbing Electrical",
-    location: "Lagos, Victoria Island",
-    rating: "4.8",
-    reviews: 207,
-    description:
-      "Certified electricians providing safe and reliable electrical installations and repairs.",
-    image: "/images/favorites/elite-electrical.jpg",
-  },
-  {
-    title: "Glamour Beauty Spa",
-    category: "Beauty & Spa",
-    location: "Lagos, Lekki",
-    rating: "4.8",
-    reviews: 127,
-    description: "Luxury spa and beauty treatments in a relaxing environment.",
-    image: "/images/favorites/glamour-spa.jpg",
-  },
-] as const;
-
-function FavoriteCard({
-  item,
-}: {
-  item: (typeof favorites)[number];
-}) {
-  return (
-    <article className="overflow-hidden rounded-2xl border border-border-light bg-card shadow-sm">
-      <div className="relative h-48 bg-muted">
-        <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
-        <div className="absolute left-3 top-3">
-          <Heart className="size-5 fill-chat-accent text-chat-accent" aria-hidden />
-        </div>
-        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-footer-bar px-3 py-1 text-[11px] font-semibold text-ice">
-          <CheckCircle2 className="size-3.5" aria-hidden />
-          VERIFIED
-        </div>
-      </div>
-
-      <div className="space-y-3 p-5">
-        <h3 className="line-clamp-1 text-lg font-semibold leading-7 text-ink-heading">{item.title}</h3>
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-footer-bar">{item.category}</p>
-          <p className="inline-flex items-center gap-1 text-sm text-body-secondary">
-            <MapPin className="size-3.5" aria-hidden />
-            {item.location}
-          </p>
-        </div>
-        <p className="inline-flex items-center gap-1 text-sm">
-          <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden />
-          <span className="font-medium text-ink-heading">{item.rating}</span>
-          <span className="text-chat-meta">({item.reviews})</span>
-        </p>
-        <p className="line-clamp-2 text-sm leading-5 text-body-secondary">{item.description}</p>
-
-        <div className="space-y-2 pt-1">
-          <ShowPhoneNumberReveal
-            useShadcnButton
-            isolateFromParentClicks={false}
-            className="h-11 w-full rounded-xl bg-brand-red text-base font-medium text-ice hover:bg-brand-red/90"
-            iconClassName="size-4 shrink-0"
-          />
-          <Button
-            variant="outline"
-            className="h-11 w-full rounded-xl border-brand bg-surface-soft text-base font-medium text-brand hover:bg-surface-wash"
-          >
-            <MessageCircle className="size-4" aria-hidden />
-            Direct Message
-          </Button>
-        </div>
-      </div>
-    </article>
-  );
+function mapFavoriteToCardProps(item: UserFavoriteBusiness) {
+  return {
+    businessInfoId: item.business_info_id,
+    title: item.business_name,
+    category: item.category_name,
+    location: userFavoriteLocationLabel(item),
+    rating: item.rating,
+    reviews: item.reviews_count,
+    image: userFavoriteImage(item),
+    verified: item.is_verified,
+  };
 }
 
 export default function Favorites() {
+  const [page, setPage] = useState(1);
+
+  const favoritesQuery = useQuery({
+    queryKey: ["user-favorites", page, USER_FAVORITES_DEFAULT_PER_PAGE],
+    queryFn: () =>
+      fetchUserFavorites({ page, per_page: USER_FAVORITES_DEFAULT_PER_PAGE }),
+  });
+
+  const payload = favoritesQuery.data;
+  const favorites = payload?.favorites ?? [];
+  const pagination = payload?.pagination;
+  const lastPage = pagination?.last_page ?? 1;
+
   return (
     <>
       <UserShell active="favorites">
@@ -159,11 +93,69 @@ export default function Favorites() {
             </button>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:mt-8 sm:gap-8 xl:grid-cols-2">
-            {favorites.map((item) => (
-              <FavoriteCard key={item.title} item={item} />
-            ))}
-          </div>
+          {favoritesQuery.isLoading ? (
+            <p className="mt-6 text-sm font-medium text-body-secondary sm:mt-8">
+              Loading your favorites…
+            </p>
+          ) : favoritesQuery.isError ? (
+            <div className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/5 p-5 sm:mt-8">
+              <p className="text-sm font-medium text-ink">Could not load favorites.</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => void favoritesQuery.refetch()}
+              >
+                Try again
+              </Button>
+            </div>
+          ) : favorites.length === 0 ? (
+            <div className="mt-6 rounded-2xl border border-border-light bg-card p-8 text-center sm:mt-8">
+              <Heart className="mx-auto size-10 text-chat-accent/40" aria-hidden />
+              <p className="mt-4 text-sm font-medium text-body-secondary">
+                You have not saved any businesses yet. Browse services and tap the heart on a listing to
+                add it here.
+              </p>
+              <Button className="mt-6 rounded-full" asChild>
+                <Link to="/filters">Browse services</Link>
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="mt-6 grid grid-cols-1 gap-6 sm:mt-8 sm:gap-8 xl:grid-cols-2">
+                {favorites.map((item) => (
+                  <FavoriteBusinessCard key={item.business_info_id} {...mapFavoriteToCardProps(item)} />
+                ))}
+              </div>
+
+              {lastPage > 1 ? (
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1 || favoritesQuery.isFetching}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-body-secondary">
+                    Page {pagination?.current_page ?? page} of {lastPage}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= lastPage || favoritesQuery.isFetching}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          )}
 
           <section className="mt-6 flex flex-col gap-5 rounded-2xl border border-success/10 bg-brand p-5 sm:mt-8 sm:rounded-3xl sm:p-8 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0">
@@ -173,9 +165,11 @@ export default function Favorites() {
                 area.
               </p>
             </div>
-            <Button className="h-12 w-full shrink-0 rounded-full bg-brand-red px-6 text-sm font-semibold text-ice hover:bg-brand-red/90 sm:h-14 sm:w-auto sm:px-8 sm:text-base">
-              Explore More Services
-              <ArrowUpRight className="size-5" aria-hidden />
+            <Button className="h-12 w-full shrink-0 rounded-full bg-brand-red px-6 text-sm font-semibold text-ice hover:bg-brand-red/90 sm:h-14 sm:w-auto sm:px-8 sm:text-base" asChild>
+              <Link to="/filters" className="inline-flex items-center justify-center gap-2">
+                Explore More Services
+                <ArrowUpRight className="size-5" aria-hidden />
+              </Link>
             </Button>
           </section>
         </section>

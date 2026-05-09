@@ -10,6 +10,8 @@ export type PublicBusiness = {
   description: string;
   image: string;
   verified: boolean;
+  /** From API e.g. `is_favorite` on GET /businesses/home when authenticated. */
+  isFavorite: boolean;
 };
 
 type Raw = Record<string, unknown>;
@@ -51,16 +53,27 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     [city, state].filter(Boolean).join(', ') ||
     str(locObj?.full_name ?? r.full_address ?? r.location, 'N/A');
 
-  const rating = num(r.average_rating ?? r.rating, 0);
-  const reviews = num(r.reviews_count ?? r.total_reviews ?? r.reviews, 0);
+  const summary = rec(r.reviews_summary);
+  const rating = summary
+    ? num(
+      summary.average_rating ?? summary.avg_rating ?? summary.average,
+      num(r.average_rating ?? r.rating, 0),
+    )
+    : num(r.average_rating ?? r.rating, 0);
+  const reviews = summary
+    ? num(
+      summary.total_reviews ?? summary.reviews_count ?? summary.count,
+      num(r.reviews_count ?? r.total_reviews ?? r.reviews, 0),
+    )
+    : num(r.reviews_count ?? r.total_reviews ?? r.reviews, 0);
   const description = str(r.business_description ?? r.description, '');
 
   // cover_photo_urls can be string[] or object[]
   const coverArr: unknown[] = Array.isArray(r.cover_photo_urls)
     ? r.cover_photo_urls
     : Array.isArray(r.cover_photos)
-    ? r.cover_photos
-    : [];
+      ? r.cover_photos
+      : [];
 
   const firstCover = rec(coverArr[0]);
   const image =
@@ -74,7 +87,12 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     r.is_verified === true ||
     r.verified === true;
 
-  return { id, name, category, location, rating, reviews, description, image, verified };
+  const isFavorite =
+    r.is_favorite === true ||
+    r.isFavorite === true ||
+    r.favorited === true
+
+  return { id, name, category, location, rating, reviews, description, image, verified, isFavorite };
 }
 
 const LIST_KEYS = ['businesses', 'business_profiles', 'items', 'data', 'results'] as const;
@@ -167,6 +185,35 @@ export async function fetchPublicBusinesses(params?: {
   return [];
 }
 
+/**
+ * `GET /businesses/:id` returns `data.business` and often `data.reviews_summary` as siblings.
+ * Merge so `parseBusiness` sees `reviews_summary` together with business fields (and `average_rating` on `business` still works as fallback).
+ */
+function mergeBusinessPayloadForParse(data: unknown): unknown {
+  const r = rec(data);
+  const dataObj = rec(r?.data);
+  const summaryFromEnvelope = rec(r?.reviews_summary);
+
+  const biz =
+    rec(dataObj?.business) ??
+    rec(dataObj?.business_info) ??
+    rec(dataObj?.business_profile);
+
+  const summary =
+    rec(dataObj?.reviews_summary) ??
+    summaryFromEnvelope ??
+    (biz ? rec(biz.reviews_summary) : null);
+
+  if (biz && summary) {
+    return { ...biz, reviews_summary: summary };
+  }
+  if (biz) {
+    return biz;
+  }
+
+  return dataObj ?? r?.data ?? data;
+}
+
 export async function fetchPublicBusinessById(id: number): Promise<PublicBusiness | null> {
   const endpoints: Array<{ label: string; fn: () => Promise<unknown> }> = [
     {
@@ -199,10 +246,7 @@ export async function fetchPublicBusinessById(id: number): Promise<PublicBusines
       if (import.meta.env.DEV) {
         console.debug('[publicBusinessApi] single response from', label, data);
       }
-      // Unwrap { data: { business: {...} } } or { data: {...} } or raw object
-      const r = rec(data);
-      const dataObj = rec(r?.data);
-      const inner = dataObj?.business ?? r?.data ?? data;
+      const inner = mergeBusinessPayloadForParse(data);
       const parsed = parseBusiness(inner, 0);
       if (parsed) return parsed;
     } catch (err) {

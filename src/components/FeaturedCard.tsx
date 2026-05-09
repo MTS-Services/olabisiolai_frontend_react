@@ -6,11 +6,12 @@ import {
   MapPin,
   CheckCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 import { encryptId } from "@/lib/encryptId";
-import { toggleFavorite } from "@/api/favorites";
+import { removeFavorite, toggleFavorite } from "@/api/favorites";
 
 interface FeaturedCardProps {
   id: number;
@@ -37,16 +38,32 @@ export function FeaturedCard({
   verified,
   favorited = false,
 }: FeaturedCardProps) {
+  const queryClient = useQueryClient();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(favorited);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
+  useEffect(() => {
+    setIsFavorited(favorited);
+  }, [favorited]);
+
   const goToService = () => {
     navigate(`/businesses/${encryptId(id)}`, {
       state: {
         from: pathname,
-        business: { id, name, category, location, rating, reviews, description, image, verified },
+        business: {
+          id,
+          name,
+          category,
+          location,
+          rating,
+          reviews,
+          description,
+          image,
+          verified,
+          isFavorite: isFavorited,
+        },
       },
     });
   };
@@ -57,8 +74,15 @@ export function FeaturedCard({
 
     setFavoriteLoading(true);
     try {
-      const response = await toggleFavorite(id);
-      setIsFavorited(response.data.favorited);
+      if (isFavorited) {
+        await removeFavorite(id);
+        setIsFavorited(false);
+      } else {
+        const response = await toggleFavorite(id);
+        setIsFavorited(response.data.favorited);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["user-favorites"] });
+      await queryClient.invalidateQueries({ queryKey: ["businesses", "home"] });
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
     } finally {
@@ -99,8 +123,8 @@ export function FeaturedCard({
         >
           <Heart
             className={`w-5 h-5 transition-colors duration-200 ${isFavorited
-                ? "fill-red-500 text-red-500"
-                : "text-gray-600 hover:text-red-500"
+              ? "fill-brand-red text-brand-red"
+              : "text-gray-600 hover:text-brand-red"
               }`}
           />
         </button>

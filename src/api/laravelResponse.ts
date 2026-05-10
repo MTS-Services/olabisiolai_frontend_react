@@ -47,12 +47,13 @@ function rolesLookLikeSpatieAdmin(raw: unknown): boolean {
 
 function isAdminResourceShape(o: Record<string, unknown>): boolean {
   if (typeof o.email !== 'string') return false
+  // UserResource (user/vendor) always includes `role` and never sends Spatie `permissions`.
+  const routeRole = o.role
+  if (routeRole === 'user' || routeRole === 'vendor') return false
   if (rolesLookLikeSpatieAdmin(o.roles)) return true
-  const perms = o.permissions
-  if (perms === undefined || perms === null) {
-    return typeof o.first_name === 'string' || typeof o.last_name === 'string'
-  }
-  return Array.isArray(perms)
+  if (Array.isArray(o.permissions)) return true
+  if (o.is_super_admin === true || o.is_super_admin === 1 || o.is_super_admin === '1') return true
+  return false
 }
 
 /**

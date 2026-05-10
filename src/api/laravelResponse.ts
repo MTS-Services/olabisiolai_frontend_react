@@ -1,28 +1,58 @@
 import { type AuthUser } from '@/auth/types'
 
+function permissionNamesFromRaw(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  for (const x of raw) {
+    if (typeof x === 'string' && x) {
+      out.push(x)
+      continue
+    }
+    if (x && typeof x === 'object' && 'name' in x && typeof (x as { name: unknown }).name === 'string') {
+      const n = (x as { name: string }).name
+      if (n) out.push(n)
+    }
+  }
+  return out
+}
+
 /** Map AdminResource / admin login payload into AuthUser with route role `admin` + Spatie fields. */
 export function normalizeAdminAuthUser(raw: Record<string, unknown>): AuthUser {
-  const spatieRoles = Array.isArray(raw.roles)
-    ? (raw.roles as unknown[]).map((x) => String(x))
-    : []
-  const perms = Array.isArray(raw.permissions)
-    ? (raw.permissions as unknown[]).map((x) => String(x))
-    : []
+  const spatieRoles = Array.isArray(raw.roles) ? permissionNamesFromRaw(raw.roles) : []
+  const perms = permissionNamesFromRaw(raw.permissions)
   const { roles: _dropRoles, permissions: _dropPerms, ...rest } = raw
+  const routeRoles = Array.from(new Set(['admin', ...spatieRoles]))
+  const isSuper =
+    raw.is_super_admin === true ||
+    raw.is_super_admin === 1 ||
+    raw.is_super_admin === '1' ||
+    raw.is_super_admin === 'true'
   return {
     ...(rest as unknown as AuthUser),
     role: 'admin',
+    roles: routeRoles,
     adminSpatieRoles: spatieRoles,
     permissions: perms,
+    is_super_admin: isSuper ? true : raw.is_super_admin === false ? false : undefined,
   }
 }
 
+function rolesLookLikeSpatieAdmin(raw: unknown): boolean {
+  if (!Array.isArray(raw)) return false
+  return raw.some((x) => {
+    const s = String(x)
+    return s === 'admin' || s === 'super-admin' || s.endsWith('-admin')
+  })
+}
+
 function isAdminResourceShape(o: Record<string, unknown>): boolean {
-  return (
-    typeof o.email === 'string' &&
-    'permissions' in o &&
-    Array.isArray(o.permissions)
-  )
+  if (typeof o.email !== 'string') return false
+  if (rolesLookLikeSpatieAdmin(o.roles)) return true
+  const perms = o.permissions
+  if (perms === undefined || perms === null) {
+    return typeof o.first_name === 'string' || typeof o.last_name === 'string'
+  }
+  return Array.isArray(perms)
 }
 
 /**
@@ -97,7 +127,10 @@ export function extractUserFromAuthPayload(body: unknown): AuthUser | null {
   // Common: { data: { user: {...} } }
   if ('user' in o && o.user && typeof o.user === 'object') {
     const u = o.user as Record<string, unknown>
-    if ('id' in u || 'email' in u) return u as unknown as AuthUser
+    if ('id' in u || 'email' in u) {
+      if (isAdminResourceShape(u)) return normalizeAdminAuthUser(u)
+      return u as unknown as AuthUser
+    }
   }
 
   // Admin login often returns: { data: { admin: {...} } }
@@ -109,6 +142,7 @@ export function extractUserFromAuthPayload(body: unknown): AuthUser | null {
   // Sometimes: { data: {...user fields...} }
   if ('id' in o || 'email' in o) {
     if (isAdminResourceShape(o)) return normalizeAdminAuthUser(o)
+    if (rolesLookLikeSpatieAdmin(o.roles)) return normalizeAdminAuthUser(o)
     return o as unknown as AuthUser
   }
   return null

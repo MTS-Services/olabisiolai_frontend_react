@@ -1,11 +1,13 @@
-import { ChevronLeft, ChevronRight, Loader2, Pencil, Plus, ShieldUser, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, ShieldUser, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   createStaffAdmin,
   fetchStaffAdmins,
+  type AdminAccountStatus,
   type StaffAdminRow,
   updateAdminRolePermissions,
+  updateAdminStatus,
 } from "@/api/adminAccounts";
 import {
   type AdminPermissionRow,
@@ -53,8 +55,80 @@ function roleLabel(row: StaffAdminRow): string {
   return "—";
 }
 
+function rowHasSuperAdminRole(row: StaffAdminRow): boolean {
+  const roles = row.roles ?? (row.role ? [row.role] : []);
+  return roles.includes("super-admin");
+}
+
+function adminStatusPillColors(status: string | undefined): string {
+  const s = (status ?? "pending").toLowerCase();
+  const map: Record<string, string> = {
+    active:
+      "bg-emerald-500/15 text-emerald-800 ring-emerald-600/25 dark:text-emerald-300",
+    pending: "bg-amber-500/15 text-amber-900 ring-amber-600/30 dark:text-amber-200",
+    block: "bg-red-500/15 text-red-800 ring-red-600/25 dark:text-red-300",
+  };
+  return map[s] ?? map.pending;
+}
+
+function adminStatusShortLabel(status: AdminAccountStatus): string {
+  if (status === "block") return "Suspended";
+  if (status === "active") return "Active";
+  return "Pending";
+}
+
+/** Single control: pill colors follow the current value; change happens in-place. */
+function AdminStatusControl({
+  value,
+  readOnly,
+  disabled,
+  onChange,
+  ariaLabel,
+}: {
+  value: AdminAccountStatus;
+  readOnly: boolean;
+  disabled?: boolean;
+  onChange?: (next: AdminAccountStatus) => void;
+  ariaLabel: string;
+}) {
+  const colors = adminStatusPillColors(value);
+  const base =
+    "inline-flex h-9 max-w-56 min-w-36 items-center rounded-full px-3 text-xs font-semibold ring-1 ring-inset transition-colors";
+
+  if (readOnly) {
+    return (
+      <span
+        className={`${base} ${colors} cursor-default pr-3`}
+        title="Status cannot be changed for this row"
+      >
+        {adminStatusShortLabel(value)}
+      </span>
+    );
+  }
+
+  return (
+    <div className="relative inline-flex max-w-56 align-middle">
+      <select
+        aria-label={ariaLabel}
+        disabled={disabled}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value as AdminAccountStatus)}
+        className={`${base} ${colors} w-full cursor-pointer appearance-none pr-8 disabled:cursor-not-allowed disabled:opacity-60`}
+      >
+        <option value="active">Active — verifies email</option>
+        <option value="pending">Pending — unverified</option>
+        <option value="block">Suspended</option>
+      </select>
+      <ChevronDown
+        className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 opacity-70"
+        aria-hidden
+      />
+    </div>
+  );
+}
+
 export default function AdminAccounts() {
-  const { can } = useAuth();
+  const { can, user, hasRole } = useAuth();
   const [items, setItems] = useState<StaffAdminRow[]>([]);
   const [meta, setMeta] = useState<{
     current_page: number;
@@ -76,13 +150,13 @@ export default function AdminAccounts() {
 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [statusSavingId, setStatusSavingId] = useState<number | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState("active");
   const [createRole, setCreateRole] = useState("");
   const [createPermNames, setCreatePermNames] = useState<Set<string>>(new Set());
 
@@ -148,7 +222,6 @@ export default function AdminAccounts() {
     setEmail("");
     setPhone("");
     setPassword("");
-    setStatus("active");
     setCreateRole(spatieRoles[0]?.name ?? "");
     setCreatePermNames(new Set());
     setCreateOpen(true);
@@ -183,7 +256,6 @@ export default function AdminAccounts() {
         password: pw,
         role: rl,
         phone: phone.trim() || undefined,
-        status: status || undefined,
         permissions: createPermNames.size > 0 ? [...createPermNames] : undefined,
       });
       setCreateOpen(false);
@@ -194,6 +266,29 @@ export default function AdminAccounts() {
       setSaving(false);
     }
   }
+
+  function isActorRow(row: StaffAdminRow): boolean {
+    if (user?.id == null) return false;
+    return Number(user.id) === row.id;
+  }
+
+  const handleStatusChange = useCallback(
+    async (row: StaffAdminRow, next: AdminAccountStatus) => {
+      const current = (row.status ?? "pending") as AdminAccountStatus;
+      if (current === next) return;
+      setStatusSavingId(row.id);
+      setError(null);
+      try {
+        await updateAdminStatus(row.id, { status: next });
+        await loadList();
+      } catch (e) {
+        setError(getAuthErrorMessage(e, "Could not update status."));
+      } finally {
+        setStatusSavingId(null);
+      }
+    },
+    [loadList],
+  );
 
   async function submitRbac() {
     if (!rbacTarget) return;
@@ -221,6 +316,7 @@ export default function AdminAccounts() {
   const canCreate = can("create admins");
   const canEditRbac = can("edit admins");
   const canView = can("view admins");
+  const canChangeStatus = can("change admin status");
 
   return (
     <div>
@@ -230,11 +326,6 @@ export default function AdminAccounts() {
           <h1 className="mt-1 text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">
             Admin accounts
           </h1>
-          <p className="mt-1 text-sm text-body-secondary">
-            <code className="rounded bg-muted px-1 text-xs">GET/POST /admin/admins</code> — role &amp; optional
-            permissions on create; <code className="rounded bg-muted px-1 text-xs">PUT …/role-permissions</code> to
-            sync later.
-          </p>
         </div>
         {canCreate ? (
           <Button type="button" onClick={openCreate} className="gap-2 shrink-0">
@@ -308,7 +399,19 @@ export default function AdminAccounts() {
                     <td className="px-2 py-3 text-sm text-body-secondary sm:px-4 sm:py-4">
                       {row.phone?.trim() ? row.phone : "—"}
                     </td>
-                    <td className="px-2 py-3 text-sm capitalize sm:px-4 sm:py-4">{row.status ?? "—"}</td>
+                    <td className="px-2 py-3 text-sm sm:px-4 sm:py-4">
+                      <AdminStatusControl
+                        value={(row.status ?? "pending") as AdminAccountStatus}
+                        readOnly={
+                          !canChangeStatus ||
+                          isActorRow(row) ||
+                          (rowHasSuperAdminRole(row) && !hasRole("super-admin"))
+                        }
+                        disabled={statusSavingId === row.id}
+                        ariaLabel={`Status for ${displayName(row)}`}
+                        onChange={(next) => void handleStatusChange(row, next)}
+                      />
+                    </td>
                     <td className="px-2 py-3 text-sm text-body-secondary sm:px-4 sm:py-4">{roleLabel(row)}</td>
                     <td className="px-2 py-3 sm:px-4 sm:py-4">
                       <div className="flex justify-end">
@@ -438,42 +541,30 @@ export default function AdminAccounts() {
                   disabled={saving}
                 />
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-ink" htmlFor="adm-st">
-                    Status
-                  </label>
-                  <select
-                    id="adm-st"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    disabled={saving}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                  >
-                    <option value="active">active</option>
-                    <option value="inactive">inactive</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-ink" htmlFor="adm-role">
-                    Spatie role
-                  </label>
-                  <select
-                    id="adm-role"
-                    value={createRole}
-                    onChange={(e) => setCreateRole(e.target.value)}
-                    disabled={saving}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                  >
-                    {spatieRoles.length === 0 ? <option value="">— add roles in API first —</option> : null}
-                    {spatieRoles.map((r) => (
-                      <option key={r.id} value={r.name}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-ink" htmlFor="adm-role">
+                  Spatie role
+                </label>
+                <select
+                  id="adm-role"
+                  value={createRole}
+                  onChange={(e) => setCreateRole(e.target.value)}
+                  disabled={saving}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                >
+                  {spatieRoles.length === 0 ? <option value="">— add roles in API first —</option> : null}
+                  {spatieRoles.map((r) => (
+                    <option key={r.id} value={r.name}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
               </div>
+              <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-body-secondary">
+                New admins start as <strong className="text-ink">Pending</strong> with email unverified. They become{" "}
+                <strong className="text-ink">Active</strong> after OTP verification, or immediately if you set status to
+                Active in the list (which also marks email verified).
+              </p>
 
               <div>
                 <p className="mb-2 text-sm font-medium text-ink">

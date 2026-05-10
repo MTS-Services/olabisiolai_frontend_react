@@ -11,6 +11,7 @@ import {
   setStoredAuthUser,
 } from '@/auth/token'
 import { type AuthUser } from '@/auth/types'
+import { isSpatieSuperAdmin } from '@/auth/adminSpatie'
 import { getRoleLogoutPath } from '@/auth/rolePolicy'
 import { getUserRoles, hasAnyRole } from '@/auth/roles'
 import { env } from '@/config/env'
@@ -25,6 +26,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => initialToken,
   )
   const [user, setUserState] = React.useState<AuthUser | null>(() => initialUser)
+  /** Keeps latest user for refreshSession (state updates are async; login + refresh same tick needs this). */
+  const userRef = React.useRef<AuthUser | null>(initialUser)
+  React.useEffect(() => {
+    userRef.current = user
+  }, [user])
   const [isSessionLoading, setIsSessionLoading] = React.useState(
     () => env.authStrategy === 'http_only_cookie',
   )
@@ -33,26 +39,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   })
 
   const setUser = React.useCallback((nextUser: AuthUser | null) => {
+    userRef.current = nextUser
     setStoredAuthUser(nextUser)
     setUserState(nextUser)
   }, [])
 
   const refreshSession = React.useCallback(async (): Promise<AuthUser | null> => {
-    const shouldBlock = env.authStrategy === 'http_only_cookie' || !user
+    const prev = userRef.current ?? getStoredAuthUser()
+    const shouldBlock = env.authStrategy === 'http_only_cookie' || !prev
     if (shouldBlock) {
       setIsUserLoading(true)
     }
     try {
       const u = await fetchCurrentUser()
-      // Never overwrite a known user with null due to a transient /me failure.
-      if (u) setUser(u)
-      return u
+      if (u) {
+        // Profile probe must not replace a valid admin session with a misparsed object (missing route role).
+        if (
+          prev &&
+          (hasAnyRole(prev, 'admin') || isSpatieSuperAdmin(prev)) &&
+          !hasAnyRole(u, 'admin') &&
+          !isSpatieSuperAdmin(u)
+        ) {
+          return prev
+        }
+        setUser(u)
+        return u
+      }
+      return null
     } finally {
       if (shouldBlock) {
         setIsUserLoading(false)
       }
     }
-  }, [user, setUser])
+  }, [setUser])
 
   React.useEffect(() => {
     if (env.authStrategy !== 'http_only_cookie') {
@@ -109,9 +128,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const can = React.useCallback(
     (permission: string) => {
+      // Super-admin must pass all UI checks even when JWT/profile omits route role `admin`.
+      if (isSpatieSuperAdmin(user)) return true
       if (!hasAnyRole(user, 'admin')) return false
-      // Matches Laravel seeder `super-admin` role with full Spatie permissions.
-      if (user?.adminSpatieRoles?.includes('super-admin')) return true
+      // Admin shell landing: RoleGate already proved panel access; API still enforces each action.
+      if (permission === 'view dashboard') return true
       return Boolean(user?.permissions?.includes(permission))
     },
     [user],
@@ -119,8 +140,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasRole = React.useCallback(
     (spatieRoleName: string) => {
+      if (user?.adminSpatieRoles?.includes(spatieRoleName)) return true
+      if (user?.roles?.includes(spatieRoleName)) return true
       if (!hasAnyRole(user, 'admin')) return false
-      return Boolean(user?.adminSpatieRoles?.includes(spatieRoleName))
+      return false
     },
     [user],
   )

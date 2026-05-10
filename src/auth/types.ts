@@ -11,5 +11,7 @@ export type AuthUser = {
   permissions?: string[]
   /** Spatie role names assigned to this admin (e.g. super-admin, manager). */
   adminSpatieRoles?: string[]
+  /** From AdminResource — true when this account has the Spatie `super-admin` role. */
+  is_super_admin?: boolean
 }
 

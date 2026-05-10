@@ -17,26 +17,30 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import type { ComponentType } from "react";
+import { isSpatieSuperAdmin } from "@/auth/adminSpatie";
+import { useAuth } from "@/auth/useAuth";
 import { cn } from "@/lib/utils";
 
 type SidebarItem = {
   label: string;
   to: string;
   icon: ComponentType<{ className?: string }>;
+  /** Spatie admin-guard permission from API; if set, link is hidden without it */
+  permission?: string;
 };
 
 const staticItems: SidebarItem[] = [
-  { label: "Dashboard", to: "/admin/dashboard", icon: Gauge },
-  { label: "Roles & permissions", to: "/admin/user-management/roles", icon: KeyRound },
-  { label: "Admins", to: "/admin/user-management/admin", icon: ShieldUser },
+  { label: "Dashboard", to: "/admin/dashboard", icon: Gauge, permission: "view dashboard" },
+  { label: "Roles & permissions", to: "/admin/user-management/roles", icon: KeyRound, permission: "view roles" },
+  { label: "Admins", to: "/admin/user-management/admin", icon: ShieldUser, permission: "view admins" },
   { label: "Users", to: "/admin/user-management/user", icon: Users },
-  { label: "Businesses", to: "/admin/businesses", icon: Building2 },
+  { label: "Businesses", to: "/admin/businesses", icon: Building2, permission: "view products" },
   { label: "Verifications", to: "/admin/verifications", icon: ClipboardCheck },
-  { label: "Leads", to: "/admin/leads", icon: ListChecks },
+  { label: "Leads", to: "/admin/leads", icon: ListChecks, permission: "view orders" },
   { label: "Reviews", to: "/admin/reviews", icon: Star },
-  { label: "Payments", to: "/admin/payments", icon: CircleDollarSign },
+  { label: "Payments", to: "/admin/payments", icon: CircleDollarSign, permission: "view orders" },
   { label: "Boost System", to: "/admin/boost-system", icon: Wrench },
-  { label: "Categories", to: "/admin/categories", icon: Tags },
+  { label: "Categories", to: "/admin/categories", icon: Tags, permission: "view products" },
   { label: "Career", to: "/admin/career", icon: UserRound },
   { label: "Locations", to: "/admin/locations", icon: MapPin },
   { label: "Notifications", to: "/admin/notifications", icon: Bell },
@@ -49,6 +53,12 @@ type AdminSidebarProps = {
 };
 
 export function AdminSidebar({ mobileOpen = false, onNavigate }: AdminSidebarProps) {
+  const { can, user } = useAuth();
+  const superAdmin = isSpatieSuperAdmin(user);
+  const visibleItems = staticItems.filter(
+    (item) => !item.permission || superAdmin || can(item.permission),
+  );
+
   return (
     <aside
       id="admin-sidebar-nav"
@@ -65,7 +75,7 @@ export function AdminSidebar({ mobileOpen = false, onNavigate }: AdminSidebarPro
       </div>
 
       <nav className="space-y-1 px-2 pb-4">
-        {staticItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink

@@ -2,8 +2,12 @@ import { lazy } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 
 import { AdminLayout } from "@/layouts/admin/AdminLayout";
+import { AdminUserManagementIndexRedirect } from "@/routes/AdminUserManagementIndexRedirect";
+import { PermissionGate } from "@/routes/PermissionGate";
 import { RoleGate } from "@/routes/RoleGate";
 import { suspensePage } from "@/routes/routeUtils";
+
+const adminDenied = "/admin/dashboard";
 
 const Dashboard = lazy(() => import("@/pages/admin/Dashboard"));
 const Users = lazy(() => import("@/pages/admin/Users"));
@@ -36,14 +40,49 @@ export const adminRoutes: RouteObject = {
   ),
   children: [
     { path: "/admin", element: <Navigate to="/admin/dashboard" replace /> },
-    { path: "/admin/dashboard", element: suspensePage(Dashboard) },
-    { path: "/admin/user-management", element: <Navigate to="/admin/user-management/roles" replace /> },
-    { path: "/admin/user-management/admin", element: suspensePage(AdminAccounts) },
+    {
+      path: "/admin/dashboard",
+      element: (
+        <PermissionGate permission="view dashboard" fallback="/admin/login">
+          {suspensePage(Dashboard)}
+        </PermissionGate>
+      ),
+    },
+    { path: "/admin/user-management", element: <AdminUserManagementIndexRedirect /> },
+    {
+      path: "/admin/user-management/admin",
+      element: (
+        <PermissionGate permission="view admins" fallback={adminDenied}>
+          {suspensePage(AdminAccounts)}
+        </PermissionGate>
+      ),
+    },
     { path: "/admin/user-management/user", element: suspensePage(Users) },
-    { path: "/admin/user-management/roles", element: suspensePage(UserManagement) },
+    {
+      path: "/admin/user-management/roles",
+      element: (
+        <PermissionGate permission="view roles" fallback={adminDenied}>
+          {suspensePage(UserManagement)}
+        </PermissionGate>
+      ),
+    },
     { path: "/admin/users", element: <Navigate to="/admin/user-management/user" replace /> },
-    { path: "/admin/businesses", element: suspensePage(Businesses) },
-    { path: "/admin/categories", element: suspensePage(Categories) },
+    {
+      path: "/admin/businesses",
+      element: (
+        <PermissionGate permission="view products" fallback={adminDenied}>
+          {suspensePage(Businesses)}
+        </PermissionGate>
+      ),
+    },
+    {
+      path: "/admin/categories",
+      element: (
+        <PermissionGate permission="view products" fallback={adminDenied}>
+          {suspensePage(Categories)}
+        </PermissionGate>
+      ),
+    },
     { path: "/admin/career", element: suspensePage(Career) },
     { path: "/admin/career/add", element: suspensePage(CareerEdit) },
     { path: "/admin/career/edit/:id", element: suspensePage(CareerEdit) },
@@ -51,9 +90,23 @@ export const adminRoutes: RouteObject = {
     { path: "/admin/locations", element: suspensePage(Locations) },
     { path: "/admin/notifications", element: suspensePage(Notifications) },
     { path: "/admin/verifications", element: suspensePage(Verifications) },
-    { path: "/admin/leads", element: suspensePage(Leads) },
+    {
+      path: "/admin/leads",
+      element: (
+        <PermissionGate permission="view orders" fallback={adminDenied}>
+          {suspensePage(Leads)}
+        </PermissionGate>
+      ),
+    },
     { path: "/admin/reviews", element: suspensePage(Reviews) },
-    { path: "/admin/payments", element: suspensePage(Payments) },
+    {
+      path: "/admin/payments",
+      element: (
+        <PermissionGate permission="view orders" fallback={adminDenied}>
+          {suspensePage(Payments)}
+        </PermissionGate>
+      ),
+    },
     { path: "/admin/boost-system", element: suspensePage(BoostSystem) },
   ],
 };

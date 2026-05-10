@@ -57,6 +57,13 @@ export type UpdateAdminRolePermissionsPayload = {
   permissions?: string[];
 };
 
+/** Matches Laravel `AdminStatus` enum values */
+export type AdminAccountStatus = "active" | "pending" | "block";
+
+export type UpdateAdminStatusPayload = {
+  status: AdminAccountStatus;
+};
+
 function mapStaffAdmin(raw: unknown, index: number): StaffAdminRow {
   const o = toRecord(raw) ?? {};
   const id = typeof o.id === "number" ? o.id : index + 1;
@@ -171,6 +178,19 @@ export async function updateAdminRolePermissions(
   return requestWithBasePaths(async (base) => {
     const res = await api.put<unknown>(`${base}/${id}/role-permissions`, payload);
     return unwrapLaravelData(res.data) ?? res.data;
+  });
+}
+
+export async function updateAdminStatus(
+  id: number,
+  payload: UpdateAdminStatusPayload,
+): Promise<StaffAdminRow> {
+  return requestWithBasePaths(async (base) => {
+    const res = await api.put<unknown>(`${base}/${id}/status`, payload);
+    const unwrapped = unwrapLaravelData(res.data) ?? res.data;
+    const rec = toRecord(unwrapped);
+    const adminPayload = rec?.admin ?? unwrapped;
+    return mapStaffAdmin(adminPayload, 0);
   });
 }
 

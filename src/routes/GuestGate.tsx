@@ -6,6 +6,9 @@ import { useAuth } from '@/auth/useAuth'
 import { env } from '@/config/env'
 
 function pickDashboardForUserRoles(roles: string[]): string {
+  if (roles.includes('admin')) {
+    return rolePolicy.admin?.dashboard ?? '/admin'
+  }
   for (const r of roles) {
     const dash = rolePolicy[r]?.dashboard
     if (dash) return dash

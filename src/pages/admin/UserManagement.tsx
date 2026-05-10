@@ -156,11 +156,7 @@ export default function UserManagement() {
           <h1 className="mt-1 text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">
             Roles &amp; permissions
           </h1>
-          <p className="mt-1 text-sm text-body-secondary">
-            App route{" "}
-            <code className="rounded bg-muted px-1 text-xs">/admin/user-management/roles</code> — API{" "}
-            <code className="rounded bg-muted px-1 text-xs">GET /admin/roles</code> (Spatie admin guard).
-          </p>
+       
         </div>
         {can("create roles") ? (
           <Button type="button" onClick={openCreate} className="gap-2 shrink-0">

@@ -114,13 +114,23 @@ export async function loginUserWithRole(payload: LoginPayload, handlers: AuthHan
 }
 
 export async function loginAdmin(payload: AdminLoginPayload, handlers: AuthHandlers) {
-  const res = await request.post<unknown>('/auth/admin/login', payload)
-  return hydrateSessionFromLoginBody(
-    res.data,
-    handlers,
-    'Unable to restore your admin session.',
-    'Admin login response is missing access token.',
-  )
+  const paths = ["/admin/login", "/auth/admin/login"];
+  let last: unknown = null;
+  for (const path of paths) {
+    try {
+      const res = await request.post<unknown>(path, payload);
+      return await hydrateSessionFromLoginBody(
+        res.data,
+        handlers,
+        "Unable to restore your admin session.",
+        "Admin login response is missing access token.",
+      );
+    } catch (e) {
+      last = e;
+    }
+  }
+  handlers.resetAuthState();
+  throw last;
 }
 
 export async function registerUser(payload: RegisterPayload) {

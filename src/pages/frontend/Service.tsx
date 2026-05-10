@@ -127,7 +127,10 @@ export default function Service() {
     queryFn: () => fetchPublicBusinessById(businessId!),
     enabled: businessId !== null,
     staleTime: 5 * 60 * 1000,
-    placeholderData: stateData ?? undefined,
+    placeholderData:
+      stateData !== null
+        ? { ...stateData, isFavorite: stateData.isFavorite ?? false }
+        : undefined,
   });
 
   const { data: reviewsResult } = useQuery({

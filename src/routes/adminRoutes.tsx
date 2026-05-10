@@ -19,8 +19,15 @@ const Leads = lazy(() => import("@/pages/admin/Leads"));
 const Reviews = lazy(() => import("@/pages/admin/Reviews"));
 const Payments = lazy(() => import("@/pages/admin/Payments"));
 const BoostSystem = lazy(() => import("@/pages/admin/BoostSystem"));
+const UserManagement = lazy(() => import("@/pages/admin/UserManagement"));
+const AdminAccounts = lazy(() => import("@/pages/admin/AdminAccounts"));
 
-/** Authenticated `admin` role area (admin shell + nested admin pages). */
+/**
+ * User-management URLs mirror `blogging_rasta_laravel` `routes/admin.php`:
+ * - `/admin/user-management/admin` — administrator accounts
+ * - `/admin/user-management/user` — site users (vendors, customers, etc.)
+ * - `/admin/user-management/roles` — Spatie roles & permissions (API-backed SPA)
+ */
 export const adminRoutes: RouteObject = {
   element: (
     <RoleGate allow="admin" fallback="/admin/login">
@@ -30,7 +37,11 @@ export const adminRoutes: RouteObject = {
   children: [
     { path: "/admin", element: <Navigate to="/admin/dashboard" replace /> },
     { path: "/admin/dashboard", element: suspensePage(Dashboard) },
-    { path: "/admin/users", element: suspensePage(Users) },
+    { path: "/admin/user-management", element: <Navigate to="/admin/user-management/roles" replace /> },
+    { path: "/admin/user-management/admin", element: suspensePage(AdminAccounts) },
+    { path: "/admin/user-management/user", element: suspensePage(Users) },
+    { path: "/admin/user-management/roles", element: suspensePage(UserManagement) },
+    { path: "/admin/users", element: <Navigate to="/admin/user-management/user" replace /> },
     { path: "/admin/businesses", element: suspensePage(Businesses) },
     { path: "/admin/categories", element: suspensePage(Categories) },
     { path: "/admin/career", element: suspensePage(Career) },

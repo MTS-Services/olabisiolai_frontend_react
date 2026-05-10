@@ -4,9 +4,11 @@ import {
   CircleDollarSign,
   ClipboardCheck,
   Gauge,
+  KeyRound,
   ListChecks,
   MapPin,
   ShieldCheck,
+  ShieldUser,
   Star,
   Tags,
   UserRound,
@@ -23,9 +25,11 @@ type SidebarItem = {
   icon: ComponentType<{ className?: string }>;
 };
 
-const items: SidebarItem[] = [
+const staticItems: SidebarItem[] = [
   { label: "Dashboard", to: "/admin/dashboard", icon: Gauge },
-  { label: "Users", to: "/admin/users", icon: Users },
+  { label: "Roles & permissions", to: "/admin/user-management/roles", icon: KeyRound },
+  { label: "Admins", to: "/admin/user-management/admin", icon: ShieldUser },
+  { label: "Users", to: "/admin/user-management/user", icon: Users },
   { label: "Businesses", to: "/admin/businesses", icon: Building2 },
   { label: "Verifications", to: "/admin/verifications", icon: ClipboardCheck },
   { label: "Leads", to: "/admin/leads", icon: ListChecks },
@@ -61,11 +65,11 @@ export function AdminSidebar({ mobileOpen = false, onNavigate }: AdminSidebarPro
       </div>
 
       <nav className="space-y-1 px-2 pb-4">
-        {items.map((item) => {
+        {staticItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
-              key={item.label}
+              key={item.to}
               to={item.to}
               onClick={() => onNavigate?.()}
               className={({ isActive }) =>

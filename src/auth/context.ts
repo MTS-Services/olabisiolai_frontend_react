@@ -18,6 +18,10 @@ export type AuthContextValue = {
   logout: () => Promise<void>
   setUser: (user: AuthUser | null) => void
   refreshSession: () => Promise<AuthUser | null>
+  /** Spatie admin-guard permission check (from profile / admin login). */
+  can: (permission: string) => boolean
+  /** Spatie admin-guard role name (e.g. super-admin). */
+  hasRole: (spatieRoleName: string) => boolean
 }
 
 export const AuthContext = React.createContext<AuthContextValue | null>(null)

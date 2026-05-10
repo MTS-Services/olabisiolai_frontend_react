@@ -1,5 +1,30 @@
 import { type AuthUser } from '@/auth/types'
 
+/** Map AdminResource / admin login payload into AuthUser with route role `admin` + Spatie fields. */
+export function normalizeAdminAuthUser(raw: Record<string, unknown>): AuthUser {
+  const spatieRoles = Array.isArray(raw.roles)
+    ? (raw.roles as unknown[]).map((x) => String(x))
+    : []
+  const perms = Array.isArray(raw.permissions)
+    ? (raw.permissions as unknown[]).map((x) => String(x))
+    : []
+  const { roles: _dropRoles, permissions: _dropPerms, ...rest } = raw
+  return {
+    ...(rest as unknown as AuthUser),
+    role: 'admin',
+    adminSpatieRoles: spatieRoles,
+    permissions: perms,
+  }
+}
+
+function isAdminResourceShape(o: Record<string, unknown>): boolean {
+  return (
+    typeof o.email === 'string' &&
+    'permissions' in o &&
+    Array.isArray(o.permissions)
+  )
+}
+
 /**
  * Typical Laravel `sendResponse($success, $message, $payload)` JSON:
  * `{ success?: boolean, message?: string, data?: T }`
@@ -78,10 +103,13 @@ export function extractUserFromAuthPayload(body: unknown): AuthUser | null {
   // Admin login often returns: { data: { admin: {...} } }
   if ('admin' in o && o.admin && typeof o.admin === 'object') {
     const a = o.admin as Record<string, unknown>
-    if ('id' in a || 'email' in a) return a as unknown as AuthUser
+    if ('id' in a || 'email' in a) return normalizeAdminAuthUser(a)
   }
 
   // Sometimes: { data: {...user fields...} }
-  if ('id' in o || 'email' in o) return o as unknown as AuthUser
+  if ('id' in o || 'email' in o) {
+    if (isAdminResourceShape(o)) return normalizeAdminAuthUser(o)
+    return o as unknown as AuthUser
+  }
   return null
 }

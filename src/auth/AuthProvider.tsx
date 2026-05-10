@@ -12,7 +12,7 @@ import {
 } from '@/auth/token'
 import { type AuthUser } from '@/auth/types'
 import { getRoleLogoutPath } from '@/auth/rolePolicy'
-import { getUserRoles } from '@/auth/roles'
+import { getUserRoles, hasAnyRole } from '@/auth/roles'
 import { env } from '@/config/env'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -107,6 +107,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsUserLoading(false)
   }, [])
 
+  const can = React.useCallback(
+    (permission: string) => {
+      if (!hasAnyRole(user, 'admin')) return false
+      // Matches Laravel seeder `super-admin` role with full Spatie permissions.
+      if (user?.adminSpatieRoles?.includes('super-admin')) return true
+      return Boolean(user?.permissions?.includes(permission))
+    },
+    [user],
+  )
+
+  const hasRole = React.useCallback(
+    (spatieRoleName: string) => {
+      if (!hasAnyRole(user, 'admin')) return false
+      return Boolean(user?.adminSpatieRoles?.includes(spatieRoleName))
+    },
+    [user],
+  )
+
   const logout = React.useCallback(async () => {
     resetAuthState()
     try {
@@ -152,9 +170,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       setUser,
       refreshSession,
+      can,
+      hasRole,
     }),
     [
       accessTokenState,
+      can,
+      hasRole,
       isSessionLoading,
       isUserLoading,
       logout,

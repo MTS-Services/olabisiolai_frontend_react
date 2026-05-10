@@ -6,7 +6,7 @@ import { type AuthUser } from '@/auth/types'
 /** GET current user — Laravel Passport Bearer or cookie session. */
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
   const pathCandidates = Array.from(
-    new Set([env.authMePath, '/auth/profile', '/me'].filter(Boolean)),
+    new Set([env.authMePath, '/admin/me', '/auth/profile', '/me'].filter(Boolean)),
   )
 
   for (const path of pathCandidates) {

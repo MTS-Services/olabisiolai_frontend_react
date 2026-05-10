@@ -25,6 +25,13 @@ import {
   fetchAdminPermissions,
   fetchAdminRoles,
 } from "@/api/adminRbac";
+
+/** Permission names attached to a Spatie role from GET /admin/roles (with permissions). */
+function permissionNamesForRole(roleName: string, roles: AdminRoleRow[]): Set<string> {
+  const role = roles.find((r) => r.name === roleName);
+  const names = role?.permissions?.map((p) => p.name).filter(Boolean) ?? [];
+  return new Set(names);
+}
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -251,8 +258,9 @@ export default function AdminAccounts() {
     setEmail("");
     setPhone("");
     setPassword("");
-    setCreateRole(spatieRoles[0]?.name ?? "");
-    setCreatePermNames(new Set());
+    const defaultRole = spatieRoles[0]?.name ?? "";
+    setCreateRole(defaultRole);
+    setCreatePermNames(permissionNamesForRole(defaultRole, spatieRoles));
     setCreateOpen(true);
   }
 
@@ -596,7 +604,11 @@ export default function AdminAccounts() {
                 <select
                   id="adm-role"
                   value={createRole}
-                  onChange={(e) => setCreateRole(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setCreateRole(v);
+                    setCreatePermNames(permissionNamesForRole(v, spatieRoles));
+                  }}
                   disabled={saving}
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                 >
@@ -690,7 +702,6 @@ export default function AdminAccounts() {
             <div className="space-y-3 overflow-y-auto px-5 py-4">
               <p className="text-sm text-body-secondary">
                 <span className="font-medium text-ink">{displayName(rbacTarget)}</span> —{" "}
-                <code className="text-xs">PUT /admin/admins/{rbacTarget.id}/role-permissions</code>
               </p>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-ink" htmlFor="rbac-role">
@@ -699,7 +710,11 @@ export default function AdminAccounts() {
                 <select
                   id="rbac-role"
                   value={rbacRole}
-                  onChange={(e) => setRbacRole(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setRbacRole(v);
+                    setRbacPermNames(permissionNamesForRole(v, spatieRoles));
+                  }}
                   disabled={saving}
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                 >
@@ -715,7 +730,10 @@ export default function AdminAccounts() {
               </div>
               <div>
                 <p className="mb-2 text-sm font-medium text-ink">Permissions</p>
-                <p className="mb-2 text-xs text-chat-meta">Leave unchecked to sync role only (omit permissions array).</p>
+                <p className="mb-2 text-xs text-chat-meta">
+                  Changing <span className="font-medium text-ink">Role</span> loads that role&apos;s default permissions;
+                  adjust checkboxes before save. Leave all unchecked to sync role only (omit permissions array).
+                </p>
                 <div className="max-h-[min(40vh,280px)] space-y-3 overflow-y-auto rounded-xl border border-border-gray p-3">
                   {[...grouped.entries()].map(([resource, plist]) => (
                     <div key={resource}>

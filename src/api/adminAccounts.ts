@@ -26,7 +26,12 @@ export type StaffAdminRow = {
   name?: string;
   email: string;
   phone?: string;
+  image?: string | null;
   status?: string;
+  is_super_admin?: boolean;
+  email_verified_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   /** Spatie role name(s) when API sends them */
   roles?: string[];
   role?: string;
@@ -95,7 +100,17 @@ function mapStaffAdmin(raw: unknown, index: number): StaffAdminRow {
     name: typeof o.name === "string" ? o.name : undefined,
     email: typeof o.email === "string" ? o.email : "",
     phone: typeof o.phone === "string" ? o.phone : undefined,
+    image: o.image === null || typeof o.image === "string" ? (o.image as string | null) : undefined,
     status: typeof o.status === "string" ? o.status : undefined,
+    is_super_admin: o.is_super_admin === true ? true : o.is_super_admin === false ? false : undefined,
+    email_verified_at:
+      o.email_verified_at === null || typeof o.email_verified_at === "string"
+        ? (o.email_verified_at as string | null)
+        : undefined,
+    created_at:
+      o.created_at === null || typeof o.created_at === "string" ? (o.created_at as string | null) : undefined,
+    updated_at:
+      o.updated_at === null || typeof o.updated_at === "string" ? (o.updated_at as string | null) : undefined,
     roles,
     role: typeof o.role === "string" ? o.role : undefined,
     permissions,
@@ -165,6 +180,15 @@ async function requestWithBasePaths<T>(
   throw last;
 }
 
+/** GET /admin/admins/{id} — full AdminResource (roles, permissions, timestamps). */
+export async function fetchStaffAdminById(id: number): Promise<StaffAdminRow> {
+  return requestWithBasePaths(async (base) => {
+    const res = await api.get<unknown>(`${base}/${id}`);
+    const inner = unwrapLaravelData(res.data) ?? res.data;
+    return mapStaffAdmin(inner, 0);
+  });
+}
+
 export async function fetchStaffAdmins(options?: {
   page?: number;
   per_page?: number;
@@ -223,5 +247,11 @@ export async function rbacCheckAdmin(
   return requestWithBasePaths(async (base) => {
     const res = await api.get<unknown>(`${base}/${id}/rbac-check`, { params: query });
     return unwrapLaravelData(res.data) ?? res.data;
+  });
+}
+
+export async function deleteStaffAdmin(id: number): Promise<void> {
+  await requestWithBasePaths(async (base) => {
+    await api.delete(`${base}/${id}`);
   });
 }

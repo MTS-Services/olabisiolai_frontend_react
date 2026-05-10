@@ -306,8 +306,7 @@ export default function ChoosePlanForm() {
               </SelectField>
               {formOptionsError ? (
                 <p className="text-xs text-destructive">
-                  Form options failed to load. Check{" "}
-                  <span className="font-mono">GET /vendor/business/form-options</span>.
+                  Form options failed to load. Try again or contact support if this continues.
                 </p>
               ) : null}
             </div>

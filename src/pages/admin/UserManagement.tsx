@@ -1,4 +1,4 @@
-import { Loader2, Pencil, Plus, Shield, Trash2, X } from "lucide-react";
+import { Eye, Loader2, Pencil, Plus, Shield, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -54,7 +54,15 @@ export default function UserManagement() {
   const [deleteTarget, setDeleteTarget] = useState<AdminRoleRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const [editorHydrating, setEditorHydrating] = useState(false);
+  const [viewRoleRow, setViewRoleRow] = useState<AdminRoleRow | null>(null);
+  const [viewRoleLoading, setViewRoleLoading] = useState(false);
+
   const grouped = useMemo(() => groupPermissionsByResource(allPermissions), [allPermissions]);
+  const viewGrouped = useMemo(() => {
+    if (!viewRoleRow?.permissions?.length) return new Map<string, AdminPermissionRow[]>();
+    return groupPermissionsByResource(viewRoleRow.permissions);
+  }, [viewRoleRow]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,6 +88,7 @@ export default function UserManagement() {
     setFormName("");
     setSelectedPermNames(new Set());
     setFormError(null);
+    setEditorHydrating(false);
     setEditorOpen(true);
   }
 
@@ -88,17 +97,35 @@ export default function UserManagement() {
     setEditingId(role.id);
     setFormName(role.name);
     setFormError(null);
+    setSelectedPermNames(new Set((role.permissions ?? []).map((x) => x.name)));
     setEditorOpen(true);
-    let full = role;
-    if (!role.permissions?.length) {
-      try {
-        full = await fetchAdminRoleById(role.id);
-      } catch {
-        // keep list row
-      }
+    setEditorHydrating(true);
+    try {
+      const full = await fetchAdminRoleById(role.id);
+      setSelectedPermNames(new Set((full.permissions ?? []).map((x) => x.name)));
+    } catch {
+      setSelectedPermNames(new Set((role.permissions ?? []).map((x) => x.name)));
+    } finally {
+      setEditorHydrating(false);
     }
-    const names = new Set((full.permissions ?? []).map((x) => x.name));
-    setSelectedPermNames(names);
+  }
+
+  async function openViewRole(role: AdminRoleRow) {
+    setViewRoleRow(role);
+    setViewRoleLoading(true);
+    try {
+      const full = await fetchAdminRoleById(role.id);
+      setViewRoleRow(full);
+    } catch {
+      setViewRoleRow(role);
+    } finally {
+      setViewRoleLoading(false);
+    }
+  }
+
+  function closeEditor() {
+    setEditorOpen(false);
+    setEditorHydrating(false);
   }
 
   function togglePerm(name: string) {
@@ -125,7 +152,7 @@ export default function UserManagement() {
       } else if (editingId != null) {
         await updateAdminRole(editingId, { name: trimmed, permissions: permList });
       }
-      setEditorOpen(false);
+      closeEditor();
       await load();
     } catch (e) {
       setFormError(getAuthErrorMessage(e, "Save failed."));
@@ -156,7 +183,7 @@ export default function UserManagement() {
           <h1 className="mt-1 text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">
             Roles &amp; permissions
           </h1>
-       
+
         </div>
         {can("create roles") ? (
           <Button type="button" onClick={openCreate} className="gap-2 shrink-0">
@@ -215,6 +242,16 @@ export default function UserManagement() {
                     </td>
                     <td className="px-2 py-3 sm:px-4 sm:py-4">
                       <div className="flex justify-end gap-1">
+                        {can("view roles") ? (
+                          <button
+                            type="button"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted"
+                            onClick={() => void openViewRole(role)}
+                            title="View role and permissions"
+                          >
+                            <Eye className="size-4 text-body-secondary" />
+                          </button>
+                        ) : null}
                         {can("edit roles") ? (
                           <button
                             type="button"
@@ -255,7 +292,7 @@ export default function UserManagement() {
       {editorOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
-          onClick={() => (saving ? null : setEditorOpen(false))}
+          onClick={() => (saving ? null : closeEditor())}
           role="presentation"
         >
           <div
@@ -272,7 +309,7 @@ export default function UserManagement() {
                 type="button"
                 disabled={saving}
                 className="inline-flex size-9 items-center justify-center rounded-lg text-body-secondary hover:bg-muted"
-                onClick={() => setEditorOpen(false)}
+                onClick={closeEditor}
                 aria-label="Close"
               >
                 <X className="size-4" />
@@ -280,6 +317,12 @@ export default function UserManagement() {
             </div>
 
             <div className="space-y-4 overflow-y-auto px-5 py-4">
+              {editorMode === "edit" && editorHydrating ? (
+                <p className="flex items-center gap-2 text-xs text-chat-meta">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Loading full permission set from API…
+                </p>
+              ) : null}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-ink" htmlFor="rbac-role-name">
                   Role name
@@ -289,7 +332,7 @@ export default function UserManagement() {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g. support-lead"
-                  disabled={saving}
+                  disabled={saving || (editorMode === "edit" && editorHydrating)}
                 />
               </div>
 
@@ -308,7 +351,7 @@ export default function UserManagement() {
                                 className="mt-0.5 size-4 rounded border-border-gray"
                                 checked={selectedPermNames.has(p.name)}
                                 onChange={() => togglePerm(p.name)}
-                                disabled={saving}
+                                disabled={saving || (editorMode === "edit" && editorHydrating)}
                               />
                               <span className="text-ink">{p.name}</span>
                             </label>
@@ -328,11 +371,77 @@ export default function UserManagement() {
             </div>
 
             <div className="flex justify-end gap-2 border-t border-border-gray px-5 py-4">
-              <Button type="button" variant="outline" disabled={saving} onClick={() => setEditorOpen(false)}>
+              <Button type="button" variant="outline" disabled={saving} onClick={closeEditor}>
                 Cancel
               </Button>
-              <Button type="button" disabled={saving} onClick={() => void submitForm()} className="min-w-[100px]">
+              <Button
+                type="button"
+                disabled={saving || (editorMode === "edit" && editorHydrating)}
+                onClick={() => void submitForm()}
+                className="min-w-[100px]"
+              >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : "Save"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {viewRoleRow ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
+          onClick={() => setViewRoleRow(null)}
+          role="presentation"
+        >
+          <div
+            className="relative flex max-h-[min(90dvh,720px)] w-full max-w-lg flex-col rounded-2xl bg-card shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center justify-between border-b border-border-gray px-5 py-4">
+              <h2 className="text-lg font-semibold text-ink">Role details</h2>
+              <button
+                type="button"
+                className="inline-flex size-9 items-center justify-center rounded-lg text-body-secondary hover:bg-muted"
+                onClick={() => setViewRoleRow(null)}
+                aria-label="Close"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="space-y-3 overflow-y-auto px-5 py-4">
+              {viewRoleLoading ? (
+                <p className="flex items-center gap-2 text-sm text-chat-meta">
+                  <Loader2 className="size-4 animate-spin" />
+                  Loading from API…
+                </p>
+              ) : null}
+              <p className="text-sm text-body-secondary">
+                <span className="font-medium text-ink">{viewRoleRow.name}</span>
+              </p>
+              <div className="max-h-[min(50vh,360px)] space-y-4 overflow-y-auto rounded-xl border border-border-gray p-3">
+                {[...viewGrouped.entries()].length ? (
+                  [...viewGrouped.entries()].map(([resource, plist]) => (
+                    <div key={resource}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-chat-meta">{resource}</p>
+                      <ul className="grid gap-1.5 sm:grid-cols-2">
+                        {plist.map((p) => (
+                          <li key={p.id} className="text-sm text-ink">
+                            {p.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-chat-meta">No permissions assigned to this role.</p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-border-gray px-5 py-4">
+              <Button type="button" variant="outline" onClick={() => setViewRoleRow(null)}>
+                Close
               </Button>
             </div>
           </div>

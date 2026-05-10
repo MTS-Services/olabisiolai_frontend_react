@@ -133,8 +133,7 @@ export function BusinessInfoCard() {
         </div>
         {isError ? (
           <p className="text-xs text-destructive">
-            Could not load categories. Sign in as a vendor and ensure{" "}
-            <span className="font-mono">GET /vendor/business/form-options</span> succeeds.
+            Could not load categories. Sign in as a vendor and ensure business form options load correctly.
           </p>
         ) : null}
 

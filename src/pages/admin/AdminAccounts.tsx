@@ -2,17 +2,21 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Eye,
   Loader2,
   Pencil,
   Plus,
   Search,
   ShieldUser,
+  Trash2,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createStaffAdmin,
+  deleteStaffAdmin,
+  fetchStaffAdminById,
   fetchStaffAdmins,
   type AdminAccountStatus,
   type StaffAdminRow,
@@ -25,17 +29,17 @@ import {
   fetchAdminPermissions,
   fetchAdminRoles,
 } from "@/api/adminRbac";
+import { useAuth } from "@/auth/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { getAuthErrorMessage } from "@/features/auth/errorMessage";
 
-/** Permission names attached to a Spatie role from GET /admin/roles (with permissions). */
+/** Permission names attached to a Spatie role from the loaded roles catalog. */
 function permissionNamesForRole(roleName: string, roles: AdminRoleRow[]): Set<string> {
   const role = roles.find((r) => r.name === roleName);
   const names = role?.permissions?.map((p) => p.name).filter(Boolean) ?? [];
   return new Set(names);
 }
-import { useAuth } from "@/auth/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { getAuthErrorMessage } from "@/features/auth/errorMessage";
 
 function permissionResourceLabel(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -171,6 +175,7 @@ export default function AdminAccounts() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [statusSavingId, setStatusSavingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -182,6 +187,11 @@ export default function AdminAccounts() {
 
   const [rbacRole, setRbacRole] = useState("");
   const [rbacPermNames, setRbacPermNames] = useState<Set<string>>(new Set());
+  const [rbacRefreshing, setRbacRefreshing] = useState(false);
+
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailRow, setDetailRow] = useState<StaffAdminRow | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const grouped = useMemo(() => groupPermissionsByResource(allPermissions), [allPermissions]);
 
@@ -264,13 +274,45 @@ export default function AdminAccounts() {
     setCreateOpen(true);
   }
 
-  function openRbac(row: StaffAdminRow) {
+  async function openRbac(row: StaffAdminRow) {
     setFormError(null);
+    setRbacOpen(true);
     setRbacTarget(row);
     const initialRole = row.roles?.[0] ?? row.role ?? spatieRoles[0]?.name ?? "";
     setRbacRole(initialRole);
     setRbacPermNames(new Set(row.permissions ?? []));
-    setRbacOpen(true);
+    setRbacRefreshing(true);
+    try {
+      const fresh = await fetchStaffAdminById(row.id);
+      setRbacTarget(fresh);
+      const r = fresh.roles?.[0] ?? fresh.role ?? initialRole;
+      setRbacRole(r);
+      setRbacPermNames(new Set(fresh.permissions ?? []));
+    } catch {
+      setFormError("Could not load latest admin details; showing list data. Save may still work.");
+    } finally {
+      setRbacRefreshing(false);
+    }
+  }
+
+  async function openDetail(row: StaffAdminRow) {
+    setDetailOpen(true);
+    setDetailRow(row);
+    setDetailLoading(true);
+    try {
+      const fresh = await fetchStaffAdminById(row.id);
+      setDetailRow(fresh);
+    } catch {
+      setDetailRow(row);
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  function closeRbacModal() {
+    setRbacOpen(false);
+    setRbacTarget(null);
+    setFormError(null);
   }
 
   async function submitCreate() {
@@ -309,6 +351,27 @@ export default function AdminAccounts() {
     return Number(user.id) === row.id;
   }
 
+  const handleDeleteAdmin = useCallback(
+    async (row: StaffAdminRow) => {
+      const label = displayName(row);
+      const ok = window.confirm(
+        `Delete admin “${label}” (${row.email})? This cannot be undone. Tokens and access will be revoked.`,
+      );
+      if (!ok) return;
+      setDeletingId(row.id);
+      setError(null);
+      try {
+        await deleteStaffAdmin(row.id);
+        await loadList();
+      } catch (e) {
+        setError(getAuthErrorMessage(e, "Could not delete admin."));
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [loadList],
+  );
+
   const handleStatusChange = useCallback(
     async (row: StaffAdminRow, next: AdminAccountStatus) => {
       const current = (row.status ?? "pending") as AdminAccountStatus;
@@ -340,8 +403,7 @@ export default function AdminAccounts() {
       const payload =
         rbacPermNames.size > 0 ? { role: rl, permissions: [...rbacPermNames] } : { role: rl };
       await updateAdminRolePermissions(rbacTarget.id, payload);
-      setRbacOpen(false);
-      setRbacTarget(null);
+      closeRbacModal();
       await loadList();
     } catch (e) {
       setFormError(getAuthErrorMessage(e, "Update role/permissions failed (super-admin only on API)."));
@@ -352,8 +414,15 @@ export default function AdminAccounts() {
 
   const canCreate = can("create admins");
   const canEditRbac = can("edit admins");
+  const canDelete = can("delete admins");
   const canView = can("view admins");
   const canChangeStatus = can("change admin status");
+
+  function canDeleteRow(row: StaffAdminRow): boolean {
+    if (!canDelete || isActorRow(row)) return false;
+    if (rowHasSuperAdminRole(row) && !hasRole("super-admin")) return false;
+    return true;
+  }
 
   return (
     <div>
@@ -470,15 +539,41 @@ export default function AdminAccounts() {
                     </td>
                     <td className="px-2 py-3 text-sm text-body-secondary sm:px-4 sm:py-4">{roleLabel(row)}</td>
                     <td className="px-2 py-3 sm:px-4 sm:py-4">
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-1">
+                        {canView ? (
+                          <button
+                            type="button"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted"
+                            title="View details"
+                            onClick={() => void openDetail(row)}
+                          >
+                            <Eye className="size-4 text-body-secondary" />
+                          </button>
+                        ) : null}
                         {canEditRbac ? (
                           <button
                             type="button"
                             className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted"
                             title="Role & permissions"
-                            onClick={() => openRbac(row)}
+                            onClick={() => void openRbac(row)}
                           >
                             <Pencil className="size-4 text-body-secondary" />
+                          </button>
+                        ) : null}
+                        {canDeleteRow(row) ? (
+                          <button
+                            type="button"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-brand-red hover:bg-tint-red/10"
+                            title="Delete admin"
+                            disabled={deletingId === row.id || loading}
+                            aria-label={`Delete ${displayName(row)}`}
+                            onClick={() => void handleDeleteAdmin(row)}
+                          >
+                            {deletingId === row.id ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-4" />
+                            )}
                           </button>
                         ) : null}
                       </div>
@@ -674,10 +769,123 @@ export default function AdminAccounts() {
         </div>
       ) : null}
 
+      {detailOpen && detailRow ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
+          onClick={() => setDetailOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="relative flex max-h-[min(92dvh,720px)] w-full max-w-lg flex-col rounded-2xl bg-card shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center justify-between border-b border-border-gray px-5 py-4">
+              <h2 className="text-lg font-semibold text-ink">Admin details</h2>
+              <button
+                type="button"
+                className="inline-flex size-9 items-center justify-center rounded-lg text-body-secondary hover:bg-muted"
+                onClick={() => setDetailOpen(false)}
+                aria-label="Close"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="space-y-4 overflow-y-auto px-5 py-4">
+              {detailLoading ? (
+                <p className="flex items-center gap-2 text-sm text-chat-meta">
+                  <Loader2 className="size-4 animate-spin" />
+                  Loading latest from API…
+                </p>
+              ) : null}
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-chat-meta">Name</dt>
+                  <dd className="font-medium text-ink">{displayName(detailRow)}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-chat-meta">Email</dt>
+                  <dd className="break-all text-ink">{detailRow.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-chat-meta">Phone</dt>
+                  <dd className="text-ink">{detailRow.phone?.trim() ? detailRow.phone : "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-chat-meta">Status</dt>
+                  <dd>
+                    <AdminStatusControl
+                      value={(detailRow.status ?? "pending") as AdminAccountStatus}
+                      readOnly
+                      ariaLabel={`Status for ${displayName(detailRow)}`}
+                    />
+                  </dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-chat-meta">Roles</dt>
+                  <dd className="text-ink">{roleLabel(detailRow)}</dd>
+                </div>
+                <div>
+                  <dt className="text-chat-meta">Super admin</dt>
+                  <dd className="text-ink">
+                    {detailRow.is_super_admin === true
+                      ? "Yes"
+                      : detailRow.is_super_admin === false
+                        ? "No"
+                        : "—"}
+                  </dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-chat-meta">Email verified</dt>
+                  <dd className="text-ink">
+                    {detailRow.email_verified_at?.trim() ? detailRow.email_verified_at : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-chat-meta">Created</dt>
+                  <dd className="text-ink">{detailRow.created_at?.trim() ? detailRow.created_at : "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-chat-meta">Updated</dt>
+                  <dd className="text-ink">{detailRow.updated_at?.trim() ? detailRow.updated_at : "—"}</dd>
+                </div>
+              </dl>
+              <div>
+                <p className="mb-2 text-sm font-medium text-ink">Effective permissions</p>
+                <div className="max-h-[min(36vh,260px)] overflow-y-auto rounded-xl border border-border-gray p-3 text-sm text-body-secondary">
+                  {(detailRow.permissions ?? []).length ? (
+                    <ul className="grid gap-1 sm:grid-cols-2">
+                      {[...(detailRow.permissions ?? [])]
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((name) => (
+                          <li key={name} className="break-all">
+                            {name}
+                          </li>
+                        ))}
+                    </ul>
+                  ) : (
+                    <p className="text-chat-meta">None listed (role-only access).</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-border-gray px-5 py-4">
+              <Button type="button" variant="outline" onClick={() => setDetailOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {rbacOpen && rbacTarget ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
-          onClick={() => (saving ? null : setRbacOpen(false))}
+          onClick={() => {
+            if (saving || rbacRefreshing) return;
+            closeRbacModal();
+          }}
           role="presentation"
         >
           <div
@@ -690,9 +898,9 @@ export default function AdminAccounts() {
               <h2 className="text-lg font-semibold text-ink">Role &amp; permissions</h2>
               <button
                 type="button"
-                disabled={saving}
+                disabled={saving || rbacRefreshing}
                 className="inline-flex size-9 items-center justify-center rounded-lg text-body-secondary hover:bg-muted"
-                onClick={() => setRbacOpen(false)}
+                onClick={closeRbacModal}
                 aria-label="Close"
               >
                 <X className="size-4" />
@@ -700,8 +908,14 @@ export default function AdminAccounts() {
             </div>
 
             <div className="space-y-3 overflow-y-auto px-5 py-4">
+              {rbacRefreshing ? (
+                <p className="flex items-center gap-2 text-xs text-chat-meta">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Loading latest roles &amp; permissions from API…
+                </p>
+              ) : null}
               <p className="text-sm text-body-secondary">
-                <span className="font-medium text-ink">{displayName(rbacTarget)}</span> —{" "}
+                <span className="font-medium text-ink">{displayName(rbacTarget)}</span>
               </p>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-ink" htmlFor="rbac-role">
@@ -715,7 +929,7 @@ export default function AdminAccounts() {
                     setRbacRole(v);
                     setRbacPermNames(permissionNamesForRole(v, spatieRoles));
                   }}
-                  disabled={saving}
+                  disabled={saving || rbacRefreshing}
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                 >
                   {rbacRole && !spatieRoles.some((r) => r.name === rbacRole) ? (
@@ -747,7 +961,7 @@ export default function AdminAccounts() {
                                 className="mt-0.5 size-4 rounded border-border-gray"
                                 checked={rbacPermNames.has(p.name)}
                                 onChange={() => toggleRbacPerm(p.name)}
-                                disabled={saving}
+                                disabled={saving || rbacRefreshing}
                               />
                               <span>{p.name}</span>
                             </label>
@@ -766,10 +980,15 @@ export default function AdminAccounts() {
             </div>
 
             <div className="flex justify-end gap-2 border-t border-border-gray px-5 py-4">
-              <Button type="button" variant="outline" disabled={saving} onClick={() => setRbacOpen(false)}>
+              <Button type="button" variant="outline" disabled={saving || rbacRefreshing} onClick={closeRbacModal}>
                 Cancel
               </Button>
-              <Button type="button" disabled={saving} onClick={() => void submitRbac()} className="min-w-[100px]">
+              <Button
+                type="button"
+                disabled={saving || rbacRefreshing}
+                onClick={() => void submitRbac()}
+                className="min-w-[100px]"
+              >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : "Save"}
               </Button>
             </div>

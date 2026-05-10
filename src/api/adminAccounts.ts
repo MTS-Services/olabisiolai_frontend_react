@@ -102,7 +102,26 @@ function mapStaffAdmin(raw: unknown, index: number): StaffAdminRow {
   };
 }
 
+function metaFromUnknown(m: unknown, fallbackPerPage: number, fallbackTotal: number): AdminListMeta | null {
+  const rec = toRecord(m);
+  if (!rec) return null;
+  return {
+    current_page: typeof rec.current_page === "number" ? rec.current_page : 1,
+    last_page: typeof rec.last_page === "number" ? rec.last_page : 1,
+    per_page: typeof rec.per_page === "number" ? rec.per_page : fallbackPerPage,
+    total: typeof rec.total === "number" ? rec.total : fallbackTotal,
+  };
+}
+
 function pickAdminList(body: unknown): { items: StaffAdminRow[]; meta: AdminListMeta | null } {
+  // Raw JSON: { success, data: AdminResource[], meta: { ... } } (meta is sibling of data)
+  const top = toRecord(body);
+  if (top && Array.isArray(top.data) && top.meta !== undefined) {
+    const list = top.data.map(mapStaffAdmin);
+    const meta = metaFromUnknown(top.meta, list.length, list.length);
+    return { items: list, meta };
+  }
+
   const root = unwrapLaravelData(body);
   if (Array.isArray(root)) {
     return { items: root.map(mapStaffAdmin), meta: null };
@@ -149,13 +168,16 @@ async function requestWithBasePaths<T>(
 export async function fetchStaffAdmins(options?: {
   page?: number;
   per_page?: number;
+  search?: string;
 }): Promise<{
   items: StaffAdminRow[];
   meta: AdminListMeta | null;
 }> {
-  const per_page = options?.per_page ?? 15;
-  const params: Record<string, number> = { per_page };
+  const per_page = options?.per_page ?? 10;
+  const params: Record<string, string | number> = { per_page };
   if (options?.page != null) params.page = options.page;
+  const q = options?.search?.trim();
+  if (q) params.search = q;
 
   return requestWithBasePaths(async (base) => {
     const res = await api.get<unknown>(base, { params });

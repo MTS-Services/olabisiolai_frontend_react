@@ -1,5 +1,15 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, ShieldUser, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  ShieldUser,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createStaffAdmin,
@@ -137,7 +147,10 @@ export default function AdminAccounts() {
     total: number;
   } | null>(null);
   const [page, setPage] = useState(1);
-  const [perPage] = useState(15);
+  const perPage = 10;
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const lastDebouncedSearchRef = useRef("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -179,7 +192,11 @@ export default function AdminAccounts() {
     setLoading(true);
     setError(null);
     try {
-      const { items: list, meta: m } = await fetchStaffAdmins({ page, per_page: perPage });
+      const { items: list, meta: m } = await fetchStaffAdmins({
+        page,
+        per_page: perPage,
+        search: debouncedSearch || undefined,
+      });
       setItems(list);
       setMeta(m);
     } catch (e) {
@@ -187,7 +204,19 @@ export default function AdminAccounts() {
     } finally {
       setLoading(false);
     }
-  }, [page, perPage]);
+  }, [page, perPage, debouncedSearch]);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const next = searchInput.trim();
+      if (lastDebouncedSearchRef.current !== next) {
+        lastDebouncedSearchRef.current = next;
+        setPage(1);
+      }
+      setDebouncedSearch(next);
+    }, 350);
+    return () => window.clearTimeout(id);
+  }, [searchInput]);
 
   useEffect(() => {
     void loadCatalog();
@@ -349,13 +378,32 @@ export default function AdminAccounts() {
       ) : null}
 
       <section className="rounded-2xl border border-border-gray bg-card p-3 shadow-sm sm:p-4 lg:p-6">
-        <div className="mb-4 flex items-center gap-2 border-b border-border-gray pb-4">
-          <span className="inline-flex size-10 items-center justify-center rounded-xl bg-surface-soft text-chat-accent">
-            <ShieldUser className="size-4" />
-          </span>
-          <div>
-            <h2 className="text-lg font-semibold text-ink">Administrators</h2>
-            <p className="text-sm text-chat-meta">{meta ? `${meta.total} total` : `${items.length} loaded`}</p>
+        <div className="mb-4 flex flex-col gap-3 border-b border-border-gray pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-soft text-chat-accent">
+              <ShieldUser className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-ink">Administrators</h2>
+              <p className="text-sm text-chat-meta">
+                {meta ? `${meta.total} total` : loading ? "…" : `${items.length} loaded`}
+                {debouncedSearch ? ` · matching “${debouncedSearch}”` : null}
+              </p>
+            </div>
+          </div>
+          <div className="relative w-full sm:max-w-xs sm:shrink-0">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-chat-meta"
+              aria-hidden
+            />
+            <Input
+              type="search"
+              placeholder="Search name, email, phone…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9"
+              aria-label="Search administrators"
+            />
           </div>
         </div>
 
@@ -440,10 +488,10 @@ export default function AdminAccounts() {
           </table>
         </div>
 
-        {meta && meta.last_page > 1 ? (
+        {meta && meta.total > perPage ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border-gray pt-4">
             <p className="text-xs text-chat-meta">
-              Page {meta.current_page} of {meta.last_page}
+              Page {meta.current_page} of {meta.last_page} ({meta.per_page} per page)
             </p>
             <div className="flex gap-2">
               <Button

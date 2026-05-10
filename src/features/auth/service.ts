@@ -92,8 +92,9 @@ async function hydrateSessionFromLoginBody(
   if (loggedInUser) {
     handlers.setUser(loggedInUser)
   }
-  await handlers.refreshSession()
-  return loggedInUser
+  const refreshedUser = await handlers.refreshSession()
+  // Prefer `/auth/profile` result so role stays correct; login JSON alone can be incomplete.
+  return refreshedUser ?? loggedInUser
 }
 
 export async function loginUserWithRole(payload: LoginPayload, handlers: AuthHandlers) {

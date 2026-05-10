@@ -7,10 +7,14 @@ export function WhatsAppLeadsList({
   leads,
   selectedLeadId,
   onSelectLead,
+  searchQuery = "",
+  onSearchChange,
 }: {
   leads: Lead[];
   selectedLeadId: string;
   onSelectLead: (id: string) => void;
+  searchQuery?: string;
+  onSearchChange?: (q: string) => void;
 }) {
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId);
 
@@ -26,9 +30,18 @@ export function WhatsAppLeadsList({
           <Input
             className="h-10 rounded-full border border-neutral-200 bg-white pl-10 pr-4 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-sky-500/25"
             placeholder="Search conversations..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange?.(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
+          {leads.length === 0 ? (
+            <p className="rounded-lg bg-white/80 px-3 py-8 text-center text-sm text-muted-foreground">
+              {searchQuery.trim()
+                ? "No conversations match your search."
+                : "No direct messages yet. When customers message you, they will appear here."}
+            </p>
+          ) : null}
           {leads.map((lead) => {
             const active = selectedLead?.id === lead.id;
             return (

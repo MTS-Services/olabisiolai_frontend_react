@@ -21,6 +21,7 @@ export function EchoProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (!messagingEnv.isReverbConfigured()) {
+      disconnectEcho()
       setEcho(null)
       return
     }
@@ -31,10 +32,9 @@ export function EchoProvider({ children }: { children: React.ReactNode }) {
     }
     const instance = createEcho(accessToken)
     setEcho(instance)
-    return () => {
-      disconnectEcho()
-      setEcho(null)
-    }
+    // No cleanup disconnect: Strict Mode would close the socket mid-handshake and break
+    // presence/typing. `createEcho()` reconnects when `accessToken` changes; logout
+    // clears the socket in the `!isAuthenticated` branch above.
   }, [isAuthenticated, accessToken])
 
   React.useEffect(() => {

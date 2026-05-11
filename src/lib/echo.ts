@@ -15,10 +15,30 @@ declare global {
 window.Pusher = Pusher
 
 let echoInstance: ReverbEcho | null = null
+/** Last successful connection identity; avoids disconnecting mid-handshake on React Strict Mode remounts. */
+let echoConnectionFingerprint: string | null = null
+
+function buildEchoFingerprint(accessToken: string | null): string {
+  return [
+    messagingEnv.reverbKey ?? '',
+    messagingEnv.reverbHost ?? '',
+    String(messagingEnv.reverbPort),
+    messagingEnv.reverbScheme,
+    messagingEnv.broadcastingAuthUrl,
+    env.authStrategy,
+    accessToken ?? '',
+  ].join('|')
+}
 
 export function createEcho(accessToken: string | null): ReverbEcho | null {
   if (!messagingEnv.isReverbConfigured()) {
+    disconnectEcho()
     return null
+  }
+
+  const fingerprint = buildEchoFingerprint(accessToken)
+  if (echoInstance && echoConnectionFingerprint === fingerprint) {
+    return echoInstance
   }
 
   disconnectEcho()
@@ -30,14 +50,17 @@ export function createEcho(accessToken: string | null): ReverbEcho | null {
     headers.Authorization = `Bearer ${accessToken}`
   }
 
+  const useTls = messagingEnv.reverbScheme === 'https'
   echoInstance = new Echo<'reverb'>({
     broadcaster: 'reverb',
     key: messagingEnv.reverbKey!,
     wsHost: messagingEnv.reverbHost!,
     wsPort: messagingEnv.reverbPort,
     wssPort: messagingEnv.reverbPort,
-    forceTLS: messagingEnv.reverbScheme === 'https',
-    enabledTransports: ['ws', 'wss'],
+    forceTLS: useTls,
+    /** Avoid noisy failed `wss://` attempts when running Reverb with `REVERB_SCHEME=http`. */
+    enabledTransports: useTls ? ['ws', 'wss'] : ['ws'],
+    disableStats: true,
     authEndpoint: messagingEnv.broadcastingAuthUrl,
     auth: { headers },
     ...(env.authStrategy === 'http_only_cookie'
@@ -45,6 +68,7 @@ export function createEcho(accessToken: string | null): ReverbEcho | null {
       : {}),
   })
 
+  echoConnectionFingerprint = fingerprint
   return echoInstance
 }
 
@@ -55,4 +79,5 @@ export function getEcho(): ReverbEcho | null {
 export function disconnectEcho(): void {
   echoInstance?.disconnect()
   echoInstance = null
+  echoConnectionFingerprint = null
 }

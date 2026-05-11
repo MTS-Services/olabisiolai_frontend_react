@@ -5,6 +5,9 @@ import toast from "react-hot-toast";
 import { getConversations } from "@/api/conversations";
 import { getMessages, sendMessage } from "@/api/messages";
 import { useAuth } from "@/auth/useAuth";
+import { useMessagingRealtime } from "@/hooks/useMessagingRealtime";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import type { Conversation } from "@/types/conversation";
 import { DirectLeadsTable } from "@/components/sections/vendor/leads/DirectLeadsTable";
 import { LeadDetailsModal } from "@/components/sections/vendor/leads/LeadDetailsModal";
 import { LeadsTabs } from "@/components/sections/vendor/leads/LeadsChannelTabs";
@@ -73,6 +76,22 @@ export default function VendorLeads() {
       setSelectedLeadId(filteredLeads[0].id);
     }
   }, [channelFilter, filteredLeads, selectedLeadId]);
+
+  const activeRealtimeConversation = useMemo((): Conversation | null => {
+    if (channelFilter !== "whatsapp" || !selectedLeadId) return null;
+    return conversationsQuery.data?.find((c) => c.uuid === selectedLeadId) ?? null;
+  }, [channelFilter, selectedLeadId, conversationsQuery.data]);
+
+  useMessagingRealtime(activeRealtimeConversation);
+
+  const { typingUsers, signalTyping } = useTypingIndicator(
+    activeRealtimeConversation?.uuid ?? null,
+  );
+
+  const peerTyping = useMemo(
+    () => typingUsers.filter((u) => u.is_typing && u.user_id !== selfId),
+    [typingUsers, selfId],
+  );
 
   const messagesQuery = useQuery({
     queryKey: ["vendor-lead-messages", selectedLeadId],
@@ -162,9 +181,11 @@ export default function VendorLeads() {
               newMessagesDividerAfterIndex={-1}
               messageDraft={messageDraft}
               onMessageDraftChange={setMessageDraft}
+              onComposerTyping={signalTyping}
               onSend={handleSend}
               isSending={sendMutation.isPending}
               messagesLoading={messagesQuery.isLoading}
+              typingPeers={peerTyping}
             />
           </div>
         )}

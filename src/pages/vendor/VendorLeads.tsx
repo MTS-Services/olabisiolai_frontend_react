@@ -1,48 +1,128 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
+import { getConversations } from "@/api/conversations";
+import { useAuth } from "@/auth/useAuth";
+import type { MessagingUser } from "@/types/user";
+import { useMessagingRealtime } from "@/hooks/useMessagingRealtime";
+import { useInfiniteMessages } from "@/hooks/useInfiniteMessages";
+import { useMessageActions } from "@/hooks/useMessageActions";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import type { Conversation } from "@/types/conversation";
 import { DirectLeadsTable } from "@/components/sections/vendor/leads/DirectLeadsTable";
 import { LeadDetailsModal } from "@/components/sections/vendor/leads/LeadDetailsModal";
 import { LeadsTabs } from "@/components/sections/vendor/leads/LeadsChannelTabs";
 import { LeadsHeader } from "@/components/sections/vendor/leads/LeadsHeader";
 import { WhatsAppLeadsList } from "@/components/sections/vendor/leads/WhatsAppLeadsList";
 import { WhatsAppChatInterface } from "@/components/sections/vendor/leads/WhatsAppChatView";
-import {
-  chatByLead,
-  leads,
-  type Lead,
-  type LeadChannel,
-} from "@/components/sections/vendor/leads/leadsData";
+import { type Lead, type LeadChannel } from "@/components/sections/vendor/leads/leadsData";
+import { conversationToLead, messageToChatMessage } from "@/utils/vendorLeads";
 
 export default function VendorLeads() {
+  const { user, isAuthenticated } = useAuth();
+  const selfId = Number(user?.id ?? 0);
+  const me = useMemo((): MessagingUser | null => {
+    if (!user) return null;
+    return {
+      id: Number(user.id),
+      name: user.name ?? "You",
+      avatar: null,
+      status: "online",
+      last_seen_at: null,
+    };
+  }, [user]);
+
   const [channelFilter, setChannelFilter] = useState<LeadChannel>("whatsapp");
-  const [selectedLeadId, setSelectedLeadId] = useState<string>(() => {
-    const whatsappLead = leads.find((l) => l.channel === "whatsapp");
-    return whatsappLead?.id ?? leads[0]?.id ?? "";
-  });
+  const [selectedLeadId, setSelectedLeadId] = useState("");
   const [openLeadDetails, setOpenLeadDetails] = useState<Lead | null>(null);
+  const [chatSearch, setChatSearch] = useState("");
+  const [messageDraft, setMessageDraft] = useState("");
 
-  const directCount = useMemo(
-    () => leads.filter((l) => l.channel === "direct").length,
-    [],
-  );
-  const whatsappCount = useMemo(
-    () => leads.filter((l) => l.channel === "whatsapp").length,
-    [],
+  const conversationsQuery = useQuery({
+    queryKey: ["vendor-conversations"],
+    queryFn: async () => {
+      const { conversations } = await getConversations({ type: "direct", page: 1 });
+      return conversations;
+    },
+    enabled: isAuthenticated && selfId > 0,
+  });
+
+  const chatLeads = useMemo(() => {
+    const list = conversationsQuery.data ?? [];
+    return list.map((c) => conversationToLead(c, selfId, "whatsapp"));
+  }, [conversationsQuery.data, selfId]);
+
+  const tableLeads = useMemo(() => {
+    const list = conversationsQuery.data ?? [];
+    return list.map((c) => conversationToLead(c, selfId, "direct"));
+  }, [conversationsQuery.data, selfId]);
+
+  const filteredLeads = useMemo(() => {
+    const base = channelFilter === "whatsapp" ? chatLeads : tableLeads;
+    if (channelFilter !== "whatsapp") return base;
+    const q = chatSearch.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter(
+      (l) => l.name.toLowerCase().includes(q) || l.message.toLowerCase().includes(q),
+    );
+  }, [channelFilter, chatLeads, tableLeads, chatSearch]);
+
+  const directCount = tableLeads.length;
+  const whatsappCount = chatLeads.length;
+
+  useEffect(() => {
+    if (conversationsQuery.isError) {
+      toast.error("Could not load conversations");
+    }
+  }, [conversationsQuery.isError]);
+
+  useEffect(() => {
+    if (channelFilter !== "whatsapp") return;
+    if (!filteredLeads.length) {
+      if (selectedLeadId) setSelectedLeadId("");
+      return;
+    }
+    if (!filteredLeads.some((l) => l.id === selectedLeadId)) {
+      setSelectedLeadId(filteredLeads[0].id);
+    }
+  }, [channelFilter, filteredLeads, selectedLeadId]);
+
+  const activeRealtimeConversation = useMemo((): Conversation | null => {
+    if (channelFilter !== "whatsapp" || !selectedLeadId) return null;
+    return conversationsQuery.data?.find((c) => c.uuid === selectedLeadId) ?? null;
+  }, [channelFilter, selectedLeadId, conversationsQuery.data]);
+
+  useMessagingRealtime(activeRealtimeConversation, selfId);
+
+  const messagesInf = useInfiniteMessages(
+    channelFilter === "whatsapp" ? selectedLeadId : null,
   );
 
-  const filteredLeads = useMemo(
-    () => leads.filter((lead) => lead.channel === channelFilter),
-    [channelFilter],
+  const { sendMessage: sendMessageAction, isSending } = useMessageActions(
+    channelFilter === "whatsapp" ? selectedLeadId : null,
+    me,
   );
 
-  const selectedLead =
-    filteredLeads.find((lead) => lead.id === selectedLeadId) ??
-    filteredLeads[0] ??
-    null;
-  const selectedConversation = selectedLead
-    ? (chatByLead[selectedLead.id] ?? [])
-    : [];
-  const isDirectChannel = channelFilter === "direct";
+  const { typingUsers, signalTyping } = useTypingIndicator(
+    activeRealtimeConversation
+      ? { uuid: activeRealtimeConversation.uuid, id: activeRealtimeConversation.id }
+      : null,
+    me ? { id: me.id, name: me.name } : null,
+  );
+
+  const peerTyping = useMemo(
+    () => typingUsers.filter((u) => u.is_typing && u.user_id !== selfId),
+    [typingUsers, selfId],
+  );
+
+  const selectedConversation = useMemo(() => {
+    const pages = messagesInf.data?.pages ?? [];
+    const flat = pages.flatMap((p) => p.messages ?? []);
+    if (!flat.length) return [];
+    const chronological = [...flat].reverse();
+    return chronological.map((m) => messageToChatMessage(m, selfId));
+  }, [messagesInf.data, selfId]);
 
   const lastVendorMessageIndex = useMemo(() => {
     let last = -1;
@@ -52,46 +132,63 @@ export default function VendorLeads() {
     return last;
   }, [selectedConversation]);
 
-  /** "New messages" rule: divider before third message when enough history */
-  const newMessagesDividerAfterIndex =
-    selectedConversation.length >= 4 ? 1 : -1;
+  const selectedLead =
+    filteredLeads.find((lead) => lead.id === selectedLeadId) ?? filteredLeads[0] ?? null;
 
-  useEffect(() => {
-    if (!filteredLeads.length) return;
-    if (!filteredLeads.some((l) => l.id === selectedLeadId)) {
-      setSelectedLeadId(filteredLeads[0].id);
-    }
-  }, [channelFilter, filteredLeads, selectedLeadId]);
+  const isDirectChannel = channelFilter === "direct";
+
+  const handleSend = () => {
+    const t = messageDraft.trim();
+    if (!t || !selectedLeadId || isSending) return;
+    void sendMessageAction(t);
+    setMessageDraft("");
+  };
 
   return (
     <div className="p-4 md:p-6">
       <div className="space-y-5 md:space-y-6">
         <LeadsHeader />
 
+        {conversationsQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading your inbox…</p>
+        ) : null}
+
         <LeadsTabs
           channelFilter={channelFilter}
-          onChange={setChannelFilter}
+          onChange={(c) => {
+            setChannelFilter(c);
+            if (c === "direct") setChatSearch("");
+          }}
           directCount={directCount}
           whatsappCount={whatsappCount}
         />
 
         {isDirectChannel ? (
-          <DirectLeadsTable
-            leads={filteredLeads}
-            onOpenLeadDetails={setOpenLeadDetails}
-          />
+          <DirectLeadsTable leads={filteredLeads} onOpenLeadDetails={setOpenLeadDetails} />
         ) : (
           <div className="grid min-h-[min(640px,calc(100dvh-220px))] lg:grid-cols-[minmax(260px,300px)_1fr]">
             <WhatsAppLeadsList
               leads={filteredLeads}
               selectedLeadId={selectedLeadId}
-              onSelectLead={setSelectedLeadId}
+              onSelectLead={(id) => {
+                setSelectedLeadId(id);
+                setMessageDraft("");
+              }}
+              searchQuery={chatSearch}
+              onSearchChange={setChatSearch}
             />
             <WhatsAppChatInterface
               selectedLead={selectedLead}
               selectedConversation={selectedConversation}
               lastVendorMessageIndex={lastVendorMessageIndex}
-              newMessagesDividerAfterIndex={newMessagesDividerAfterIndex}
+              newMessagesDividerAfterIndex={-1}
+              messageDraft={messageDraft}
+              onMessageDraftChange={setMessageDraft}
+              onComposerTyping={signalTyping}
+              onSend={handleSend}
+              isSending={isSending}
+              messagesLoading={messagesInf.isLoading}
+              typingPeers={peerTyping}
             />
           </div>
         )}

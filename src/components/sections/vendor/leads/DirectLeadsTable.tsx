@@ -55,6 +55,13 @@ export function DirectLeadsTable({
             </tr>
           </thead>
           <tbody className="text-sm">
+            {leads.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                  No conversations yet. Direct message threads with customers will show in this table.
+                </td>
+              </tr>
+            ) : null}
             {leads.map((lead) => {
               const { date, time } = splitDateTime(lead.dateTime);
               return (

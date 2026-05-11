@@ -1,6 +1,8 @@
-import { Fragment } from "react";
+import { Fragment, useLayoutEffect, useRef } from "react";
+import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { TypingUser } from "@/types/message";
 import { CheckCheck, Paperclip, SendHorizontal, Smile } from "lucide-react";
 import { type Lead, type ChatMessage } from "./leadsData";
 
@@ -9,15 +11,38 @@ export function WhatsAppChatInterface({
   selectedConversation,
   lastVendorMessageIndex,
   newMessagesDividerAfterIndex,
+  messageDraft,
+  onMessageDraftChange,
+  onComposerTyping,
+  onSend,
+  isSending = false,
+  messagesLoading = false,
+  typingPeers = [],
 }: {
   selectedLead: Lead | null;
   selectedConversation: ChatMessage[];
   lastVendorMessageIndex: number;
   newMessagesDividerAfterIndex: number;
+  messageDraft: string;
+  onMessageDraftChange: (value: string) => void;
+  /** Fires while the vendor types (drives API typing + realtime for the other party). */
+  onComposerTyping?: () => void;
+  onSend: () => void;
+  isSending?: boolean;
+  messagesLoading?: boolean;
+  typingPeers?: TypingUser[];
 }) {
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = messagesScrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [selectedConversation, selectedLead?.id, messagesLoading]);
+
   return (
-    <div className="flex min-h-[480px] flex-col bg-[#FAF8FF]">
-      <div className="border-b border-neutral-200 bg-[#FAF8FF] px-5 py-4">
+    <div className="flex min-h-[480px] max-h-[calc(100dvh-11rem)] flex-col overflow-hidden bg-[#FAF8FF]">
+      <div className="shrink-0 border-b border-neutral-200 bg-[#FAF8FF] px-5 py-4">
         {selectedLead ? (
           <div className="flex items-center gap-3">
             <div className="flex size-11 items-center justify-center rounded-full bg-neutral-200/90 text-xs font-semibold text-neutral-700">
@@ -30,10 +55,16 @@ export function WhatsAppChatInterface({
                   ? ` - ${selectedLead.chatSubtitle}`
                   : ""}
               </p>
-              <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                <span className="inline-flex size-2 rounded-full bg-emerald-500" />
-                Online
-              </p>
+              {selectedLead.online ? (
+                <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                  <span className="inline-flex size-2 rounded-full bg-emerald-500" />
+                  Online
+                </p>
+              ) : (
+                <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                  Last seen {selectedLead.lastSeen}
+                </p>
+              )}
             </div>
           </div>
         ) : (
@@ -43,7 +74,16 @@ export function WhatsAppChatInterface({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-0 overflow-y-auto px-4 py-5 md:px-6">
+      <div
+        ref={messagesScrollRef}
+        className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-y-contain px-4 py-5 md:px-6"
+      >
+        {messagesLoading ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Loading messages…</p>
+        ) : null}
+        {!messagesLoading && selectedLead && selectedConversation.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">No messages yet. Say hello below.</p>
+        ) : null}
         {selectedConversation.map((message, idx) => (
           <Fragment key={message.id}>
             {idx === newMessagesDividerAfterIndex + 1 &&
@@ -93,7 +133,10 @@ export function WhatsAppChatInterface({
         ))}
       </div>
 
-      <div className="border-t border-neutral-200 bg-white p-4">
+      <div className="shrink-0 border-t border-neutral-200 bg-white px-4 pt-2">
+        <TypingIndicator users={typingPeers} />
+      </div>
+      <div className="shrink-0 border-neutral-200 bg-white px-4 pb-4 pt-0">
         <div className="flex items-center gap-2">
           {/* <button
             type="button"
@@ -111,8 +154,9 @@ export function WhatsAppChatInterface({
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  console.log(file); 
+                  console.log(file);
                 }
+                e.target.value = "";
               }}
             />
           </label>
@@ -120,6 +164,18 @@ export function WhatsAppChatInterface({
             <Input
               className="h-11 rounded-xl border border-neutral-200 bg-neutral-100/80 pr-11 text-sm shadow-inner placeholder:text-muted-foreground focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-sky-500/25"
               placeholder="Type your message here..."
+              value={messageDraft}
+              onChange={(e) => {
+                onMessageDraftChange(e.target.value)
+                onComposerTyping?.()
+              }}
+              disabled={!selectedLead || isSending}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  onSend();
+                }
+              }}
             />
             <button
               type="button"
@@ -134,6 +190,8 @@ export function WhatsAppChatInterface({
             size="icon"
             className="size-11 shrink-0 rounded-xl bg-sky-600 text-white shadow-sm hover:bg-sky-600/90"
             aria-label="Send message"
+            disabled={!selectedLead || isSending || !messageDraft.trim()}
+            onClick={onSend}
           >
             <SendHorizontal className="size-5" />
           </Button>

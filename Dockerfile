@@ -25,7 +25,7 @@ RUN npm ci --ignore-scripts
 
 # Copy source and build
 COPY . .
-RUN npm install && npm run build
+RUN npm run build
 
 # ─── Stage 2: Serve ──────────────────────────────────────────────────────────
 FROM nginx:1.27-alpine AS runner

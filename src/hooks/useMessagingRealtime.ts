@@ -7,6 +7,7 @@ import {
   appendOrMergeMessageInCache,
   removeMessageFromCache,
 } from '@/features/messaging/messageCache'
+import { applyNewMessagePreview } from '@/features/messaging/conversationCache'
 import { useEcho } from '@/hooks/useEcho'
 import { EchoService } from '@/services/echoService'
 import { useMessagingStore } from '@/store/messagingStore'
@@ -14,11 +15,15 @@ import type { Conversation } from '@/types/conversation'
 import type { InfiniteData } from '@tanstack/react-query'
 import type { MessagesPage } from '@/features/messaging/types'
 
-export function useMessagingRealtime(conversation: Conversation | null) {
+export function useMessagingRealtime(
+  conversation: Conversation | null,
+  selfUserId?: number,
+) {
   const echo = useEcho()
   const queryClient = useQueryClient()
   const setTypingUser = useMessagingStore((s) => s.setTypingUser)
   const clearTypingUser = useMessagingStore((s) => s.clearTypingUser)
+  const activeUuid = useMessagingStore((s) => s.activeConversationUuid)
   const typingTimers = React.useRef<Map<number, ReturnType<typeof setTimeout>>>(
     new Map(),
   )
@@ -47,7 +52,12 @@ export function useMessagingRealtime(conversation: Conversation | null) {
       {
         onMessageSent: (msg) => {
           appendOrMergeMessageInCache(queryClient, uuid, msg)
-          void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
+          if (typeof selfUserId === 'number' && selfUserId > 0) {
+            applyNewMessagePreview(queryClient, uuid, msg, {
+              selfUserId,
+              isActiveConversation: activeUuid === uuid,
+            })
+          }
         },
         onMessageEdited: (messageUuid, body, editedAt) => {
           queryClient.setQueryData<InfiniteData<MessagesPage>>(
@@ -74,12 +84,10 @@ export function useMessagingRealtime(conversation: Conversation | null) {
         },
       },
       {
-        onJoin: () => {
-          void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversation(uuid) })
-        },
-        onLeave: () => {
-          void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversation(uuid) })
-        },
+        // Presence join/leave can fire frequently (especially initial `here` batch),
+        // so avoid invalidating conversation detail on every presence change.
+        onJoin: () => {},
+        onLeave: () => {},
         onTyping: (tu) => {
           setTypingUser(uuid, tu)
           if (tu.is_typing) {
@@ -93,5 +101,13 @@ export function useMessagingRealtime(conversation: Conversation | null) {
         },
       },
     )
-  }, [echo, conversation, queryClient, setTypingUser, clearTypingUser])
+  }, [
+    echo,
+    conversation,
+    queryClient,
+    setTypingUser,
+    clearTypingUser,
+    activeUuid,
+    selfUserId,
+  ])
 }

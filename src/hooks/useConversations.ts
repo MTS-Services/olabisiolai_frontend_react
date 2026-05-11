@@ -10,5 +10,7 @@ export function useConversations() {
       const { conversations } = await getConversations({ page: 1 })
       return conversations
     },
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   })
 }

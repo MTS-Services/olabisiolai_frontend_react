@@ -4,9 +4,15 @@ import type { Message } from '@/types/message'
 /** Oldest → newest for top-to-bottom chat layout. */
 export function flattenMessagesChronological(pages: MessagesPage[]): Message[] {
   const out: Message[] = []
+  const seen = new Set<string>()
   for (let i = pages.length - 1; i >= 0; i--) {
     const p = pages[i]
-    out.push(...[...p.messages].reverse())
+    const chronological = [...p.messages].reverse()
+    for (const msg of chronological) {
+      if (seen.has(msg.uuid)) continue
+      seen.add(msg.uuid)
+      out.push(msg)
+    }
   }
   return out
 }

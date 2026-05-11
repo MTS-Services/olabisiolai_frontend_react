@@ -5,6 +5,16 @@ import type { Message } from '@/types/message'
 
 import type { MessagesPage } from '@/features/messaging/types'
 
+function removeMessageEverywhere(
+  pages: MessagesPage[],
+  predicate: (m: Message) => boolean,
+): MessagesPage[] {
+  return pages.map((p) => ({
+    ...p,
+    messages: p.messages.filter((m) => !predicate(m)),
+  }))
+}
+
 export function appendOrMergeMessageInCache(
   queryClient: QueryClient,
   conversationUuid: string,
@@ -14,18 +24,9 @@ export function appendOrMergeMessageInCache(
     QUERY_KEYS.messages(conversationUuid),
     (old) => {
       if (!old?.pages.length) return old
-      const pages = [...old.pages]
+      const pages = removeMessageEverywhere(old.pages, (m) => m.uuid === message.uuid)
       const first = pages[0]
       if (!first) return old
-      if (first.messages.some((m) => m.uuid === message.uuid)) {
-        pages[0] = {
-          ...first,
-          messages: first.messages.map((m) =>
-            m.uuid === message.uuid ? { ...m, ...message } : m,
-          ),
-        }
-        return { ...old, pages }
-      }
       pages[0] = {
         ...first,
         messages: [message, ...first.messages],
@@ -63,12 +64,15 @@ export function replaceTempMessageInCache(
     QUERY_KEYS.messages(conversationUuid),
     (old) => {
       if (!old) return old
-      const pages = old.pages.map((p) => ({
-        ...p,
-        messages: p.messages.map((m) =>
-          m.uuid === tempId || m._tempId === tempId ? real : m,
-        ),
-      }))
+      const pages = removeMessageEverywhere(
+        old.pages.map((p) => ({
+          ...p,
+          messages: p.messages.map((m) =>
+            m.uuid === tempId || m._tempId === tempId ? real : m,
+          ),
+        })),
+        (m) => m.uuid === real.uuid && m._tempId !== tempId,
+      )
       return { ...old, pages }
     },
   )

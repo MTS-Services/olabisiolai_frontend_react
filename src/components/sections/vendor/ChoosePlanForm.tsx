@@ -207,10 +207,8 @@ export default function ChoosePlanForm() {
     setState(selectedLocation.state);
     setCity(selectedLocation.city);
     setLgaInput(selectedLocation.lga);
-    const firstTier = selectedLocation.boost?.tiers[0];
-    setSelectedTopSlotKey(firstTier?.key ?? "");
-    const firstDuration = (selectedLocation.boost?.durations ?? []).find((duration) => duration.enabled);
-    setSelectedDurationDays(firstDuration ? String(firstDuration.days) : "");
+    setSelectedTopSlotKey("");
+    setSelectedDurationDays("");
   }, [selectedLocation]);
 
   useEffect(() => {

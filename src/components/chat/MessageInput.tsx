@@ -40,6 +40,7 @@ export function MessageInput({
 
   const handleChange = (v: string) => {
     onChange(v)
+    onTyping()
     if (typingTimer.current) clearTimeout(typingTimer.current)
     typingTimer.current = setTimeout(() => {
       onTyping()

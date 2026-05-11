@@ -14,6 +14,7 @@ import {
   removeMessageFromCache,
   replaceTempMessageInCache,
 } from '@/features/messaging/messageCache'
+import { applyNewMessagePreview } from '@/features/messaging/conversationCache'
 import type { Message } from '@/types/message'
 import type { MessagingUser } from '@/types/user'
 
@@ -70,7 +71,10 @@ export function useMessageActions(
           parentUuid,
         })
         replaceTempMessageInCache(queryClient, conversationUuid, tempId, real)
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
+        applyNewMessagePreview(queryClient, conversationUuid, real, {
+          selfUserId: currentUser.id,
+          isActiveConversation: true,
+        })
       } catch {
         toast.error('Failed to send message')
         queryClient.setQueryData<InfiniteData<MessagesPage>>(

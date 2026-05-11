@@ -1,6 +1,8 @@
 import { Fragment, useLayoutEffect, useRef } from "react";
+import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { TypingUser } from "@/types/message";
 import { CheckCheck, Paperclip, SendHorizontal, Smile } from "lucide-react";
 import { type Lead, type ChatMessage } from "./leadsData";
 
@@ -11,9 +13,11 @@ export function WhatsAppChatInterface({
   newMessagesDividerAfterIndex,
   messageDraft,
   onMessageDraftChange,
+  onComposerTyping,
   onSend,
   isSending = false,
   messagesLoading = false,
+  typingPeers = [],
 }: {
   selectedLead: Lead | null;
   selectedConversation: ChatMessage[];
@@ -21,9 +25,12 @@ export function WhatsAppChatInterface({
   newMessagesDividerAfterIndex: number;
   messageDraft: string;
   onMessageDraftChange: (value: string) => void;
+  /** Fires while the vendor types (drives API typing + realtime for the other party). */
+  onComposerTyping?: () => void;
   onSend: () => void;
   isSending?: boolean;
   messagesLoading?: boolean;
+  typingPeers?: TypingUser[];
 }) {
   const messagesScrollRef = useRef<HTMLDivElement>(null);
 
@@ -126,7 +133,10 @@ export function WhatsAppChatInterface({
         ))}
       </div>
 
-      <div className="shrink-0 border-t border-neutral-200 bg-white p-4">
+      <div className="shrink-0 border-t border-neutral-200 bg-white px-4 pt-2">
+        <TypingIndicator users={typingPeers} />
+      </div>
+      <div className="shrink-0 border-neutral-200 bg-white px-4 pb-4 pt-0">
         <div className="flex items-center gap-2">
           {/* <button
             type="button"
@@ -155,7 +165,10 @@ export function WhatsAppChatInterface({
               className="h-11 rounded-xl border border-neutral-200 bg-neutral-100/80 pr-11 text-sm shadow-inner placeholder:text-muted-foreground focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-sky-500/25"
               placeholder="Type your message here..."
               value={messageDraft}
-              onChange={(e) => onMessageDraftChange(e.target.value)}
+              onChange={(e) => {
+                onMessageDraftChange(e.target.value)
+                onComposerTyping?.()
+              }}
               disabled={!selectedLead || isSending}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {

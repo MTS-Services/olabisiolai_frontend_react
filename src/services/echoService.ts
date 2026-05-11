@@ -100,6 +100,11 @@ export class EchoService {
     presenceChannel.listen(ECHO_EVENTS.userTyping, (p: TypingUser) => {
       presence.onTyping(p)
     })
+    ;(presenceChannel as unknown as {
+      listenForWhisper?: (event: string, cb: (payload: TypingUser) => void) => void
+    }).listenForWhisper?.('typing', (p: TypingUser) => {
+      presence.onTyping(p)
+    })
 
     return () => {
       privateChannel.stopListening(ECHO_EVENTS.messageSent)
@@ -109,6 +114,16 @@ export class EchoService {
       presenceChannel.stopListening(ECHO_EVENTS.userTyping)
       this.echo.leave(`conversation.${conversationId}`)
     }
+  }
+
+  whisperTyping(
+    conversationId: number,
+    payload: { user_id: number; user_name: string; is_typing: boolean },
+  ) {
+    const channel = this.echo.join(`conversation.${conversationId}`) as unknown as {
+      whisper?: (event: string, data: unknown) => void
+    }
+    channel.whisper?.('typing', payload)
   }
 
   subscribeToUserChannel(userId: number, handlers: UserEventHandlers): () => void {

@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 import { getConversations } from "@/api/conversations";
-import { getMessages, sendMessage } from "@/api/messages";
 import { useAuth } from "@/auth/useAuth";
+import type { MessagingUser } from "@/types/user";
+import { useMessagingRealtime } from "@/hooks/useMessagingRealtime";
+import { useInfiniteMessages } from "@/hooks/useInfiniteMessages";
+import { useMessageActions } from "@/hooks/useMessageActions";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import type { Conversation } from "@/types/conversation";
 import { DirectLeadsTable } from "@/components/sections/vendor/leads/DirectLeadsTable";
 import { LeadDetailsModal } from "@/components/sections/vendor/leads/LeadDetailsModal";
 import { LeadsTabs } from "@/components/sections/vendor/leads/LeadsChannelTabs";
@@ -16,8 +21,17 @@ import { conversationToLead, messageToChatMessage } from "@/utils/vendorLeads";
 
 export default function VendorLeads() {
   const { user, isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
   const selfId = Number(user?.id ?? 0);
+  const me = useMemo((): MessagingUser | null => {
+    if (!user) return null;
+    return {
+      id: Number(user.id),
+      name: user.name ?? "You",
+      avatar: null,
+      status: "online",
+      last_seen_at: null,
+    };
+  }, [user]);
 
   const [channelFilter, setChannelFilter] = useState<LeadChannel>("whatsapp");
   const [selectedLeadId, setSelectedLeadId] = useState("");
@@ -74,34 +88,41 @@ export default function VendorLeads() {
     }
   }, [channelFilter, filteredLeads, selectedLeadId]);
 
-  const messagesQuery = useQuery({
-    queryKey: ["vendor-lead-messages", selectedLeadId],
-    queryFn: async () => {
-      const { messages } = await getMessages(selectedLeadId);
-      return messages;
-    },
-    enabled: Boolean(
-      channelFilter === "whatsapp" && selectedLeadId && isAuthenticated && selfId > 0,
-    ),
-  });
+  const activeRealtimeConversation = useMemo((): Conversation | null => {
+    if (channelFilter !== "whatsapp" || !selectedLeadId) return null;
+    return conversationsQuery.data?.find((c) => c.uuid === selectedLeadId) ?? null;
+  }, [channelFilter, selectedLeadId, conversationsQuery.data]);
 
-  const sendMutation = useMutation({
-    mutationFn: (body: string) => sendMessage(selectedLeadId, body.trim()),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["vendor-lead-messages", selectedLeadId] });
-      await queryClient.invalidateQueries({ queryKey: ["vendor-conversations"] });
-      setMessageDraft("");
-    },
-    onError: () => {
-      toast.error("Could not send message");
-    },
-  });
+  useMessagingRealtime(activeRealtimeConversation, selfId);
+
+  const messagesInf = useInfiniteMessages(
+    channelFilter === "whatsapp" ? selectedLeadId : null,
+  );
+
+  const { sendMessage: sendMessageAction, isSending } = useMessageActions(
+    channelFilter === "whatsapp" ? selectedLeadId : null,
+    me,
+  );
+
+  const { typingUsers, signalTyping } = useTypingIndicator(
+    activeRealtimeConversation
+      ? { uuid: activeRealtimeConversation.uuid, id: activeRealtimeConversation.id }
+      : null,
+    me ? { id: me.id, name: me.name } : null,
+  );
+
+  const peerTyping = useMemo(
+    () => typingUsers.filter((u) => u.is_typing && u.user_id !== selfId),
+    [typingUsers, selfId],
+  );
 
   const selectedConversation = useMemo(() => {
-    if (!messagesQuery.data?.length) return [];
-    const chronological = [...messagesQuery.data].reverse();
+    const pages = messagesInf.data?.pages ?? [];
+    const flat = pages.flatMap((p) => p.messages ?? []);
+    if (!flat.length) return [];
+    const chronological = [...flat].reverse();
     return chronological.map((m) => messageToChatMessage(m, selfId));
-  }, [messagesQuery.data, selfId]);
+  }, [messagesInf.data, selfId]);
 
   const lastVendorMessageIndex = useMemo(() => {
     let last = -1;
@@ -118,8 +139,9 @@ export default function VendorLeads() {
 
   const handleSend = () => {
     const t = messageDraft.trim();
-    if (!t || !selectedLeadId || sendMutation.isPending) return;
-    sendMutation.mutate(t);
+    if (!t || !selectedLeadId || isSending) return;
+    void sendMessageAction(t);
+    setMessageDraft("");
   };
 
   return (
@@ -162,9 +184,11 @@ export default function VendorLeads() {
               newMessagesDividerAfterIndex={-1}
               messageDraft={messageDraft}
               onMessageDraftChange={setMessageDraft}
+              onComposerTyping={signalTyping}
               onSend={handleSend}
-              isSending={sendMutation.isPending}
-              messagesLoading={messagesQuery.isLoading}
+              isSending={isSending}
+              messagesLoading={messagesInf.isLoading}
+              typingPeers={peerTyping}
             />
           </div>
         )}

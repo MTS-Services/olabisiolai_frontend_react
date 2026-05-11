@@ -49,11 +49,14 @@ export function ConversationView({
   const me = authUserToMessagingUser(selfUser)
   const selfId = me?.id ?? 0
 
-  useMessagingRealtime(conversation ?? null)
+  useMessagingRealtime(conversation ?? null, selfId)
 
   const { sendMessage, editMessage, deleteMessage, isSending } =
     useMessageActions(conversationUuid, me)
-  const { typingUsers, signalTyping } = useTypingIndicator(conversationUuid)
+  const { typingUsers, signalTyping } = useTypingIndicator(
+    conversation ? { uuid: conversation.uuid, id: conversation.id } : null,
+    me ? { id: me.id, name: me.name } : null,
+  )
   const { files, addFiles, removeFile, clearFiles } = useAttachmentUpload()
 
   const replyingTo = useUiStore((s) => s.replyingTo)

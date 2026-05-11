@@ -8,6 +8,7 @@ import { QUERY_KEYS } from '@/constants/queryKeys'
 import type { ReverbEcho } from '@/lib/echo'
 import { EchoService } from '@/services/echoService'
 import { notifyNewMessage } from '@/services/notificationService'
+import { bumpConversationToTopInCache, updateConversationInCache } from '@/features/messaging/conversationCache'
 
 export type EchoContextValue = {
   echo: ReverbEcho | null
@@ -21,6 +22,7 @@ export function EchoProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (!messagingEnv.isReverbConfigured()) {
+      disconnectEcho()
       setEcho(null)
       return
     }
@@ -31,10 +33,9 @@ export function EchoProvider({ children }: { children: React.ReactNode }) {
     }
     const instance = createEcho(accessToken)
     setEcho(instance)
-    return () => {
-      disconnectEcho()
-      setEcho(null)
-    }
+    // No cleanup disconnect: Strict Mode would close the socket mid-handshake and break
+    // presence/typing. `createEcho()` reconnects when `accessToken` changes; logout
+    // clears the socket in the `!isAuthenticated` branch above.
   }, [isAuthenticated, accessToken])
 
   React.useEffect(() => {
@@ -43,14 +44,31 @@ export function EchoProvider({ children }: { children: React.ReactNode }) {
     const uid = Number(user.id)
     return svc.subscribeToUserChannel(uid, {
       onNewMessageNotification: (payload) => {
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
+        const conversationUuid = String(payload.conversation_uuid ?? '')
+        const unreadCountRaw = payload.unread_count
+        const unreadCount =
+          typeof unreadCountRaw === 'number'
+            ? unreadCountRaw
+            : Number.isFinite(Number(unreadCountRaw))
+              ? Number(unreadCountRaw)
+              : null
+
+        if (conversationUuid) {
+          updateConversationInCache(queryClient, conversationUuid, (c) => ({
+            ...c,
+            unread_count: unreadCount ?? c.unread_count,
+            updated_at: new Date().toISOString(),
+          }))
+          bumpConversationToTopInCache(queryClient, conversationUuid)
+        } else {
+          void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
+        }
         const sender = String(payload.sender_name ?? 'Message')
         const preview = String(payload.preview ?? '')
         notifyNewMessage(sender, preview)
       },
-      onUserPresence: () => {
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
-      },
+      // Presence status can be very chatty; avoid invalidation loops from frequent broadcasts.
+      onUserPresence: () => {},
     })
   }, [echo, user?.id])
 

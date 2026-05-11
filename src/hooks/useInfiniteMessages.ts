@@ -37,18 +37,12 @@ export function useInfiniteMessages(conversationUuid: string | null) {
         QUERY_KEYS.messages(conversationUuid),
         (old) => {
           if (!old?.pages.length) return old
-          const pages = [...old.pages]
+          const pages = old.pages.map((p) => ({
+            ...p,
+            messages: p.messages.filter((m) => m.uuid !== message.uuid),
+          }))
           const first = pages[0]
           if (!first) return old
-          if (first.messages.some((m) => m.uuid === message.uuid)) {
-            pages[0] = {
-              ...first,
-              messages: first.messages.map((m) =>
-                m.uuid === message.uuid ? { ...m, ...message } : m,
-              ),
-            }
-            return { ...old, pages }
-          }
           pages[0] = {
             ...first,
             messages: [message, ...first.messages],

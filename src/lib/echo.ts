@@ -58,8 +58,8 @@ export function createEcho(accessToken: string | null): ReverbEcho | null {
     wsPort: messagingEnv.reverbPort,
     wssPort: messagingEnv.reverbPort,
     forceTLS: useTls,
-    /** Avoid noisy failed `wss://` attempts when running Reverb with `REVERB_SCHEME=http`. */
-    enabledTransports: useTls ? ['ws', 'wss'] : ['ws'],
+    /** On HTTPS pages Pusher already prefers TLS; avoid plain `ws://` attempts to the same host. */
+    enabledTransports: useTls ? ['wss'] : ['ws'],
     disableStats: true,
     authEndpoint: messagingEnv.broadcastingAuthUrl,
     auth: { headers },

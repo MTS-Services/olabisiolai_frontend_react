@@ -11,8 +11,9 @@ function viteString(name: string): string | undefined {
 
 function reverbPortFromEnv(): number {
   const raw = viteString('VITE_REVERB_PORT')
-  const n = raw != null && raw !== '' ? Number(raw) : 8080
-  return Number.isFinite(n) && n > 0 ? n : 8080
+  /** Default 8089 matches Laravel `.env.example` / Docker Reverb (`reverb:start --port=8089`). */
+  const n = raw != null && raw !== '' ? Number(raw) : 8089
+  return Number.isFinite(n) && n > 0 ? n : 8089
 }
 
 export const messagingEnv = {

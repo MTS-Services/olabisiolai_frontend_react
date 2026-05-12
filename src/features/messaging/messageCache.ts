@@ -60,6 +60,8 @@ export function replaceTempMessageInCache(
   tempId: string,
   real: Message,
 ) {
+  /** Tie the server row to the optimistic slot so dedupe does not delete the only copy. */
+  const merged: Message = { ...real, _tempId: tempId }
   queryClient.setQueryData<InfiniteData<MessagesPage>>(
     QUERY_KEYS.messages(conversationUuid),
     (old) => {
@@ -68,11 +70,18 @@ export function replaceTempMessageInCache(
         old.pages.map((p) => ({
           ...p,
           messages: p.messages.map((m) =>
-            m.uuid === tempId || m._tempId === tempId ? real : m,
+            m.uuid === tempId || m._tempId === tempId ? merged : m,
           ),
         })),
         (m) => m.uuid === real.uuid && m._tempId !== tempId,
-      )
+      ).map((p) => ({
+        ...p,
+        messages: p.messages.map((m) =>
+          m.uuid === real.uuid && m._tempId === tempId
+            ? { ...m, _tempId: undefined, _isOptimistic: undefined }
+            : m,
+        ),
+      }))
       return { ...old, pages }
     },
   )

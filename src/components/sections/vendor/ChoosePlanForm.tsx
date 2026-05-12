@@ -141,12 +141,18 @@ export default function ChoosePlanForm() {
   const { data: formOptions, isPending: formOptionsLoading, isError: formOptionsError } =
     useVendorBusinessFormOptions();
   const categories = formOptions?.categories ?? [];
-  const locationTree = useMemo(() => normalizeLocationTree(formOptions?.locations), [formOptions?.locations]);
-  const locationOptions = useMemo(() => Object.keys(locationTree), [locationTree]);
+  const parsedLocations = useMemo(() => parseVendorLocationOptions(formOptions?.locations), [formOptions?.locations]);
+  const locationOptions = useMemo(
+    () => parsedLocations.map((entry) => ({ value: entry.id, label: entry.label })),
+    [parsedLocations],
+  );
   const [categoryId, setCategoryId] = useState("");
-  const [location, setLocation] = useState("");
+  const [locationId, setLocationId] = useState("");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
+  const [lgaInput, setLgaInput] = useState("");
+  const [selectedTopSlotKey, setSelectedTopSlotKey] = useState("");
+  const [selectedDurationDays, setSelectedDurationDays] = useState("");
   const [services, setServices] = useState<string[]>([""]);
   const [logo, setLogo] = useState<File | null>(null);
   const [coverPhotos, setCoverPhotos] = useState<File[]>([]);
@@ -162,23 +168,48 @@ export default function ChoosePlanForm() {
       next[index] = value;
       return next;
     });
-  const stateOptions = useMemo(() => {
-    if (!location) return [];
-    return Object.keys(locationTree[location] ?? {});
-  }, [location, locationTree]);
-  const cityOptions = useMemo(() => {
-    if (!location || !state) return [];
-    return locationTree[location]?.[state] ?? [];
-  }, [location, state, locationTree]);
+  const selectedLocation = useMemo(
+    () => parsedLocations.find((entry) => entry.id === locationId) ?? null,
+    [locationId, parsedLocations],
+  );
+  const stateOptions = useMemo(
+    () => (selectedLocation?.state ? [selectedLocation.state] : []),
+    [selectedLocation?.state],
+  );
+  const cityOptions = useMemo(
+    () => (selectedLocation?.city ? [selectedLocation.city] : []),
+    [selectedLocation?.city],
+  );
+  const enabledDurations = useMemo(
+    () => (selectedLocation?.boost?.durations ?? []).filter((duration) => duration.enabled),
+    [selectedLocation?.boost?.durations],
+  );
+  const selectedTopSlot = useMemo(
+    () => selectedLocation?.boost?.tiers.find((tier) => tier.key === selectedTopSlotKey) ?? null,
+    [selectedLocation?.boost?.tiers, selectedTopSlotKey],
+  );
+  const selectedDuration = useMemo(
+    () => enabledDurations.find((duration) => String(duration.days) === selectedDurationDays) ?? null,
+    [enabledDurations, selectedDurationDays],
+  );
+  const selectedCombinedPrice = useMemo(
+    () => (selectedTopSlot?.priceAmount ?? 0) + (selectedDuration?.priceAmount ?? 0),
+    [selectedDuration?.priceAmount, selectedTopSlot?.priceAmount],
+  );
 
   useEffect(() => {
-    setState("");
-    setCity("");
-  }, [location]);
-
-  useEffect(() => {
-    setCity("");
-  }, [state]);
+    if (!selectedLocation) {
+      setState("");
+      setCity("");
+      setLgaInput("");
+      return;
+    }
+    setState(selectedLocation.state);
+    setCity(selectedLocation.city);
+    setLgaInput(selectedLocation.lga);
+    setSelectedTopSlotKey("");
+    setSelectedDurationDays("");
+  }, [selectedLocation]);
 
   useEffect(() => {
     if (!logo) {
@@ -216,7 +247,7 @@ export default function ChoosePlanForm() {
     const normalizedServices = services.map((service) => service.trim()).filter(Boolean);
 
     const lga = showLocationSection ? String(formData.get("lga") ?? "").trim() : "";
-    if (!categoryId || !location) {
+    if (!categoryId || !locationId) {
       setSubmitError("Please select category and location.");
       return;
     }
@@ -232,7 +263,7 @@ export default function ChoosePlanForm() {
     createBusinessMutation.mutate({
       category_id: categoryId,
       business_name: String(formData.get("businessName") ?? ""),
-      location,
+      location: selectedLocation?.location ?? "",
       state: showLocationSection ? state : "",
       city: showLocationSection ? city : "",
       lga,
@@ -318,8 +349,8 @@ export default function ChoosePlanForm() {
                 </>
               }
               rightIcon={MapPin}
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
               disabled={formOptionsLoading || locationOptions.length === 0}
               required
             >
@@ -331,8 +362,8 @@ export default function ChoosePlanForm() {
                     : "Select location"}
               </option>
               {locationOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </SelectField>
@@ -343,7 +374,7 @@ export default function ChoosePlanForm() {
               label="State"
               value={state}
               onChange={(e) => setState(e.target.value)}
-              disabled={!location || stateOptions.length === 0}
+              disabled={!selectedLocation || stateOptions.length === 0}
               required={showLocationSection}
             >
               <option value="">Select state</option>
@@ -357,7 +388,7 @@ export default function ChoosePlanForm() {
               label="City"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              disabled={!state || cityOptions.length === 0}
+              disabled={!selectedLocation || cityOptions.length === 0}
               required={showLocationSection}
             >
               <option value="">Select city</option>
@@ -375,11 +406,127 @@ export default function ChoosePlanForm() {
             </Label>
             <Input
               name="lga"
+              value={lgaInput}
+              onChange={(e) => setLgaInput(e.target.value)}
               placeholder="Enter your local government area"
               className="h-11 border-border-light bg-secondary/80 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
+              readOnly={Boolean(selectedLocation?.lga)}
               required
             />
           </div>
+
+          {selectedLocation ? (
+            <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
+              <p className="text-sm font-semibold text-foreground">Boost options (Optional)</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {selectedLocation.state} / {selectedLocation.city} / {selectedLocation.lga}
+              </p>
+
+              {selectedLocation.boost?.enabled ? (
+                <div className="mt-4 space-y-3">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-md border border-sky-100 bg-white px-3 py-2">
+                      <p className="text-[11px] uppercase text-muted-foreground">Total slots</p>
+                      <p className="text-lg font-semibold text-foreground">{selectedLocation.boost.stats.totalSlots}</p>
+                    </div>
+                    <div className="rounded-md border border-sky-100 bg-white px-3 py-2">
+                      <p className="text-[11px] uppercase text-muted-foreground">Sold</p>
+                      <p className="text-lg font-semibold text-foreground">{selectedLocation.boost.stats.slotsSold}</p>
+                    </div>
+                    <div className="rounded-md border border-sky-100 bg-white px-3 py-2">
+                      <p className="text-[11px] uppercase text-muted-foreground">Remaining</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {selectedLocation.boost.stats.slotsRemaining}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Top slots & price</p>
+                    {selectedLocation.boost.tiers.length > 0 ? (
+                      <ul className="grid gap-2 sm:grid-cols-2">
+                        {selectedLocation.boost.tiers.map((tier) => (
+                          <li
+                            key={tier.key}
+                            className="rounded-md border border-sky-100 bg-white px-3 py-2 text-xs text-foreground"
+                          >
+                            <label className="flex cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                checked={selectedTopSlotKey === tier.key}
+                                onChange={(e) =>
+                                  setSelectedTopSlotKey(e.target.checked ? tier.key : "")
+                                }
+                              />
+                              <span className="font-semibold">{tier.label}</span>
+                              <span className="text-muted-foreground">Slots: {tier.totalSlots}</span>
+                              <span className="text-muted-foreground">Price: {formatNaira(tier.priceAmount)}</span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No top slot config found for this location.</p>
+                    )}
+                    {selectedTopSlot ? (
+                      <p className="text-xs text-sky-900">
+                        Selected: <span className="font-semibold">{selectedTopSlot.label}</span> | Slots:{" "}
+                        {selectedTopSlot.totalSlots} | Price: {formatNaira(selectedTopSlot.priceAmount)}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Durations</p>
+                    {selectedLocation.boost.durations.length > 0 ? (
+                      <ul className="flex flex-wrap gap-2">
+                        {enabledDurations.map((duration) => (
+                          <li
+                            key={duration.days}
+                            className="rounded-md border border-sky-100 bg-white px-2.5 py-1 text-xs text-foreground"
+                          >
+                            <label className="flex cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                checked={selectedDurationDays === String(duration.days)}
+                                onChange={(e) =>
+                                  setSelectedDurationDays(e.target.checked ? String(duration.days) : "")
+                                }
+                              />
+                              <span>
+                                {duration.days} days - {formatNaira(duration.priceAmount)}
+                              </span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No duration pricing configured.</p>
+                    )}
+                    {selectedDuration ? (
+                      <p className="text-xs text-sky-900">
+                        Selected duration: <span className="font-semibold">{selectedDuration.days} days</span> | Price:{" "}
+                        {formatNaira(selectedDuration.priceAmount)}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {(selectedTopSlot || selectedDuration) && (
+                    <div className="rounded-md border border-sky-200 bg-white px-3 py-2">
+                      <p className="text-[11px] uppercase text-muted-foreground">Total selected price</p>
+                      <p className="text-base font-semibold text-foreground">{formatNaira(selectedCombinedPrice)}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  This location has no active slot configuration yet.
+                </p>
+              )}
+            </div>
+          ) : null}
 
           <div>
             <Label>Full address</Label>
@@ -670,80 +817,145 @@ function getMessageFromUnknown(error: unknown): string {
   return "Could not create business profile.";
 }
 
-type LocationTree = Record<string, Record<string, string[]>>;
+type BoostTierView = {
+  key: string;
+  label: string;
+  totalSlots: number;
+  priceAmount: number;
+};
 
-function normalizeLocationTree(raw: unknown): LocationTree {
-  const out: LocationTree = {};
+type BoostDurationView = {
+  days: number;
+  enabled: boolean;
+  priceAmount: number;
+};
 
-  const setRow = (locationName: string, stateName: string, cityName: string) => {
-    const location = locationName.trim();
-    const state = stateName.trim();
-    const city = cityName.trim();
-    if (!location || !state || !city) return;
-    if (!out[location]) out[location] = {};
-    if (!out[location][state]) out[location][state] = [];
-    if (!out[location][state].includes(city)) out[location][state].push(city);
-  };
-
-  const parseNode = (node: unknown, inheritedLocation?: string, inheritedState?: string) => {
-    if (Array.isArray(node)) {
-      node.forEach((item) => parseNode(item, inheritedLocation, inheritedState));
-      return;
-    }
-    if (!node || typeof node !== "object") return;
-    const record = node as Record<string, unknown>;
-
-    const locationName =
-      readString(record.name) ??
-      readString(record.location) ??
-      readString(record.country) ??
-      inheritedLocation;
-    const stateName = readString(record.state) ?? inheritedState;
-
-    const citiesCandidate = record.cities ?? record.city;
-    if (Array.isArray(citiesCandidate) && locationName && stateName) {
-      citiesCandidate.forEach((city) => setRow(locationName, stateName, String(city)));
-    }
-
-    if (Array.isArray(record.states) && locationName) {
-      (record.states as unknown[]).forEach((stateNode) => parseNode(stateNode, locationName));
-    }
-
-    if (record.locations && Array.isArray(record.locations)) {
-      parseNode(record.locations);
-    }
-
-    Object.entries(record).forEach(([key, value]) => {
-      if (["states", "cities", "city", "locations"].includes(key)) return;
-
-      if (Array.isArray(value)) {
-        if (value.every((entry) => typeof entry === "string") && locationName) {
-          value.forEach((entry) => setRow(locationName, key, String(entry)));
-          return;
-        }
-        parseNode(value, locationName ?? key, stateName);
-        return;
-      }
-
-      if (value && typeof value === "object") {
-        parseNode(value, locationName ?? key, stateName);
-      }
-    });
-  };
-
-  parseNode(raw);
-
-  if (Object.keys(out).length === 0) {
-    out.Nigeria = {
-      Lagos: ["Ikeja", "Victoria Island", "Lekki"],
+type ParsedLocationOption = {
+  id: string;
+  location: string;
+  state: string;
+  city: string;
+  lga: string;
+  label: string;
+  boost: {
+    enabled: boolean;
+    tiers: BoostTierView[];
+    durations: BoostDurationView[];
+    stats: {
+      totalSlots: number;
+      slotsSold: number;
+      slotsRemaining: number;
     };
-  }
+  } | null;
+};
 
-  return out;
+function parseVendorLocationOptions(raw: unknown): ParsedLocationOption[] {
+  const rows = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object" && Array.isArray((raw as Record<string, unknown>).data)
+      ? ((raw as Record<string, unknown>).data as unknown[])
+      : [];
+  if (rows.length === 0) return [];
+  return rows
+    .map((item, index) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const state = readNestedString(record, ["state", "name"]);
+      const city = readNestedString(record, ["city", "name"]);
+      const lga = readNestedString(record, ["lga", "name"]);
+      const country = readNestedString(record, ["country", "name"]) ?? "Nigeria";
+      const idValue = readString(record.id) ?? String(record.id ?? `${state}-${city}-${lga}-${index}`);
+      if (!state || !city || !lga) return null;
+
+      return {
+        id: idValue,
+        location: country,
+        state,
+        city,
+        lga,
+        label: `${state} / ${city} / ${lga}`,
+        boost: parseBoostData(readNestedValue(record, ["lga", "boost"])),
+      } satisfies ParsedLocationOption;
+    })
+    .filter((entry): entry is ParsedLocationOption => entry !== null);
+}
+
+function parseBoostData(raw: unknown): ParsedLocationOption["boost"] {
+  if (!raw || typeof raw !== "object") return null;
+  const record = raw as Record<string, unknown>;
+  const tiersRaw = Array.isArray(record.tiers) ? record.tiers : [];
+  const durationsRaw = Array.isArray(record.durations) ? record.durations : [];
+  const statsRaw =
+    record.stats && typeof record.stats === "object"
+      ? (record.stats as Record<string, unknown>)
+      : ({} as Record<string, unknown>);
+
+  return {
+    enabled: Boolean(record.enabled),
+    tiers: tiersRaw
+      .map((tier, index) => {
+        if (!tier || typeof tier !== "object") return null;
+        const tierRecord = tier as Record<string, unknown>;
+        return {
+          key: readString(tierRecord.key) ?? `tier-${index + 1}`,
+          label: readString(tierRecord.label) ?? readString(tierRecord.name) ?? `Tier ${index + 1}`,
+          totalSlots: toNumber(tierRecord.total_slots ?? tierRecord.totalSlots),
+          priceAmount: toNumber(tierRecord.price_amount ?? tierRecord.priceAmount ?? tierRecord.price),
+        } satisfies BoostTierView;
+      })
+      .filter((tier): tier is BoostTierView => tier !== null),
+    durations: durationsRaw
+      .map((duration) => {
+        if (!duration || typeof duration !== "object") return null;
+        const durationRecord = duration as Record<string, unknown>;
+        return {
+          days: toNumber(durationRecord.days ?? durationRecord.duration_days),
+          enabled: Boolean(durationRecord.enabled ?? durationRecord.is_active),
+          priceAmount: toNumber(durationRecord.price_amount ?? durationRecord.priceAmount ?? durationRecord.price),
+        } satisfies BoostDurationView;
+      })
+      .filter((duration): duration is BoostDurationView => duration !== null && duration.days > 0),
+    stats: {
+      totalSlots: toNumber(statsRaw.total_slots ?? statsRaw.totalSlots),
+      slotsSold: toNumber(statsRaw.slots_sold ?? statsRaw.slotsSold),
+      slotsRemaining: toNumber(statsRaw.slots_remaining ?? statsRaw.slotsRemaining),
+    },
+  };
+}
+
+function readNestedValue(record: Record<string, unknown>, path: string[]): unknown {
+  let current: unknown = record;
+  for (const key of path) {
+    if (!current || typeof current !== "object") return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current;
+}
+
+function readNestedString(record: Record<string, unknown>, path: string[]): string | undefined {
+  return readString(readNestedValue(record, path));
 }
 
 function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function toNumber(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
+function formatNaira(amount: number): string {
+  if (!Number.isFinite(amount) || amount <= 0) return "Free";
+  try {
+    return `₦${new Intl.NumberFormat("en-NG").format(Math.round(amount))}`;
+  } catch {
+    return `₦${Math.round(amount).toLocaleString()}`;
+  }
 }
 
 function isAcceptedImage(file: File): boolean {

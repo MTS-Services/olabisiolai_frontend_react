@@ -1,0 +1,79 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+const mockPlans = [
+  { name: "Basic Boost", price: "$29", features: ["7 days visibility", "Basic analytics"] },
+  { name: "Premium Boost", price: "$79", features: ["30 days visibility", "Advanced analytics", "Priority placement"] },
+  { name: "Enterprise Boost", price: "$199", features: ["90 days visibility", "Full analytics", "Top placement", "Dedicated support"] },
+];
+
+export function BasicBoost() {
+  const navigate = useNavigate();
+  
+  const handleUpgradeClick = () => {
+    navigate("/vendor/choose-your-plan");
+  };
+
+  return (
+    <div className="relative">
+      {/* Full Page Overlay */}
+      <div className="absolute inset-0 bg-white/40 z-20 flex flex-col items-center justify-center gap-3 p-8">
+        <div className="w-13 h-13 rounded-full bg-brand-red flex items-center justify-center p-3">
+          <Lock className="text-popover-foreground w-6 h-6" />
+        </div>
+        <p className="text-lg font-semibold text-popover-foreground">Upgrade to Premium</p>
+        <p className="text-sm text-popover-foreground text-center max-w-[260px]">
+          Unlock premium boost plans, enhanced visibility, and advanced promotional features.
+        </p>
+        <button 
+          onClick={handleUpgradeClick}
+          className="bg-red-600 hover:bg-brand-red text-text-white rounded-full px-6 py-3 text-sm font-medium"
+        >
+          Get Premium Access
+        </button>
+      </div>
+      
+      <Card className="opacity-40 h-screen">
+        <CardContent className="p-6">
+          <h2 className="text-xl font-bold font-inter mb-5">Boost Plans</h2>
+
+          {/* Plan Cards */}
+          <div className="grid grid-cols-3 gap-4 mb-5">
+            {mockPlans.map((plan, index) => (
+              <div key={index} className="bg-muted rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-2">{plan.name}</h3>
+                <p className="text-2xl font-bold mb-3">{plan.price}</p>
+                <ul className="text-sm space-y-1">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="text-muted-foreground">• {feature}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Locked Features Section */}
+          <div className="relative border rounded-lg overflow-hidden min-h-[200px]">
+            {/* Blurred Content */}
+            <div className="p-4 blur-sm opacity-30 pointer-events-none">
+              <h3 className="text-lg font-semibold mb-3">Premium Benefits</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="h-2 bg-red-500 rounded"></div>
+                  <div className="h-2 bg-red-500 rounded w-3/4"></div>
+                  <div className="h-2 bg-red-500 rounded w-1/2"></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-2 bg-red-500 rounded"></div>
+                  <div className="h-2 bg-red-500 rounded w-2/3"></div>
+                  <div className="h-2 bg-red-500 rounded w-4/5"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

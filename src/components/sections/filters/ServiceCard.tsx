@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, MapPin, Star, CheckCircle, MessageCircle } from "lucide-react";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
+import { encryptId } from "@/lib/encryptId";
 
 interface ServiceCardProps {
   id: number;
@@ -13,6 +14,7 @@ interface ServiceCardProps {
   description: string;
   image: string;
   verified: boolean;
+  favorited?: boolean;
 }
 
 export default function ServiceCard({
@@ -25,12 +27,29 @@ export default function ServiceCard({
   description,
   image,
   verified,
+  favorited = false,
 }: ServiceCardProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
   const goToService = () => {
-    navigate("/service", { state: { from: pathname, business_id: id } });
+    navigate(`/businesses/${encryptId(id)}`, {
+      state: {
+        from: pathname,
+        business: {
+          id,
+          name,
+          category,
+          location,
+          rating,
+          reviews,
+          description,
+          image,
+          verified,
+          isFavorite: favorited,
+        },
+      },
+    });
   };
 
   return (

@@ -4,7 +4,10 @@ export type PublicBusiness = {
   id: number;
   name: string;
   category: string;
+  categoryId?: number | null;
   location: string;
+  locationId?: number | null;
+  locationName?: string | null;
   rating: number;
   reviews: number;
   description: string;
@@ -12,6 +15,14 @@ export type PublicBusiness = {
   verified: boolean;
   /** From API e.g. `is_favorite` on GET /businesses/home when authenticated. */
   isFavorite: boolean;
+};
+
+export type PublicBusinessesPage = {
+  items: PublicBusiness[];
+  currentPage: number;
+  perPage: number;
+  lastPage: number;
+  total: number;
 };
 
 type Raw = Record<string, unknown>;
@@ -45,6 +56,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
 
   const catObj = rec(r.category);
   const category = str(catObj?.name ?? r.category_name ?? r.category, 'General');
+  const categoryId = num(catObj?.id ?? r.category_id, NaN);
+  const categoryIdNorm = Number.isFinite(categoryId) && categoryId > 0 ? categoryId : null;
 
   const locObj = rec(r.location);
   const city = str(locObj?.city ?? r.city, '');
@@ -52,6 +65,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const location =
     [city, state].filter(Boolean).join(', ') ||
     str(locObj?.full_name ?? r.full_address ?? r.location, 'N/A');
+  const locationId = num(locObj?.id ?? r.location_id, 0) || null;
+  const locationName = str(locObj?.name ?? locObj?.full_name ?? city, '') || null;
 
   const summary = rec(r.reviews_summary);
   const rating = summary
@@ -92,10 +107,25 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     r.isFavorite === true ||
     r.favorited === true
 
-  return { id, name, category, location, rating, reviews, description, image, verified, isFavorite };
+  return {
+    id,
+    name,
+    category,
+    categoryId: categoryIdNorm,
+    location,
+    locationId,
+    locationName,
+    rating,
+    reviews,
+    description,
+    image,
+    verified,
+    isFavorite,
+  };
 }
 
 const LIST_KEYS = ['businesses', 'business_profiles', 'items', 'data', 'results'] as const;
+const PAGINATION_KEYS = ['pagination', 'meta', 'page'] as const;
 
 function extractList(data: unknown): unknown[] {
   if (Array.isArray(data)) return data;
@@ -121,12 +151,113 @@ function extractList(data: unknown): unknown[] {
   return [];
 }
 
+function extractPagination(data: unknown): Partial<PublicBusinessesPage> | null {
+  const r = rec(data);
+  if (!r) return null;
+
+  const candidates: Raw[] = [];
+  for (const key of PAGINATION_KEYS) {
+    const direct = rec(r[key]);
+    if (direct) candidates.push(direct);
+  }
+  const inner = rec(r.data);
+  if (inner) {
+    for (const key of PAGINATION_KEYS) {
+      const nested = rec(inner[key]);
+      if (nested) candidates.push(nested);
+    }
+  }
+
+  for (const p of candidates) {
+    const currentPage = num(p.current_page ?? p.currentPage ?? p.page, 1);
+    const perPage = num(p.per_page ?? p.perPage ?? p.page_size, 12);
+    const lastPage = num(p.last_page ?? p.lastPage ?? 1, 1);
+    const total = num(p.total ?? p.count, 0);
+    if (currentPage > 0 && perPage > 0 && lastPage > 0) {
+      return { currentPage, perPage, lastPage, total };
+    }
+  }
+
+  return null;
+}
+
+function parseBusinessesPage(data: unknown): PublicBusinessesPage {
+  const rows = extractList(data);
+  const items = rows
+    .map((row, i) => parseBusiness(row, i))
+    .filter((b): b is PublicBusiness => b !== null);
+
+  const pagination = extractPagination(data);
+  return {
+    items,
+    currentPage: pagination?.currentPage ?? 1,
+    perPage: pagination?.perPage ?? Math.max(items.length, 1),
+    lastPage: pagination?.lastPage ?? 1,
+    total: pagination?.total ?? items.length,
+  };
+}
+
 export async function fetchPublicBusinesses(params?: {
   category?: string;
+  category_id?: number;
+  location_id?: number;
+  search?: string;
+  verification_status?: string;
   page?: number;
   per_page?: number;
 }): Promise<PublicBusiness[]> {
-  const endpoints: Array<{ label: string; fn: () => Promise<unknown> }> = [
+  const page = await fetchPublicBusinessesPage(params);
+  return page.items;
+}
+
+function hasServerListFilters(params?: {
+  category_id?: number;
+  location_id?: number;
+  search?: string;
+  verification_status?: string;
+}): boolean {
+  if (!params) return false;
+  if (params.category_id != null && params.category_id > 0) return true;
+  if (params.location_id != null && params.location_id > 0) return true;
+  if (params.search != null && params.search.trim() !== '') return true;
+  if (params.verification_status != null && params.verification_status.trim() !== '') return true;
+  return false;
+}
+
+export async function fetchPublicBusinessesPage(params?: {
+  category?: string;
+  category_id?: number;
+  location_id?: number;
+  search?: string;
+  verification_status?: string;
+  page?: number;
+  per_page?: number;
+}): Promise<PublicBusinessesPage> {
+  /**
+   * When the user applies category / location / search / verification filters we must NOT
+   * fall through to legacy endpoints that ignore those params — that produced wrong rows
+   * (e.g. Plumbing selected but Cleaning businesses shown after `/businesses/home` returned []).
+   */
+  const strictFiltered = hasServerListFilters(params);
+
+  const endpointsStrict: Array<{ label: string; fn: () => Promise<unknown> }> = [
+    {
+      label: 'GET /businesses/all',
+      fn: () =>
+        request
+          .get('/businesses/all', { params, skipAuthRedirect: true })
+          .then((r) => r.data),
+    },
+    {
+      label: 'GET /businesses/home',
+      fn: () =>
+        request
+          .get('/businesses/home', { params, skipAuthRedirect: true })
+          .then((r) => r.data),
+    },
+  ];
+
+  const endpointsLoose: Array<{ label: string; fn: () => Promise<unknown> }> = [
     {
       label: 'GET /businesses/home',
       fn: () =>
@@ -164,17 +295,19 @@ export async function fetchPublicBusinesses(params?: {
     },
   ];
 
+  const endpoints = strictFiltered ? endpointsStrict : endpointsLoose;
+
   for (const { label, fn } of endpoints) {
     try {
       const data = await fn();
       if (import.meta.env.DEV) {
         console.debug('[publicBusinessApi] response from', label, data);
       }
-      const rows = extractList(data);
-      const parsed = rows
-        .map((row, i) => parseBusiness(row, i))
-        .filter((b): b is PublicBusiness => b !== null);
-      if (parsed.length > 0) return parsed;
+      const parsedPage = parseBusinessesPage(data);
+      if (strictFiltered) {
+        return parsedPage;
+      }
+      if (parsedPage.items.length > 0) return parsedPage;
     } catch (err) {
       if (import.meta.env.DEV) {
         console.warn('[publicBusinessApi] failed:', label, err);
@@ -182,7 +315,13 @@ export async function fetchPublicBusinesses(params?: {
     }
   }
 
-  return [];
+  return {
+    items: [],
+    currentPage: Math.max(1, params?.page ?? 1),
+    perPage: Math.max(1, params?.per_page ?? 12),
+    lastPage: 1,
+    total: 0,
+  };
 }
 
 /**

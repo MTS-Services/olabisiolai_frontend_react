@@ -1,9 +1,11 @@
 import FiltersSection from "@/components/sections/filters/FiltersSection";
 import ServiceCard from "@/components/sections/filters/ServiceCard";
+import { useQuery } from "@tanstack/react-query";
 import { useCategoryCatalog } from "@/features/categories/useCategoryCatalog";
-import { fetchPublicBusinesses, type PublicBusiness } from "@/features/business/publicBusinessApi";
-import { ChevronLeft, Loader2, Map, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useLocationCatalog } from "@/features/locations/useLocationCatalog";
+import { fetchPublicBusinessesPage, type PublicBusiness } from "@/features/business/publicBusinessApi";
+import { ChevronLeft, Loader2, Map as MapIcon, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 const FALLBACK_BUSINESSES: PublicBusiness[] = [
@@ -17,51 +19,212 @@ export default function Filters() {
   const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const paramCategory = (searchParams.get("category") ?? "").trim();
+  const categoryIdParam = searchParams.get("category_id");
+  const categoryNameParam = (searchParams.get("category") ?? "").trim();
+  const searchTerm = (searchParams.get("search") ?? "").trim();
+  const verifiedOnly = searchParams.get("verified") === "1";
+  const locationRaw = Number(searchParams.get("location_id") ?? "");
+  const selectedLocationId = Number.isFinite(locationRaw) && locationRaw > 0 ? locationRaw : null;
+  const ratingRaw = Number(searchParams.get("rating") ?? "");
+  const selectedMinRating = Number.isFinite(ratingRaw) && ratingRaw >= 1 && ratingRaw <= 5 ? ratingRaw : null;
+  const pageRaw = Number(searchParams.get("page") ?? "");
+  const currentPage = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
 
   const { data: apiCategories = [], isPending: categoriesLoading } = useCategoryCatalog();
-  const categoryNames = useMemo(() => apiCategories.map((c) => c.name), [apiCategories]);
-  const categoryFilterLabels = useMemo(() => ["All", ...categoryNames], [categoryNames]);
+  const { data: catalogLocations = [] } = useLocationCatalog();
+  const perPage = 12;
 
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [businesses, setBusinesses] = useState<PublicBusiness[]>([]);
-  const [businessesLoading, setBusinessesLoading] = useState(true);
+  /**
+   * Category filter from URL — must NOT wait for `apiCategories` to load.
+   * Otherwise the first API call runs without `category_id` and wrong cards appear
+   * while the sidebar still shows the selected category.
+   */
+  const filterCategoryId = useMemo<number | null>(() => {
+    const rawId = Number(categoryIdParam ?? "");
+    if (Number.isFinite(rawId) && rawId > 0) {
+      return rawId;
+    }
+    if (categoryNameParam && apiCategories.length > 0) {
+      const byName = apiCategories.find((c) => c.name === categoryNameParam);
+      if (byName) return byName.id;
+    }
+    return null;
+  }, [categoryIdParam, categoryNameParam, apiCategories]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setBusinessesLoading(true);
-    fetchPublicBusinesses()
-      .then((data) => {
-        if (cancelled) return;
-        setBusinesses(data.length > 0 ? data : FALLBACK_BUSINESSES);
-      })
-      .catch(() => {
-        if (!cancelled) setBusinesses(FALLBACK_BUSINESSES);
-      })
-      .finally(() => {
-        if (!cancelled) setBusinessesLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
+  const filterCategoryName = useMemo(() => {
+    if (filterCategoryId == null) return null;
+    return apiCategories.find((c) => c.id === filterCategoryId)?.name ?? null;
+  }, [apiCategories, filterCategoryId]);
 
-  useEffect(() => {
-    if (!paramCategory) return;
-    if (categoryNames.length === 0) return;
-    if (categoryNames.includes(paramCategory)) setSelectedCategory(paramCategory);
-  }, [paramCategory, categoryNames]);
+  const businessesQuery = useQuery({
+    queryKey: ["filters", filterCategoryId, selectedLocationId, searchTerm, verifiedOnly, currentPage, perPage],
+    queryFn: () =>
+      fetchPublicBusinessesPage({
+        category_id: filterCategoryId ?? undefined,
+        location_id: selectedLocationId ?? undefined,
+        search: searchTerm || undefined,
+        verification_status: verifiedOnly ? "approved" : undefined,
+        page: currentPage,
+        per_page: perPage,
+      }),
+    staleTime: 60_000,
+  });
+  const businesses = useMemo<PublicBusiness[]>(() => {
+    if (businessesQuery.isError) {
+      const hasActiveFilters =
+        filterCategoryId != null ||
+        selectedLocationId != null ||
+        searchTerm.length > 0 ||
+        verifiedOnly;
+      return hasActiveFilters ? [] : FALLBACK_BUSINESSES;
+    }
+    return businessesQuery.data?.items ?? [];
+  }, [
+    businessesQuery.data?.items,
+    businessesQuery.isError,
+    filterCategoryId,
+    selectedLocationId,
+    searchTerm,
+    verifiedOnly,
+  ]);
+  const businessesLoading = businessesQuery.isPending;
 
-  const handleSelectCategory = (label: string) => {
-    setSelectedCategory(label);
+  const handleSelectCategory = (categoryId: number | null) => {
     const next = new URLSearchParams(searchParams);
-    if (label === "All") next.delete("category");
-    else next.set("category", label);
+    if (categoryId == null) {
+      next.delete("category_id");
+      next.delete("category");
+    } else {
+      next.set("category_id", String(categoryId));
+      next.delete("category");
+    }
+    next.delete("page");
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleSelectLocation = (locationId: number | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (locationId === null) next.delete("location_id");
+    else next.set("location_id", String(locationId));
+    next.delete("page");
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleSearchTermChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (!value.trim()) next.delete("search");
+    else next.set("search", value.trim());
+    next.delete("page");
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleVerifiedOnlyChange = (value: boolean) => {
+    const next = new URLSearchParams(searchParams);
+    if (!value) next.delete("verified");
+    else next.set("verified", "1");
+    next.delete("page");
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleSelectMinRating = (rating: number | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (rating === null) next.delete("rating");
+    else next.set("rating", String(rating));
+    next.delete("page");
     setSearchParams(next, { replace: true });
   };
 
   const visibleBusinesses = useMemo(() => {
-    if (selectedCategory === "All") return businesses;
-    return businesses.filter((b) => b.category === selectedCategory);
-  }, [selectedCategory, businesses]);
+    return businesses.filter((business) => {
+      if (filterCategoryId != null) {
+        const rawBid = business.categoryId;
+        const bid =
+          rawBid != null && Number.isFinite(Number(rawBid)) ? Number(rawBid) : NaN;
+        if (Number.isFinite(bid)) {
+          if (bid !== filterCategoryId) return false;
+        } else if (filterCategoryName != null) {
+          if (
+            business.category.trim().toLowerCase() !==
+            filterCategoryName.trim().toLowerCase()
+          ) {
+            return false;
+          }
+        } else {
+          // URL has category_id but row has no numeric id and catalog name unknown — drop row
+          return false;
+        }
+      }
+      if (selectedLocationId != null) {
+        if (business.locationId != null && business.locationId !== selectedLocationId) {
+          return false;
+        }
+      }
+      if (selectedMinRating !== null && business.rating < selectedMinRating) return false;
+      return true;
+    });
+  }, [
+    businesses,
+    filterCategoryId,
+    filterCategoryName,
+    selectedLocationId,
+    selectedMinRating,
+  ]);
+
+  /** Full list from `/public/locations` so options do not collapse when `location_id` filters API results. */
+  const locationOptions = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const opt of catalogLocations) {
+      map.set(opt.id, opt.label);
+    }
+    for (const business of businesses) {
+      if (!business.locationId) continue;
+      const label = (business.locationName || business.location).trim();
+      if (!map.has(business.locationId) && label) {
+        map.set(business.locationId, label);
+      }
+    }
+    return Array.from(map.entries())
+      .map(([id, label]) => ({ id, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [catalogLocations, businesses]);
+
+  const mapQuery = useMemo(() => {
+    if (visibleBusinesses[0]) return visibleBusinesses[0].location;
+    if (selectedLocationId) {
+      const option = locationOptions.find((opt) => opt.id === selectedLocationId);
+      if (option) return option.label;
+    }
+    return "Nigeria";
+  }, [visibleBusinesses, selectedLocationId, locationOptions]);
+
+  const totalPages = Math.max(1, businessesQuery.data?.lastPage ?? 1);
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const hasActiveFilters = useMemo(() => {
+    const hasCategoryInUrl =
+      Boolean(categoryIdParam?.trim()) || categoryNameParam.length > 0;
+    return (
+      hasCategoryInUrl ||
+      searchTerm.length > 0 ||
+      verifiedOnly ||
+      selectedLocationId != null ||
+      selectedMinRating != null ||
+      currentPage > 1
+    );
+  }, [
+    categoryIdParam,
+    categoryNameParam,
+    searchTerm,
+    verifiedOnly,
+    selectedLocationId,
+    selectedMinRating,
+    currentPage,
+  ]);
+
+  const handleResetFilters = () => {
+    setShowFilters(false);
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,19 +248,32 @@ export default function Filters() {
       </div>
 
       {/* Mobile Action Bar — visible only on mobile */}
-      <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-card border-b border-border sticky top-0 z-20">
+      <div className="lg:hidden flex items-center gap-2 px-4 py-3 bg-card border-b border-border sticky top-0 z-20">
         <button
           onClick={() => setShowFilters(true)}
-          className="flex items-center gap-2 flex-1 justify-center py-2 rounded-lg border border-border text-sm font-medium text-text-primary hover:bg-muted"
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium text-text-primary hover:bg-muted"
         >
           <SlidersHorizontal size={16} />
           Filters
         </button>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-muted"
+            aria-label="Reset filters"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <RotateCcw size={16} className="shrink-0" aria-hidden />
+              Reset
+            </span>
+          </button>
+        )}
         <button
           onClick={() => setShowMap(true)}
-          className="flex items-center gap-2 flex-1 justify-center py-2 rounded-lg border border-border text-sm font-medium text-text-primary hover:bg-muted"
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium text-text-primary hover:bg-muted"
         >
-          <Map size={16} />
+          <MapIcon size={16} />
           View Map
         </button>
       </div>
@@ -119,15 +295,26 @@ export default function Filters() {
               <button
                 onClick={() => setShowFilters(false)}
                 className="p-1 rounded-md hover:bg-muted"
+                aria-label="Close filters"
               >
                 <X size={20} className="text-text-secondary" />
               </button>
             </div>
             <div className="p-4">
               <FiltersSection
-                categoryLabels={categoryFilterLabels}
-                selectedCategory={selectedCategory}
+                radioGroupId="filters-mobile-drawer"
+                categories={apiCategories}
+                selectedCategoryId={filterCategoryId}
                 onSelectCategory={handleSelectCategory}
+                locationOptions={locationOptions}
+                selectedLocationId={selectedLocationId}
+                onSelectLocation={handleSelectLocation}
+                searchTerm={searchTerm}
+                onSearchTermChange={handleSearchTermChange}
+                verifiedOnly={verifiedOnly}
+                onVerifiedOnlyChange={handleVerifiedOnlyChange}
+                selectedMinRating={selectedMinRating}
+                onSelectMinRating={handleSelectMinRating}
                 categoriesLoading={categoriesLoading}
               />
             </div>
@@ -157,7 +344,7 @@ export default function Filters() {
               </button>
             </div>
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3650.1664374611155!2d90.41842197589845!3d23.81267988638146!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755c73499552657%3A0xed30abd127dd179f!2smaktech!5e0!3m2!1sen!2sbd!4v1775822816302!5m2!1sen!2sbd"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -173,11 +360,31 @@ export default function Filters() {
       <div className="container mx-auto px-4 py-6 lg:py-8 flex gap-6">
 
         {/* Filters Sidebar — hidden on mobile, visible on lg+ */}
-        <aside className="hidden lg:block w-1/6 shrink-0">
+        <aside className="hidden lg:block w-1/6 shrink-0 space-y-3">
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-text-primary shadow-sm hover:bg-muted"
+            >
+              <RotateCcw size={16} className="shrink-0" aria-hidden />
+              Reset filters
+            </button>
+          )}
           <FiltersSection
-            categoryLabels={categoryFilterLabels}
-            selectedCategory={selectedCategory}
+            radioGroupId="filters-desktop-sidebar"
+            categories={apiCategories}
+            selectedCategoryId={filterCategoryId}
             onSelectCategory={handleSelectCategory}
+            locationOptions={locationOptions}
+            selectedLocationId={selectedLocationId}
+            onSelectLocation={handleSelectLocation}
+            searchTerm={searchTerm}
+            onSearchTermChange={handleSearchTermChange}
+            verifiedOnly={verifiedOnly}
+            onVerifiedOnlyChange={handleVerifiedOnlyChange}
+            selectedMinRating={selectedMinRating}
+            onSelectMinRating={handleSelectMinRating}
             categoriesLoading={categoriesLoading}
           />
         </aside>
@@ -204,6 +411,7 @@ export default function Filters() {
                   description={business.description}
                   image={business.image}
                   verified={business.verified}
+                  favorited={business.isFavorite}
                 />
               ))
             )}
@@ -211,26 +419,53 @@ export default function Filters() {
 
           {/* Pagination */}
           <div className="flex justify-center items-center gap-1.5 sm:gap-2 mt-6 flex-wrap">
-            <button className="p-2 rounded-lg border border-border hover:bg-muted">
+            <button
+              className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+              disabled={safeCurrentPage <= 1}
+              onClick={() => {
+                const nextPage = Math.max(1, safeCurrentPage - 1);
+                const next = new URLSearchParams(searchParams);
+                if (nextPage <= 1) next.delete("page");
+                else next.set("page", String(nextPage));
+                setSearchParams(next, { replace: true });
+              }}
+            >
               <ChevronLeft size={16} className="text-muted-foreground" />
             </button>
 
-            {/* Show fewer pages on mobile */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {[1, 2, 3, 4, 5, 6, 7].map((page) => (
-                <button
-                  key={page}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg ${page === 1
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border text-text-primary hover:bg-muted"
-                    } ${page > 5 ? "hidden sm:flex items-center justify-center" : "flex items-center justify-center"}`}
-                >
-                  {page.toString().padStart(2, "0")}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }).map((_, index) => {
+                const page = index + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => {
+                      const next = new URLSearchParams(searchParams);
+                      if (page <= 1) next.delete("page");
+                      else next.set("page", String(page));
+                      setSearchParams(next, { replace: true });
+                    }}
+                    className={`w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm rounded-lg ${page === safeCurrentPage
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border text-text-primary hover:bg-muted"
+                      } ${page > 5 ? "hidden sm:flex items-center justify-center" : "flex items-center justify-center"}`}
+                  >
+                    {page.toString().padStart(2, "0")}
+                  </button>
+                );
+              })}
             </div>
 
-            <button className="p-2 rounded-lg border border-border hover:bg-muted">
+            <button
+              className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+              disabled={safeCurrentPage >= totalPages}
+              onClick={() => {
+                const nextPage = Math.min(totalPages, safeCurrentPage + 1);
+                const next = new URLSearchParams(searchParams);
+                next.set("page", String(nextPage));
+                setSearchParams(next, { replace: true });
+              }}
+            >
               <ChevronLeft size={16} className="text-muted-foreground rotate-180" />
             </button>
           </div>
@@ -241,7 +476,7 @@ export default function Filters() {
           <div className="bg-card rounded-lg shadow-md overflow-hidden sticky top-20">
             <div className="h-[750px] bg-muted relative">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3650.1664374611155!2d90.41842197589845!3d23.81267988638146!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755c73499552657%3A0xed30abd127dd179f!2smaktech!5e0!3m2!1sen!2sbd!4v1775822816302!5m2!1sen!2sbd"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

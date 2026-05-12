@@ -39,7 +39,7 @@ export function Category() {
                   key={category.id}
                   name={category.name}
                   icon={lucideIconForCategoryName(category.name)}
-                  to={`/filters?category=${encodeURIComponent(category.name)}`}
+                  to={`/filters?category_id=${category.id}`}
                 />
               ))}
             </div>

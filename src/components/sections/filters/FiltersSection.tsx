@@ -1,25 +1,65 @@
 import { Star } from "lucide-react";
 
+import type { CategoryDto } from "@/features/categories/types";
+
 export type FiltersSectionProps = {
-  categoryLabels: string[];
-  selectedCategory: string;
-  onSelectCategory: (label: string) => void;
+  /** Unique prefix so multiple filter panels on one page do not share radio `name` (breaks selection on mobile). */
+  radioGroupId?: string;
+  categories: CategoryDto[];
+  selectedCategoryId: number | null;
+  onSelectCategory: (categoryId: number | null) => void;
+  locationOptions: Array<{ id: number; label: string }>;
+  selectedLocationId: number | null;
+  onSelectLocation: (id: number | null) => void;
+  searchTerm: string;
+  onSearchTermChange: (value: string) => void;
+  verifiedOnly: boolean;
+  onVerifiedOnlyChange: (value: boolean) => void;
+  selectedMinRating: number | null;
+  onSelectMinRating: (rating: number | null) => void;
   categoriesLoading?: boolean;
 };
 
 export default function FiltersSection({
-  categoryLabels,
-  selectedCategory,
+  radioGroupId = "filters",
+  categories,
+  selectedCategoryId,
   onSelectCategory,
+  locationOptions,
+  selectedLocationId,
+  onSelectLocation,
+  searchTerm,
+  onSearchTermChange,
+  verifiedOnly,
+  onVerifiedOnlyChange,
+  selectedMinRating,
+  onSelectMinRating,
   categoriesLoading,
 }: FiltersSectionProps) {
   const size = 24;
+  const catName = `${radioGroupId}-category`;
+  const locName = `${radioGroupId}-location`;
+  const ratingName = `${radioGroupId}-rating`;
 
   return (
     <div className="bg-card p-8 rounded-lg  sticky top-20">
       <h2 className="text-2xl font-inter font-bold text-text-primary mb-6">
         Filters
       </h2>
+
+      {/* Search */}
+      <div className="mb-6">
+        <h3 className="font-inter font-semibold text-text-primary mb-3">
+          Search
+        </h3>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(event) => onSearchTermChange(event.target.value)}
+          placeholder="Search business name..."
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text-primary outline-none focus:border-primary"
+        />
+      </div>
 
       {/* Verified Only Toggle */}
       <div className="mb-6">
@@ -43,55 +83,82 @@ export default function FiltersSection({
 
           <span className="text-primary text-sm font-medium">Verified Only</span>
           <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" className="sr-only peer" />
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={verifiedOnly}
+              onChange={(event) => onVerifiedOnlyChange(event.target.checked)}
+            />
             <div className="w-11 h-6 bg-red-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-card after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
           </label>
         </div>
       </div>
 
-      {/* Category Section */}
+      {/* Category Section — list from API (`CategoryDto[]`) */}
       <div className="mb-8">
         <h3 className="font-inter font-semibold text-text-primary mb-3">
           Category
         </h3>
         {categoriesLoading ? (
           <p className="text-sm text-text-secondary">Loading categories…</p>
+        ) : categories.length === 0 ? (
+          <p className="text-sm text-text-secondary">No categories available.</p>
         ) : (
           <div className="space-y-2">
-            {categoryLabels.map((label) => (
-              <label key={label} className="flex items-center cursor-pointer">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                name={catName}
+                className="mr-2 accent-primary"
+                checked={selectedCategoryId === null}
+                onChange={() => onSelectCategory(null)}
+              />
+              <span className="text-text-secondary">All</span>
+            </label>
+            {categories.map((category) => (
+              <label key={category.id} className="flex items-center cursor-pointer">
                 <input
                   type="radio"
-                  name="category"
+                  name={catName}
                   className="mr-2 accent-primary"
-                  checked={selectedCategory === label}
-                  onChange={() => onSelectCategory(label)}
+                  checked={selectedCategoryId === category.id}
+                  onChange={() => onSelectCategory(category.id)}
                 />
-                <span className="text-text-secondary">{label}</span>
+                <span className="text-text-secondary">{category.name}</span>
               </label>
             ))}
           </div>
         )}
       </div>
 
-      {/* Distances Section */}
+      {/* Location Section */}
       <div className="mb-6">
         <h3 className="font-inter font-semibold text-text-primary mb-3">
-          Distances
+          Location
         </h3>
         <div className="space-y-2">
-          {["1 km", "2 km", "3 km", "4 km", "5 km", "10 km", "20 km"].map(
-            (distance) => (
-              <label key={distance} className="flex items-center">
-                <input
-                  type="radio"
-                  name="distance"
-                  className="mr-2 accent-primary"
-                />
-                <span className="text-text-secondary">{distance}</span>
-              </label>
-            ),
-          )}
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name={locName}
+              className="mr-2 accent-primary"
+              checked={selectedLocationId === null}
+              onChange={() => onSelectLocation(null)}
+            />
+            <span className="text-text-secondary">All locations</span>
+          </label>
+          {locationOptions.map((location) => (
+            <label key={location.id} className="flex items-center">
+              <input
+                type="radio"
+                name={locName}
+                className="mr-2 accent-primary"
+                checked={selectedLocationId === location.id}
+                onChange={() => onSelectLocation(location.id)}
+              />
+              <span className="text-text-secondary">{location.label}</span>
+            </label>
+          ))}
         </div>
       </div>
 
@@ -101,12 +168,24 @@ export default function FiltersSection({
           Ratings & Reviews
         </h3>
         <div className="space-y-2">
+          <div className="flex items-center">
+            <input
+              type="radio"
+              name={ratingName}
+              className="mr-2 accent-primary"
+              checked={selectedMinRating === null}
+              onChange={() => onSelectMinRating(null)}
+            />
+            <span className="text-text-secondary">All ratings</span>
+          </div>
           {[5, 4, 3, 2, 1].map((rating) => (
             <div key={rating} className="flex items-center">
               <input
                 type="radio"
-                name="rating"
+                name={ratingName}
                 className="mr-2 accent-primary"
+                checked={selectedMinRating === rating}
+                onChange={() => onSelectMinRating(rating)}
               />
               <div className="flex items-center mr-2">
                 {[...Array(5)].map((_, i) => (

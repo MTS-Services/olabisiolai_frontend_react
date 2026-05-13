@@ -170,7 +170,7 @@ export default function Filters() {
     selectedMinRating,
   ]);
 
-  /** Full list from `/public/locations` so options do not collapse when `location_id` filters API results. */
+  /** Full list from `GET /locations` so options do not collapse when `location_id` filters API results. */
   const locationOptions = useMemo(() => {
     const map = new Map<number, string>();
     for (const opt of catalogLocations) {

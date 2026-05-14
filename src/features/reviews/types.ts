@@ -28,6 +28,8 @@ export type ReviewDto = {
   is_approved: boolean;
   is_flagged?: boolean;
   flag_reason?: string | null;
+  flagged_at?: string | null;
+  flagged_at_human?: string | null;
   business: ReviewBusiness;
   images: ReviewImage[];
   replies: ReviewReply[];

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Eye, Flag, Loader2, Star, Trash2 } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Eye, Flag, Loader2, ShieldAlert, Star, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { ReviewDetailsModal } from "@/components/Modal/ReviewDetailsModal";
@@ -7,6 +7,7 @@ import {
   adminGetStatistics,
   adminListReviews,
   adminUpdateReview,
+  adminViewReview,
 } from "@/features/reviews/adminReviewApi";
 import type { ReviewDto, ReviewPagination, ReviewStatistics } from "@/features/reviews/types";
 
@@ -151,6 +152,13 @@ export default function Reviews() {
   const handleView = (review: ReviewDto) => {
     setSelectedReview(review);
     setModalOpen(true);
+    void adminViewReview(review.id)
+      .then((fresh) => {
+        setSelectedReview(fresh);
+      })
+      .catch(() => {
+        /* keep row snapshot if view fails */
+      });
   };
 
   const handleApprove = async (review: ReviewDto) => {
@@ -159,6 +167,7 @@ export default function Reviews() {
       const updated = await adminUpdateReview(review.id, { is_approved: true });
       setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       if (selectedReview?.id === updated.id) setSelectedReview(updated);
+      void loadStats();
     } finally {
       setProcessingId(null);
     }
@@ -174,6 +183,7 @@ export default function Reviews() {
       });
       setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       if (selectedReview?.id === updated.id) setSelectedReview(updated);
+      void loadStats();
     } finally {
       setProcessingId(null);
       setFlagTargetId(null);
@@ -265,11 +275,10 @@ export default function Reviews() {
               key={tab}
               type="button"
               onClick={() => handleTabChange(tab)}
-              className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                activeTab === tab
-                  ? "bg-chat-accent text-ice"
-                  : "bg-card text-body-secondary hover:bg-muted"
-              }`}
+              className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${activeTab === tab
+                ? "bg-chat-accent text-ice"
+                : "bg-card text-body-secondary hover:bg-muted"
+                }`}
             >
               {tab === "all" ? "All Reviews" : "Flagged / Reported"}
             </button>
@@ -305,6 +314,7 @@ export default function Reviews() {
               ) : (
                 reviews.map((review) => {
                   const isProcessing = processingId === review.id;
+                  const isNotApproved = !review.is_approved;
                   return (
                     <tr key={review.id} className="border-b border-border-light">
                       <td className="px-4 py-4">
@@ -322,8 +332,12 @@ export default function Reviews() {
                           <p className="line-clamp-2 text-sm leading-5 text-gray-600">
                             {review.review_text}
                           </p>
-                          {review.is_flagged && (
-                            <Flag className="mt-0.5 size-4 shrink-0 text-brand-red" aria-label="Flagged" />
+                          {isNotApproved && (
+                            <ShieldAlert
+                              className="mt-0.5 size-4 shrink-0 text-red-600"
+                              aria-label="Flagged for moderation"
+                              strokeWidth={2}
+                            />
                           )}
                         </div>
                       </td>
@@ -368,7 +382,7 @@ export default function Reviews() {
                               {isProcessing ? (
                                 <Loader2 className="size-4 animate-spin text-emerald-600" />
                               ) : (
-                                <Eye className="size-4 text-emerald-600" strokeWidth={2} />
+                                <CheckCircle2 className="size-4 text-emerald-600" strokeWidth={2} aria-hidden />
                               )}
                             </button>
                           )}
@@ -418,11 +432,10 @@ export default function Reviews() {
                     key={pg}
                     type="button"
                     onClick={() => setPage(pg)}
-                    className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold ${
-                      page === pg
-                        ? "bg-brand-red text-white"
-                        : "text-stone-700 hover:bg-muted"
-                    }`}
+                    className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold ${page === pg
+                      ? "bg-brand-red text-white"
+                      : "text-stone-700 hover:bg-muted"
+                      }`}
                   >
                     {pg}
                   </button>

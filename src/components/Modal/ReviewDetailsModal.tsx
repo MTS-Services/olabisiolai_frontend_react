@@ -1,4 +1,4 @@
-import { Flag, Star, X } from "lucide-react";
+import { ShieldAlert, Star, X } from "lucide-react";
 
 import type { ReviewDto } from "@/features/reviews/types";
 
@@ -28,6 +28,7 @@ export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModal
   if (!open || !review) return null;
 
   const businessName = review.business?.business_name ?? "—";
+  const isNotApproved = !review.is_approved;
   const statusLabel = review.is_approved ? "Approved" : "Flagged";
   const statusClass = review.is_approved
     ? "inline-flex rounded-full bg-[rgb(27_175_93/0.1)] px-2 py-0.5 text-xs font-medium text-[#1baf5d]"
@@ -88,13 +89,28 @@ export function ReviewDetailsModal({ open, onClose, review }: ReviewDetailsModal
             </div>
           </div>
 
-          {review.is_flagged && review.flag_reason != null && (
-            <div className="space-y-0.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-              <p className="inline-flex items-center gap-1 text-xs font-semibold text-red-700">
-                <Flag className="size-3.5" />
-                Flag Reason
+          {isNotApproved && (
+            <div className="space-y-3 rounded-lg border border-red-200 bg-red-50 px-3 py-3">
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-800">
+                <ShieldAlert className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+                Flagging details
               </p>
-              <p className="text-sm text-red-800">{review.flag_reason}</p>
+              <div className="space-y-0.5">
+                <p className="text-xs font-semibold text-red-700">Reason</p>
+                <p className="text-sm leading-relaxed text-red-900">
+                  {review.flag_reason != null && review.flag_reason.trim() !== "" ? review.flag_reason : "—"}
+                </p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs font-semibold text-red-700">Flagged at</p>
+                <p className="text-sm text-red-900">
+                  {review.flagged_at != null && review.flagged_at !== "" ? review.flagged_at : "—"}
+                </p>
+                {review.flagged_at_human != null && review.flagged_at_human !== "" && (
+                  <p className="text-xs text-red-700/85">{review.flagged_at_human}</p>
+                )}
+              </div>
+
             </div>
           )}
 

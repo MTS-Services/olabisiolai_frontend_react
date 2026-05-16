@@ -120,7 +120,7 @@ export default function BusinessTable() {
   const [verificationFilter, setVerificationFilter] = useState("all");
   const [businessStatusFilter, setBusinessStatusFilter] = useState("all");
   const [boostFilter, setBoostFilter] = useState("all");
-  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionBusinessId, setActionBusinessId] = useState<number | null>(null);
   const [actionType, setActionType] = useState<"status" | "delete" | null>(null);
@@ -481,7 +481,7 @@ export default function BusinessTable() {
                           className="inline-flex h-8 w-9 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100"
                           title="View details"
                           onClick={() => {
-                            setSelectedBusiness(b);
+                            setSelectedBusinessId(b.id);
                             setIsModalOpen(true);
                           }}
                         >
@@ -590,8 +590,11 @@ export default function BusinessTable() {
 
       <BusinessDetailsModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        business={selectedBusiness}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedBusinessId(null);
+        }}
+        businessId={selectedBusinessId}
       />
 
       {deleteTarget ? (

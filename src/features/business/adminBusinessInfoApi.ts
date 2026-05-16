@@ -1,4 +1,5 @@
 import { request } from "@/api/request";
+import { resolveMediaUrl, resolveMediaUrls } from "@/lib/mediaUrl";
 
 type RawRecord = Record<string, unknown>;
 
@@ -61,6 +62,46 @@ export type AdminBusinessListResponse = {
 };
 
 export type AdminCategoryOption = { id: number; name: string };
+
+export type AdminBusinessVendor = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+};
+
+export type AdminBusinessMessage = {
+  id: number;
+  message: string;
+  adminName: string;
+  vendorName: string;
+  createdAt: string;
+};
+
+export type AdminBusinessDetail = {
+  id: number;
+  name: string;
+  description: string;
+  services: string[];
+  category: string;
+  categoryId: number | null;
+  location: string;
+  locationFull: string;
+  phone: string;
+  whatsapp: string;
+  website: string;
+  logoUrl: string;
+  coverPhotoUrls: string[];
+  status: AdminBusinessInfo["status"];
+  verification: AdminBusinessInfo["verification"];
+  boost: AdminBusinessInfo["boost"];
+  averageRating: number;
+  reviewsCount: number;
+  joinDate: string;
+  updatedAt: string;
+  vendor: AdminBusinessVendor | null;
+  messages: AdminBusinessMessage[];
+};
 
 const DEFAULT_FILTER_OPTIONS: AdminBusinessFilterOptions = {
   verification_statuses: [
@@ -432,6 +473,122 @@ function extractCategoryRows(payload: unknown): unknown[] {
     if (inner.length > 0) return inner;
   }
   return [];
+}
+
+function parseStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => asString(entry).trim())
+    .filter((entry) => entry.length > 0);
+}
+
+function parseAdminBusinessDetail(raw: unknown): AdminBusinessDetail | null {
+  const item = asRecord(raw);
+  if (!item) return null;
+
+  const categoryObj = pickRecord(item, ["category"]);
+  const locationObj = pickRecord(item, ["location"]);
+  const vendorObj = pickRecord(item, ["vendor"]);
+
+  const id = toSafeId(item.id, "business-detail");
+  const name = pickString(item, ["business_name", "name"], `Business ${id}`);
+  const category = pickString(categoryObj ?? {}, ["name"], pickString(item, ["category_name"], "Uncategorized"));
+  const categoryId = asNumber(categoryObj?.id ?? item.category_id);
+
+  const city = pickString(locationObj ?? {}, ["city", "name"], "");
+  const state = pickString(locationObj ?? {}, ["state"], "");
+  const location =
+    [city, state].filter(Boolean).join(", ") ||
+    pickString(locationObj ?? {}, ["full_name"], pickString(item, ["location"], "N/A"));
+  const locationFull = pickString(locationObj ?? {}, ["full_name"], location);
+
+  const status = toStatus(pickString(item, ["business_status", "status"], "active").toLowerCase());
+  const verification = toVerification(pickString(item, ["verification_status"], "none").toLowerCase());
+  const boost = toBoost(pickString(item, ["boost_status"], "none").toLowerCase());
+
+  const coverPhotoUrls = parseStringArray(item.cover_photo_urls);
+
+  const vendor: AdminBusinessVendor | null = vendorObj
+    ? {
+      id: toSafeId(vendorObj.id, `vendor-${id}`),
+      name: pickString(vendorObj, ["name"], "Vendor"),
+      email: pickString(vendorObj, ["email"], ""),
+      phone: pickString(vendorObj, ["phone"], ""),
+    }
+    : null;
+
+  return {
+    id,
+    name,
+    description: pickString(item, ["business_description", "description"], ""),
+    services: parseStringArray(item.services_offered),
+    category,
+    categoryId: categoryId !== null && categoryId > 0 ? categoryId : null,
+    location,
+    locationFull,
+    phone: pickString(item, ["phone"], ""),
+    whatsapp: pickString(item, ["whatsapp"], ""),
+    website: pickString(item, ["website"], ""),
+    logoUrl: resolveMediaUrl(pickString(item, ["logo_url", "logo"], "")),
+    coverPhotoUrls: resolveMediaUrls(coverPhotoUrls),
+    status,
+    verification,
+    boost,
+    averageRating: asNumber(item.average_rating) ?? 0,
+    reviewsCount: asNumber(item.reviews_count) ?? 0,
+    joinDate: pickString(item, ["created_at", "join_date"], ""),
+    updatedAt: pickString(item, ["updated_at"], ""),
+    vendor,
+    messages: [],
+  };
+}
+
+function parseAdminBusinessMessages(raw: unknown): AdminBusinessMessage[] {
+  const rows = toUnknownArray(raw);
+  return rows
+    .map((row) => {
+      const item = asRecord(row);
+      if (!item) return null;
+      const admin = pickRecord(item, ["admin"]);
+      const vendor = pickRecord(item, ["vendor"]);
+      const message = pickString(item, ["message"], "");
+      if (!message) return null;
+      return {
+        id: toSafeId(item.id, message),
+        message,
+        adminName: pickString(admin ?? {}, ["name"], "Admin"),
+        vendorName: pickString(vendor ?? {}, ["name"], "Vendor"),
+        createdAt: pickString(item, ["created_at"], ""),
+      };
+    })
+    .filter((row): row is AdminBusinessMessage => row !== null);
+}
+
+function extractAdminBusinessDetailPayload(payload: unknown): {
+  business: AdminBusinessDetail | null;
+  messages: AdminBusinessMessage[];
+} {
+  const root = asRecord(payload);
+  const data = asRecord(root?.data);
+  const businessRaw = data?.business ?? root?.business;
+  const business = parseAdminBusinessDetail(businessRaw);
+  const messages = parseAdminBusinessMessages(data?.messages ?? root?.messages);
+  if (business) {
+    return { business: { ...business, messages }, messages };
+  }
+  return { business: null, messages };
+}
+
+export async function fetchAdminBusinessDetail(businessInfoId: number): Promise<AdminBusinessDetail> {
+  const res = await request.post("/admin/business-info/view", {
+    business_info_id: businessInfoId,
+  });
+  assertApiSuccess(res.data, "Failed to load business details.");
+  const { business } = extractAdminBusinessDetailPayload(res.data);
+  if (!business) {
+    throw new Error("Business profile not found.");
+  }
+  return business;
 }
 
 export async function fetchAdminCategoryOptions(maxRows = 200): Promise<AdminCategoryOption[]> {

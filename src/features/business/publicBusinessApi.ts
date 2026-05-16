@@ -1,4 +1,5 @@
 import { request } from '@/api/request';
+import { resolveMediaUrl } from '@/lib/mediaUrl';
 
 export type PublicBusiness = {
   id: number;
@@ -91,11 +92,11 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
       : [];
 
   const firstCover = rec(coverArr[0]);
-  const image =
+  const imageRaw =
     (typeof coverArr[0] === 'string' && coverArr[0] ? coverArr[0] : '') ||
     str(firstCover?.url ?? firstCover?.image_path, '') ||
-    str(r.logo_url ?? r.logo ?? r.image, '') ||
-    '/images/feature/1.jpg';
+    str(r.logo_url ?? r.logo ?? r.image, '');
+  const image = resolveMediaUrl(imageRaw, '/images/feature/1.jpg');
 
   const verified =
     r.verification_status === 'approved' ||

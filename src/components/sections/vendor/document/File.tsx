@@ -1,74 +1,66 @@
 import { UploadCloudIcon, X, FileText } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-export default function File() {
-  const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File[] }>({
-    "Business Registration": [],
-    "Identity Proof": [],
-    "Address Proof": [],
-  });
+type FileProps = {
+  uploadedFiles: Record<string, File[]>;
+  onFilesChange: (files: Record<string, File[]>) => void;
+};
 
-  const [previewUrls, setPreviewUrls] = useState<{ [key: string]: string[] }>({
+export default function File({ uploadedFiles, onFilesChange }: FileProps) {
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string[]>>({
     "Business Registration": [],
     "Identity Proof": [],
     "Address Proof": [],
   });
 
   const handleFileUpload = (title: string, files: FileList | null) => {
-    if (files) {
-      const newFiles = Array.from(files);
-      const newUrls = newFiles.map(file => {
-        if (file.type.startsWith('image/')) {
-          return URL.createObjectURL(file);
-        }
-        return '';
-      });
+    if (!files) return;
 
-      setUploadedFiles(prev => ({
-        ...prev,
-        [title]: [...prev[title], ...newFiles]
-      }));
+    const newFiles = Array.from(files);
+    const newUrls = newFiles.map((file) =>
+      file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
+    );
 
-      setPreviewUrls(prev => ({
-        ...prev,
-        [title]: [...prev[title], ...newUrls]
-      }));
-    }
+    onFilesChange({
+      ...uploadedFiles,
+      [title]: [...(uploadedFiles[title] ?? []), ...newFiles],
+    });
+
+    setPreviewUrls((prev) => ({
+      ...prev,
+      [title]: [...(prev[title] ?? []), ...newUrls],
+    }));
   };
 
   const removeFile = (title: string, index: number) => {
-    // Revoke object URL to prevent memory leaks
-    if (previewUrls[title][index]) {
+    if (previewUrls[title]?.[index]) {
       URL.revokeObjectURL(previewUrls[title][index]);
     }
 
-    setUploadedFiles(prev => ({
-      ...prev,
-      [title]: prev[title].filter((_, i) => i !== index)
-    }));
+    onFilesChange({
+      ...uploadedFiles,
+      [title]: (uploadedFiles[title] ?? []).filter((_, i) => i !== index),
+    });
 
-    setPreviewUrls(prev => ({
+    setPreviewUrls((prev) => ({
       ...prev,
-      [title]: prev[title].filter((_, i) => i !== index)
+      [title]: (prev[title] ?? []).filter((_, i) => i !== index),
     }));
   };
 
-  // Cleanup object URLs on component unmount
   useEffect(() => {
     return () => {
-      Object.values(previewUrls).forEach(urls => {
-        urls.forEach(url => {
-          if (url) {
-            URL.revokeObjectURL(url);
-          }
+      Object.values(previewUrls).forEach((urls) => {
+        urls.forEach((url) => {
+          if (url) URL.revokeObjectURL(url);
         });
       });
     };
   }, [previewUrls]);
- 
+
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 p-5 ">
+      <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-3">
         {[
           {
             title: "Business Registration",
@@ -84,46 +76,43 @@ export default function File() {
           },
         ].map(({ title, hint }) => (
           <div key={title}>
-            <p className="text-xl font-medium text-gray-600 mb-2">{title}</p>
-            <div className="border-2 border-gray-200 rounded-xl p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-blue-400 bg-blue-50/40 transition-colors min-h-[150px] justify-center relative">
+            <p className="mb-2 text-xl font-medium text-gray-600">{title}</p>
+            <div className="relative flex min-h-[150px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-blue-50/40 p-8 transition-colors hover:border-blue-400">
               <input
                 type="file"
                 multiple
                 accept=".pdf,.jpg,.jpeg,.png"
-                className="absolute inset-0 opacity-0 cursor-pointer"
+                className="absolute inset-0 cursor-pointer opacity-0"
                 onChange={(e) => handleFileUpload(title, e.target.files)}
               />
-              <UploadCloudIcon className="w-7 h-7 text-blue-500" />
-              <span className="text-sm font-medium text-blue-500">
-                Click to upload images
-              </span>
-              <span className="text-xs text-gray-400 text-center leading-snug">
-                {hint}
-              </span>
+              <UploadCloudIcon className="h-7 w-7 text-blue-500" />
+              <span className="text-sm font-medium text-blue-500">Click to upload images</span>
+              <span className="text-center text-xs leading-snug text-gray-400">{hint}</span>
             </div>
-            
-            {uploadedFiles[title].length > 0 && (
+
+            {(uploadedFiles[title] ?? []).length > 0 && (
               <div className="mt-3 grid grid-cols-3 gap-2">
-                {uploadedFiles[title].map((file, index) => (
-                  <div key={index} className="relative group">
-                    {previewUrls[title][index] ? (
+                {(uploadedFiles[title] ?? []).map((file, index) => (
+                  <div key={`${file.name}-${index}`} className="group relative">
+                    {previewUrls[title]?.[index] ? (
                       <img
                         src={previewUrls[title][index]}
                         alt={file.name}
-                        className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                        className="h-20 w-full rounded-lg border border-gray-200 object-cover"
                       />
                     ) : (
-                      <div className="w-full h-20 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-gray-400" />
+                      <div className="flex h-20 w-full items-center justify-center rounded-lg border border-gray-200 bg-gray-100">
+                        <FileText className="h-6 w-6 text-gray-400" />
                       </div>
                     )}
                     <button
+                      type="button"
                       onClick={() => removeFile(title, index)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="h-3 w-3" />
                     </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg truncate">
+                    <div className="absolute bottom-0 left-0 right-0 truncate rounded-b-lg bg-black bg-opacity-50 p-1 text-xs text-white">
                       {file.name}
                     </div>
                   </div>

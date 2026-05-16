@@ -7,29 +7,39 @@ import { Card, CardContent } from "@/components/ui/card";
 export function OrderSummaryCard({
   onConfirmPay,
   isPaying,
+  planTitle = "Visibility Pro Plus",
+  totalAmount = 5000,
+  isVerification = false,
 }: {
   onConfirmPay?: () => void;
   isPaying?: boolean;
+  planTitle?: string;
+  totalAmount?: number;
+  isVerification?: boolean;
 }) {
   const navigate = useNavigate();
 
-  const handleConfirmPay = () => {
-    const cameFromVerification = sessionStorage.getItem('paymentSource') === 'verification';
+  const formattedTotal = new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+  }).format(totalAmount);
 
-    sessionStorage.removeItem('paymentSource');
+  const handleConfirmPay = () => {
+    if (onConfirmPay) {
+      onConfirmPay();
+      return;
+    }
+
+    const cameFromVerification = sessionStorage.getItem("paymentSource") === "verification";
+    sessionStorage.removeItem("paymentSource");
 
     if (cameFromVerification) {
-      // navigate("/vendor/after-verification");
       navigate("/vendor/document-upload");
     } else {
       navigate("/vendor/boost");
     }
-
-    // Call the onConfirmPay prop if it exists
-    if (onConfirmPay) {
-      onConfirmPay();
-    }
   };
+
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
@@ -40,36 +50,16 @@ export function OrderSummaryCard({
             <PlugZap className="size-5" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan Selected</p>
-            <p className="text-base font-semibold">Visibility Pro Plus</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 border-y py-3 text-sm">
-          <div>
-            <p className="text-xs uppercase text-muted-foreground">Duration</p>
-            <p className="font-semibold">30 Days</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase text-muted-foreground">Target Areas</p>
-            <p className="font-semibold">Lagos Metro, Abuja</p>
-          </div>
-        </div>
-
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span>₦4,650.00</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Processing Fee</span>
-            <span>₦350.00</span>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {isVerification ? "Verification package" : "Plan selected"}
+            </p>
+            <p className="text-base font-semibold">{planTitle}</p>
           </div>
         </div>
 
         <div className="flex items-center justify-between border-t pt-3">
           <span className="text-lg font-semibold">Total Price</span>
-          <span className="text-4xl font-bold text-brand-red">₦5,000.00</span>
+          <span className="text-4xl font-bold text-brand-red">{formattedTotal}</span>
         </div>
 
         <Button

@@ -35,10 +35,10 @@ function VisibilityToggle({ checked, disabled }: { checked: boolean; disabled?: 
   );
 }
 
-function verificationLabel(status: string): string {
+function verificationLabel(status: string, isFlagged: boolean): string {
   if (status === "approved") return "Verified";
+  if (isFlagged) return "Verification flagged";
   if (status === "pending") return "Pending verification";
-  if (status === "rejected") return "Verification rejected";
   return "Not verified yet";
 }
 
@@ -48,7 +48,8 @@ export function ProfileVisibilityCard() {
 
   const isActive = profile.businessStatus === "active";
   const isVerified = profile.verificationStatus === "approved";
-  const isPending = profile.verificationStatus === "pending";
+  const isFlagged = profile.isFlagged;
+  const isPending = profile.verificationStatus === "pending" && !isFlagged;
 
   return (
     <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
@@ -80,16 +81,24 @@ export function ProfileVisibilityCard() {
             "rounded-lg border p-4",
             isVerified
               ? "border-emerald-200 bg-emerald-50"
-              : isPending
-                ? "border-amber-200 bg-amber-50"
-                : "border-gray-200 bg-gray-50",
+              : isFlagged
+                ? "border-red-200 bg-red-50"
+                : isPending
+                  ? "border-amber-200 bg-amber-50"
+                  : "border-gray-200 bg-gray-50",
           )}
         >
           <div className="flex gap-3">
             <BadgeCheck
               className={cn(
                 "size-5",
-                isVerified ? "text-emerald-600" : isPending ? "text-amber-600" : "text-gray-500",
+                isVerified
+                  ? "text-emerald-600"
+                  : isFlagged
+                    ? "text-red-600"
+                    : isPending
+                      ? "text-amber-600"
+                      : "text-gray-500",
               )}
               aria-hidden
             />
@@ -97,22 +106,36 @@ export function ProfileVisibilityCard() {
               <p
                 className={cn(
                   "font-semibold font-manrope",
-                  isVerified ? "text-emerald-800" : isPending ? "text-amber-800" : "text-gray-800",
+                  isVerified
+                    ? "text-emerald-800"
+                    : isFlagged
+                      ? "text-red-800"
+                      : isPending
+                        ? "text-amber-800"
+                        : "text-gray-800",
                 )}
               >
-                {verificationLabel(profile.verificationStatus)}
+                {verificationLabel(profile.verificationStatus, isFlagged)}
               </p>
               <p
                 className={cn(
                   "text-sm font-inter",
-                  isVerified ? "text-emerald-700" : isPending ? "text-amber-700" : "text-gray-600",
+                  isVerified
+                    ? "text-emerald-700"
+                    : isFlagged
+                      ? "text-red-700"
+                      : isPending
+                        ? "text-amber-700"
+                        : "text-gray-600",
                 )}
               >
                 {isVerified
                   ? "Your business is verified on the platform"
-                  : isPending
-                    ? "Verification is under admin review"
-                    : "Apply for verification to build more trust with customers"}
+                  : isFlagged
+                    ? "Admin flagged your application. Fix issues and apply again."
+                    : isPending
+                      ? "Verification is under admin review"
+                      : "Apply for verification to build more trust with customers"}
               </p>
             </div>
           </div>

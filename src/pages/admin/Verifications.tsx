@@ -1,52 +1,17 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
-type QueueHealth = "stable" | "unstable";
+import { FlagVerificationModal } from "@/components/Modal/FlagVerificationModal";
+import {
+  adminApproveVerification,
+  adminFlagVerification,
+  adminListVerifications,
+  type AdminVerificationRow,
+} from "@/features/verification/adminVerificationApi";
+
 type VerificationStatus = "pending" | "approved" | "flagged";
-
-type VerificationRow = {
-  id: number;
-  businessName: string;
-  category: string;
-  dateJoined: string;
-  verificationDate: string;
-  status: VerificationStatus;
-};
-
-const DATA: VerificationRow[] = [
-  {
-    id: 1,
-    businessName: "Lagos Logistics Ltd",
-    category: "Logistics",
-    dateJoined: "2023-10-24",
-    verificationDate: "2026-04-24",
-    status: "pending",
-  },
-  {
-    id: 2,
-    businessName: "Horizon Plumbing",
-    category: "Plumbing",
-    dateJoined: "2023-10-25",
-    verificationDate: "2026-04-25",
-    status: "pending",
-  },
-  {
-    id: 3,
-    businessName: "City Electricals Hub",
-    category: "Electrical",
-    dateJoined: "2023-10-25",
-    verificationDate: "2026-04-27",
-    status: "approved",
-  },
-  {
-    id: 4,
-    businessName: "Fresh Clean Nigeria",
-    category: "Cleaning",
-    dateJoined: "2023-10-26",
-    verificationDate: "2026-04-28",
-    status: "flagged",
-  },
-];
 
 function formatDate(input: string) {
   const date = new Date(input);
@@ -54,24 +19,24 @@ function formatDate(input: string) {
   return date.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
 }
 
-function statusClass(status: VerificationStatus) {
+function rowDisplayStatus(row: AdminVerificationRow): VerificationStatus | "flagged" {
+  if (row.is_flagged) return "flagged";
+  if (row.verification_status === "approved") return "approved";
+  return "pending";
+}
+
+function statusClass(status: VerificationStatus | "flagged") {
   if (status === "approved") return "bg-green-100 text-green-700";
   if (status === "flagged") return "bg-red-100 text-red-700";
   return "bg-amber-100 text-amber-700";
 }
 
-function exportCsv(rows: VerificationRow[]) {
-  const headers = [
-    "Business Name",
-    "Category",
-    "Date Joined",
-    "Verification Date",
-    "Status",
-  ];
+function exportCsv(rows: AdminVerificationRow[]) {
+  const headers = ["Business Name", "Category", "Status", "Submitted"];
   const csvLines = [
     headers.join(","),
     ...rows.map((row) =>
-      [row.businessName, row.category, formatDate(row.dateJoined), formatDate(row.verificationDate), row.status]
+      [row.business_name, row.category?.name ?? "", row.verification_status_label, row.created_at]
         .map((value) => `"${String(value).replace(/"/g, '""')}"`)
         .join(","),
     ),
@@ -89,17 +54,86 @@ function exportCsv(rows: VerificationRow[]) {
 }
 
 export default function VerificationGrid() {
+  const [rows, setRows] = useState<AdminVerificationRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("queue");
+  const [flagTarget, setFlagTarget] = useState<AdminVerificationRow | null>(null);
+  const [actingId, setActingId] = useState<number | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await adminListVerifications({
+        verification_status: statusFilter === "all" ? undefined : statusFilter,
+        per_page: 50,
+      });
+      setRows(result.items);
+    } catch {
+      toast.error("Could not load verification requests.");
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   const todayKey = new Date().toDateString();
   const todaysVerified = useMemo(
     () =>
-      DATA.filter(
-        (item) => item.status === "approved" && new Date(item.verificationDate).toDateString() === todayKey,
+      rows.filter(
+        (item) =>
+          item.verification_status === "approved" &&
+          item.verified_at &&
+          new Date(item.verified_at).toDateString() === todayKey,
       ).length,
-    [todayKey],
+    [rows, todayKey],
   );
 
-  const averageHours = 2.4;
-  const queueHealth: QueueHealth = averageHours < 24 ? "stable" : "unstable";
+  const pendingCount = rows.filter(
+    (r) => r.verification_status === "pending" && !r.is_flagged,
+  ).length;
+
+  const handleApprove = async (row: AdminVerificationRow) => {
+    setActingId(row.id);
+    try {
+      const updated = await adminApproveVerification(row.id);
+      toast.success(`${row.business_name} approved.`);
+      setRows((prev) =>
+        prev.map((item) =>
+          item.id === row.id
+            ? {
+              ...item,
+              verification_status: "approved",
+              verification_status_label: updated.verification_status_label,
+              is_approved: true,
+              verified_at: updated.verified_at ?? item.verified_at,
+            }
+            : item,
+        ),
+      );
+    } catch {
+      toast.error("Could not approve verification.");
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const handleFlag = async (reason: string) => {
+    if (!flagTarget) return;
+    setActingId(flagTarget.id);
+    try {
+      await adminFlagVerification(flagTarget.id, reason);
+      toast.success(`${flagTarget.business_name} flagged.`);
+      setFlagTarget(null);
+      await load();
+    } catch {
+      toast.error("Could not flag verification.");
+    } finally {
+      setActingId(null);
+    }
+  };
 
   return (
     <div>
@@ -107,33 +141,37 @@ export default function VerificationGrid() {
         <h1 className="text-2xl font-semibold leading-tight text-ink-heading sm:text-3xl">Verifications</h1>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="cursor-pointer rounded-xl border border-border-gray bg-card px-3 py-2 text-sm"
+        >
+          <option value="queue">Pending &amp; approved</option>
+          <option value="all">All</option>
+          <option value="pending">Pending only</option>
+          <option value="approved">Approved</option>
+          <option value="flagged">Flagged</option>
+        </select>
         <button
           type="button"
-          onClick={() => exportCsv(DATA)}
-          className="inline-flex items-center gap-2 rounded-xl border border-border-gray bg-card px-4 py-2.5 text-sm font-semibold text-ink hover:bg-muted"
+          onClick={() => exportCsv(rows)}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border-gray bg-card px-4 py-2.5 text-sm font-semibold text-ink hover:bg-muted"
         >
           <Download className="size-4" />
-          Export Log (Excel/CSV)
+          Export Log (CSV)
         </button>
       </div>
 
       <section className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
         <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Queue Health</p>
-          <p className={`mt-1 text-4xl font-semibold leading-10 ${queueHealth === "stable" ? "text-success" : "text-brand-red"}`}>
-            {queueHealth === "stable" ? "Stable" : "Unstable"}
-          </p>
-          <p className="mt-1 text-sm text-body-secondary">Avg response time: {averageHours}hrs</p>
-          <p className="mt-1 text-xs text-body-secondary">
-            {queueHealth === "stable" ? "Less than 24 hours" : "Above 24 hours"}
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Pending queue</p>
+          <p className="mt-1 text-4xl font-semibold leading-10 text-amber-600">{pendingCount}</p>
+          <p className="mt-1 text-sm text-body-secondary">Awaiting admin review</p>
         </article>
-
         <article className="rounded-xl border border-chat-border-subtle bg-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Today&apos;s Verified</p>
-          <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{todaysVerified.toLocaleString()}</p>
-          <p className="mt-1 text-sm font-medium text-success">+12% from yesterday</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-chat-meta">Today&apos;s verified</p>
+          <p className="mt-1 text-4xl font-semibold leading-10 text-ink">{todaysVerified}</p>
         </article>
       </section>
 
@@ -143,51 +181,82 @@ export default function VerificationGrid() {
             <tr className="border-b border-border-gray bg-muted/40">
               <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Business Name</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Category</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Date Joined</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Verification Date</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Submitted</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-body-secondary">Status</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-body-secondary">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {DATA.map((row) => (
-              <tr key={row.id} className="border-b border-border-light">
-                <td className="px-4 py-3 font-medium text-ink">{row.businessName}</td>
-                <td className="px-4 py-3 text-ink">{row.category}</td>
-                <td className="px-4 py-3 text-body-secondary">{formatDate(row.dateJoined)}</td>
-                <td className="px-4 py-3 text-body-secondary">{formatDate(row.verificationDate)}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusClass(row.status)}`}>
-                    {row.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      className="rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success/90"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
-                    >
-                      Flag
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-md border border-border-gray px-3 py-1.5 text-xs font-semibold text-body-secondary hover:bg-muted"
-                    >
-                      Request Info
-                    </button>
-                  </div>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-body-secondary">
+                  Loading…
                 </td>
               </tr>
-            ))}
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-body-secondary">
+                  No verification requests found.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} className="border-b border-border-light">
+                  <td className="px-4 py-3 font-medium text-ink">{row.business_name}</td>
+                  <td className="px-4 py-3 text-ink">{row.category?.name ?? "—"}</td>
+                  <td className="px-4 py-3 text-body-secondary">
+                    {formatDate(row.submitted_at ?? row.created_at)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusClass(rowDisplayStatus(row))}`}
+                    >
+                      {row.verification_status_label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        to={`/admin/verifications/${row.id}`}
+                        className="cursor-pointer rounded-md border border-border-gray bg-card px-3 py-1.5 text-xs font-semibold text-ink hover:bg-muted"
+                      >
+                        Request Info
+                      </Link>
+                      {row.verification_status === "pending" && !row.is_flagged ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={actingId === row.id}
+                            onClick={() => void handleApprove(row)}
+                            className="cursor-pointer rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success/90 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={actingId === row.id}
+                            onClick={() => setFlagTarget(row)}
+                            className="cursor-pointer rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Flag
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </section>
+
+      <FlagVerificationModal
+        open={flagTarget !== null}
+        businessName={flagTarget?.business_name ?? ""}
+        onClose={() => setFlagTarget(null)}
+        onConfirm={handleFlag}
+      />
     </div>
   );
 }

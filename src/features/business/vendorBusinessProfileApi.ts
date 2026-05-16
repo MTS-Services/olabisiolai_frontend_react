@@ -24,6 +24,7 @@ export type VendorBusinessProfile = {
   logoUrl: string;
   coverPhotoUrls: string[];
   verificationStatus: string;
+  isFlagged: boolean;
   businessStatus: string;
   boostStatus: "active" | "none";
 };
@@ -114,6 +115,7 @@ export function parseVendorBusinessProfile(raw: unknown): VendorBusinessProfile 
     logoUrl: resolveMediaUrl(pickString(item, ["logo_url", "logo"], "")),
     coverPhotoUrls: resolveMediaUrls(parseStringArray(item.cover_photo_urls)),
     verificationStatus: pickString(item, ["verification_status"], "none").toLowerCase(),
+    isFlagged: item.is_flagged === true || item.is_flagged === 1 || item.is_flagged === "1",
     businessStatus: pickString(item, ["business_status"], "active").toLowerCase(),
     boostStatus: boostRaw === "active" ? "active" : "none",
   };

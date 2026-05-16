@@ -28,7 +28,7 @@ const verificationStyles: Record<Verification, string> = {
   none: "bg-gray-100 text-gray-600 border border-gray-200",
   pending: "bg-orange-50 text-orange-500 border border-orange-200",
   verified: "bg-green-50 text-green-600 border border-green-200",
-  rejected: "bg-red-50 text-red-500 border border-red-200",
+  flagged: "bg-red-50 text-red-500 border border-red-200",
 };
 
 const boostStyles: Record<Boost, string> = {
@@ -46,6 +46,7 @@ function statusLabel(status: Status): string {
 function verificationLabel(verification: Verification): string {
   if (verification === "verified") return "Verified";
   if (verification === "none") return "Not applied";
+  if (verification === "flagged") return "Flagged";
   return verification.charAt(0).toUpperCase() + verification.slice(1);
 }
 

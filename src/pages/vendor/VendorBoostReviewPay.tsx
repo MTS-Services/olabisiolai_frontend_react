@@ -1,33 +1,50 @@
+import { useMemo, useState } from "react";
+import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import { useAuth } from "@/auth/useAuth";
 import { BillingInformationCard } from "@/components/sections/vendor/boost/boostPay/BillingInformationCard";
 import { BoostPayHeader } from "@/components/sections/vendor/boost/boostPay/BoostPayHeader";
 import { OrderSummaryCard } from "@/components/sections/vendor/boost/boostPay/OrderSummaryCard";
 import { PaymentMethodsCard } from "@/components/sections/vendor/boost/boostPay/PaymentMethodsCard";
-import { useState } from "react";
-import { useFlutterwave } from "flutterwave-react-v3";
+import { plans, type PlanId } from "@/components/sections/vendor/verification/verificationData";
 import { env } from "@/config/env";
-import { useAuth } from "@/auth/useAuth";
-import { useMemo } from "react";
+import {
+  confirmVerificationPayment,
+  initVerificationPayment,
+} from "@/features/verification/vendorVerificationApi";
+
+const PAYMENT_ID_KEY = "verificationPaymentId";
+const PLAN_STORAGE_KEY = "verificationPlanId";
 
 export default function VendorBoostReviewPayPage() {
+  const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<"card" | "bank">("card");
   const [isPaying, setIsPaying] = useState(false);
   const { user } = useAuth();
 
-  const amountNgn = 5000;
+  const isVerification = sessionStorage.getItem("paymentSource") === "verification";
+  const packageId = (sessionStorage.getItem(PLAN_STORAGE_KEY) as PlanId | null) ?? "individual";
+  const selectedPlan = plans.find((p) => p.id === packageId) ?? plans[0];
+  const amountNgn = Number(selectedPlan.amount.replace(/,/g, "")) || 5000;
+
   const customerEmail = user?.email ?? "guest@gidira.app";
   const customerPhone =
-    (user as unknown as { phone?: string; phone_number?: string })?.phone ??
-    (user as unknown as { phone?: string; phone_number?: string })?.phone_number ??
+    (user as { phone?: string; phone_number?: string })?.phone ??
+    (user as { phone?: string; phone_number?: string })?.phone_number ??
     "08000000000";
   const customerName =
-    (user as unknown as { name?: string; full_name?: string })?.name ??
-    (user as unknown as { name?: string; full_name?: string })?.full_name ??
+    (user as { name?: string; full_name?: string })?.name ??
+    (user as { name?: string; full_name?: string })?.full_name ??
     "Gidira Vendor";
 
-  // Keep tx_ref stable across re-renders so Flutterwave init doesn't churn.
-  const txRef = useMemo(() => {
-    return `boost_${Date.now()}_${String(user?.id ?? "guest")}`;
-  }, [user?.id]);
+  const [paymentId, setPaymentId] = useState<number | null>(() => {
+    const stored = sessionStorage.getItem(PAYMENT_ID_KEY);
+    return stored ? Number(stored) : null;
+  });
+
+  const txRef = useMemo(() => `verification_${Date.now()}_${String(user?.id ?? "guest")}`, [user?.id]);
 
   const handleFlutterPayment = useFlutterwave({
     public_key: env.flutterwavePublicKey,
@@ -41,75 +58,89 @@ export default function VendorBoostReviewPayPage() {
       name: customerName,
     },
     customizations: {
-      title: "Gidira Boost Payment",
-      description: "Boost plan purchase",
+      title: isVerification ? "Gidira Verification Payment" : "Gidira Boost Payment",
+      description: isVerification ? "Verification package" : "Boost plan purchase",
       logo: "/favicon.ico",
     },
   });
 
-  const onConfirmPay = () => {
+  const onConfirmPay = async () => {
     if (selectedMethod === "bank") {
-      window.alert("Bank transfer checkout is coming soon. Please use Card for now.");
+      toast("Bank transfer checkout is coming soon. Please use Card for now.");
       return;
     }
 
     if (!env.flutterwavePublicKey) {
-      window.alert("Flutterwave public key is missing. Set VITE_FLUTTERWAVE_PUBLIC_KEY and restart dev server.");
+      toast.error("Flutterwave public key is missing. Set VITE_FLUTTERWAVE_PUBLIC_KEY.");
+      return;
+    }
+
+    if (!isVerification) {
+      toast("Boost payment API is not wired yet.");
       return;
     }
 
     try {
       setIsPaying(true);
+
+      let activePaymentId = paymentId;
+      if (!activePaymentId) {
+        const payment = await initVerificationPayment(packageId);
+        activePaymentId = payment.id;
+        setPaymentId(payment.id);
+        sessionStorage.setItem(PAYMENT_ID_KEY, String(payment.id));
+      }
+
+      const resolvedPaymentId = activePaymentId;
+
       handleFlutterPayment({
         callback: async (response) => {
-          // Dev-only: verify via Vite dev proxy (keeps secret out of browser bundle).
-          // Production: move this to Laravel backend.
-          if (import.meta.env.DEV) {
-            try {
-              const txId = (response as unknown as { transaction_id?: string | number })
-                ?.transaction_id;
-              if (txId) {
-                const res = await fetch(
-                  `/__dev/flutterwave/verify/${encodeURIComponent(String(txId))}`,
-                );
-                const data = await res.json().catch(() => null);
-                // eslint-disable-next-line no-console
-                console.log("[flutterwave] verify result", { status: res.status, data });
-              } else {
-                // eslint-disable-next-line no-console
-                console.log("[flutterwave] payment response (no transaction_id)", response);
-              }
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.log("[flutterwave] dev verify failed", e);
+          try {
+            const txId =
+              (response as { transaction_id?: string | number })?.transaction_id ??
+              (response as { id?: string | number })?.id;
+
+            if (!txId) {
+              toast.error("Payment completed but transaction id was missing.");
+              return;
             }
+
+            await confirmVerificationPayment(resolvedPaymentId, String(txId));
+            closePaymentModal();
+            toast.success("Payment confirmed. Upload your documents next.");
+            navigate("/vendor/document-upload");
+          } catch {
+            toast.error("Payment succeeded but confirmation failed. Contact support.");
+          } finally {
+            setIsPaying(false);
           }
-          setIsPaying(false);
         },
-        onClose: () => {
-          setIsPaying(false);
-        },
+        onClose: () => setIsPaying(false),
       });
-    } catch (e) {
+    } catch {
       setIsPaying(false);
-      window.alert(`Unable to start payment: ${String(e)}`);
+      toast.error("Unable to start payment.");
     }
   };
+
   return (
     <div className="p-4 md:p-6">
       <div className="space-y-4">
         <BoostPayHeader />
 
-        <div className="grid gap-4 xl:grid-cols-[1fr_390px] mt-10">
+        <div className="mt-10 grid gap-4 xl:grid-cols-[1fr_390px]">
           <div className="space-y-4">
-            <PaymentMethodsCard
-              selectedMethod={selectedMethod}
-              onMethodChange={setSelectedMethod}
-            />
+            <PaymentMethodsCard selectedMethod={selectedMethod} onMethodChange={setSelectedMethod} />
             <BillingInformationCard />
           </div>
 
-          <OrderSummaryCard onConfirmPay={onConfirmPay} isPaying={isPaying} />
+          <OrderSummaryCard
+            onConfirmPay={() => void onConfirmPay()}
+            isPaying={isPaying}
+            planTitle={isVerification ? selectedPlan.title : "Visibility Pro Plus"}
+            totalAmount={amountNgn}
+            isVerification={isVerification}
+          />
         </div>
       </div>
     </div>

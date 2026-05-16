@@ -11,7 +11,8 @@ export type AdminBusinessInfo = {
   location: string;
   status: "pending" | "active" | "inactive" | "suspended";
   /** `verified` includes API value `approved`. */
-  verification: "none" | "pending" | "verified" | "rejected";
+  verification: "none" | "pending" | "verified" | "flagged";
+  is_flagged?: boolean;
   boost: "none" | "active";
   plan: "free" | "premium";
   joinDate: string;
@@ -36,7 +37,7 @@ export type AdminBusinessListParams = {
   page?: number;
   per_page?: number;
   search?: string;
-  /** API: none | pending | approved | rejected */
+  /** API: none | pending | approved */
   verification_status?: string;
   /** API: active | inactive | suspended (BusinessStatus) */
   business_status?: string;
@@ -108,7 +109,7 @@ const DEFAULT_FILTER_OPTIONS: AdminBusinessFilterOptions = {
     { value: "none", label: "Not applied" },
     { value: "pending", label: "Pending review" },
     { value: "approved", label: "Verified" },
-    { value: "rejected", label: "Rejected" },
+    { value: "flagged", label: "Flagged" },
   ],
   business_statuses: [
     { value: "active", label: "Active" },
@@ -151,7 +152,7 @@ function asBoolean(value: unknown): boolean | null {
   if (typeof value === "string") {
     const normalized = value.trim().toLowerCase();
     if (["1", "true", "yes", "verified", "active", "approved"].includes(normalized)) return true;
-    if (["0", "false", "no", "rejected", "inactive", "pending"].includes(normalized)) return false;
+    if (["0", "false", "no", "flagged", "inactive", "pending"].includes(normalized)) return false;
   }
   return null;
 }
@@ -199,7 +200,7 @@ function toVerification(raw: string): AdminBusinessInfo["verification"] {
   if (n === "none") return "none";
   if (n === "pending") return "pending";
   if (n === "approved" || n === "verified") return "verified";
-  if (n === "rejected") return "rejected";
+  if (n === "flagged") return "flagged";
   return "none";
 }
 
@@ -245,7 +246,8 @@ function parseBusiness(raw: unknown, index: number): AdminBusinessInfo | null {
   const status = toStatus(pickString(item, ["business_status", "status"], "active").toLowerCase());
 
   const verificationBool = asBoolean(item.is_verified ?? item.verified ?? verificationObj?.is_verified);
-  const verification = toVerification(
+  const isFlagged = asBoolean(item.is_flagged) === true;
+  let verification = toVerification(
     (
       pickString(item, ["verification_status"], "") ||
       pickString(verificationObj ?? {}, ["status"], "") ||
@@ -253,6 +255,9 @@ function parseBusiness(raw: unknown, index: number): AdminBusinessInfo | null {
       pickString(item, ["verification"], "")
     ).toLowerCase(),
   );
+  if (isFlagged) {
+    verification = "flagged";
+  }
   const boost = toBoost(
     (
       pickString(item, ["boost_status"], "") ||
@@ -276,6 +281,7 @@ function parseBusiness(raw: unknown, index: number): AdminBusinessInfo | null {
     location,
     status,
     verification,
+    is_flagged: isFlagged,
     boost,
     plan,
     joinDate,

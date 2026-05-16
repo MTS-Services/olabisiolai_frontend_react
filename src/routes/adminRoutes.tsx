@@ -19,6 +19,7 @@ const Locations = lazy(() => import("@/pages/admin/Locations"));
 const Settings = lazy(() => import("@/pages/admin/Settings"));
 const Notifications = lazy(() => import("@/pages/admin/Notifications"));
 const Verifications = lazy(() => import("@/pages/admin/Verifications"));
+const AdminVerificationDetail = lazy(() => import("@/pages/admin/AdminVerificationDetail"));
 const Leads = lazy(() => import("@/pages/admin/Leads"));
 const Reviews = lazy(() => import("@/pages/admin/Reviews"));
 const Payments = lazy(() => import("@/pages/admin/Payments"));
@@ -90,6 +91,10 @@ export const adminRoutes: RouteObject = {
     { path: "/admin/locations", element: suspensePage(Locations) },
     { path: "/admin/notifications", element: suspensePage(Notifications) },
     { path: "/admin/verifications", element: suspensePage(Verifications) },
+    {
+      path: "/admin/verifications/:businessId",
+      element: suspensePage(AdminVerificationDetail),
+    },
     {
       path: "/admin/leads",
       element: (

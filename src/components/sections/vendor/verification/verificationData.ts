@@ -8,6 +8,8 @@ export type Plan = {
     title: string;
     amount: string;
     description: string;
+    /** Shown under the plan grid when this tier is selected — what happens after payment. */
+    afterPurchaseNote: string;
     perks: string[];
     icon: LucideIcon;
     /** Default panel fill when not selected (design: white vs soft blue). */
@@ -23,6 +25,8 @@ export const plans: Plan[] = [
         amount: "2,500",
         description:
             "Best for solo entrepreneurs and independent contractors. Requires government ID and personal biometric verification.",
+        afterPurchaseNote:
+            "After payment you will upload your ID and business documents. Track each file on your status page — see what is approved, rejected, or still under review, and re-upload if admin requests changes.",
         perks: ["Trusted badge"],
         icon: CircleUserRound,
         surface: "tint",
@@ -34,6 +38,8 @@ export const plans: Plan[] = [
         amount: "5,000",
         description:
             "For registered sole proprietorships. Includes CAC document validation and business account linkage.",
+        afterPurchaseNote:
+            "After payment, submit your CAC certificate, identity proof, and address proof. Your document status page shows admin decisions on every file so you always know what to fix.",
         perks: ["Vendor priority", "Storefront personalization"],
         icon: Store,
         surface: "white",
@@ -45,6 +51,8 @@ export const plans: Plan[] = [
         amount: "10,000",
         description:
             "The gold standard for corporate entities. Comprehensive verification of directors, shareholders, and legal status.",
+        afterPurchaseNote:
+            "After payment, upload incorporation documents and director IDs. Use the document status page to follow review progress and replace any file marked as flagged by our team.",
         perks: ["Enterprise blue badge"],
         icon: FileText,
         surface: "tint",

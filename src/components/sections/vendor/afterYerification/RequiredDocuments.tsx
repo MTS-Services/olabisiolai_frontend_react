@@ -18,6 +18,7 @@ import {
   nestDocumentsByParent,
   REQUIRED_VERIFICATION_DOCUMENTS,
   type DocumentUiStatus,
+  type NestedDocFile,
   type RequiredDocSpec,
 } from "@/features/verification/verificationDocuments";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
@@ -80,7 +81,7 @@ type ApiDocNode = {
   rejectionReason: string | null;
 };
 
-function mapNestedNode(node: ApiDocNode & { children: ApiDocNode[] }): VerificationFileRow {
+function mapNestedNode(node: NestedDocFile<ApiDocNode>): VerificationFileRow {
   return {
     id: node.id,
     fileName: node.fileName,

@@ -62,8 +62,8 @@ export function documentTypeLabel(documentType: string): string {
   return documentType.replace(/_/g, " ");
 }
 
-export type NestedDocFile<T extends { id: number; children?: T[] }> = T & {
-  children: T[];
+export type NestedDocFile<T extends { id: number }> = T & {
+  children: NestedDocFile<T>[];
 };
 
 export function nestDocumentsByParent<T extends { id: number; parent_document_id?: number | null }>(

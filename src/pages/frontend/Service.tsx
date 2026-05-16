@@ -1,7 +1,10 @@
 import { useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchPublicBusinessById } from "@/features/business/publicBusinessApi";
+import {
+  fetchPublicBusinessById,
+  type PublicBusiness,
+} from "@/features/business/publicBusinessApi";
 import { fetchBusinessReviews } from "@/features/reviews/publicReviewApi";
 import { decryptId } from "@/lib/encryptId";
 import {
@@ -104,6 +107,24 @@ interface StateBusinessData {
   isFavorite?: boolean;
 }
 
+function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
+  return {
+    id: data.id,
+    name: data.name,
+    category: data.category,
+    location: data.location,
+    rating: data.rating,
+    reviews: data.reviews,
+    description: data.description,
+    image: data.image,
+    logoUrl: data.logoUrl ?? data.image,
+    coverPhotoUrls: data.coverPhotoUrls ?? (data.image ? [data.image] : []),
+    servicesOffered: data.servicesOffered ?? [],
+    verified: data.verified,
+    isFavorite: data.isFavorite ?? false,
+  };
+}
+
 export default function Service() {
   const [photosOpen, setPhotosOpen] = useState(false);
   const [reviewPage, setReviewPage] = useState(1);
@@ -116,15 +137,13 @@ export default function Service() {
   const stateData = (location.state as { from?: string; business?: StateBusinessData } | null)
     ?.business ?? null;
 
-  const { data: business } = useQuery({
+  const { data: business } = useQuery<PublicBusiness | null>({
     queryKey: ["business", businessId],
     queryFn: () => fetchPublicBusinessById(businessId!),
     enabled: businessId !== null,
     staleTime: 5 * 60 * 1000,
     placeholderData:
-      stateData !== null
-        ? { ...stateData, isFavorite: stateData.isFavorite ?? false }
-        : undefined,
+      stateData !== null ? toPublicBusinessPlaceholder(stateData) : undefined,
   });
 
   const { data: reviewsResult } = useQuery({

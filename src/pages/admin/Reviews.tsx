@@ -10,6 +10,7 @@ import {
   adminViewReview,
 } from "@/features/reviews/adminReviewApi";
 import type { ReviewDto, ReviewPagination, ReviewStatistics } from "@/features/reviews/types";
+import { alert, showError, showSuccess } from "@/lib/sweetAlert";
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -168,6 +169,9 @@ export default function Reviews() {
       setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       if (selectedReview?.id === updated.id) setSelectedReview(updated);
       void loadStats();
+      showSuccess("Review approved.");
+    } catch {
+      showError("Could not approve review.");
     } finally {
       setProcessingId(null);
     }
@@ -184,6 +188,9 @@ export default function Reviews() {
       setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       if (selectedReview?.id === updated.id) setSelectedReview(updated);
       void loadStats();
+      showSuccess("Review flagged.");
+    } catch {
+      showError("Could not flag review.");
     } finally {
       setProcessingId(null);
       setFlagTargetId(null);
@@ -191,7 +198,8 @@ export default function Reviews() {
   };
 
   const handleDelete = async (reviewId: number) => {
-    if (!window.confirm("Delete this review? This cannot be undone.")) return;
+    const confirmed = await alert.confirmDelete("this review");
+    if (!confirmed) return;
     setProcessingId(reviewId);
     try {
       await adminDeleteReview(reviewId);
@@ -203,6 +211,9 @@ export default function Reviews() {
       if (stats) {
         setStats({ ...stats, total_reviews: Math.max(0, stats.total_reviews - 1) });
       }
+      alert.crud.deleted("Review");
+    } catch {
+      showError("Could not delete review.");
     } finally {
       setProcessingId(null);
     }

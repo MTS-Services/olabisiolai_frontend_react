@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Loader2, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { showError, showInfo, showSuccess } from "@/lib/sweetAlert";
 
 import {
   VerificationFileRows,
@@ -138,7 +138,7 @@ export function RequiredDocuments({ className }: { className?: string }) {
     try {
       setStatusPayload(await fetchVerificationStatus());
     } catch {
-      toast.error("Could not load verification documents.");
+      showError("Could not load verification documents.");
     } finally {
       setLoading(false);
     }
@@ -174,7 +174,7 @@ export function RequiredDocuments({ className }: { className?: string }) {
       return;
     }
     if (statusPayload?.is_flagged) {
-      toast("Complete a new verification payment before uploading documents.");
+      showInfo("Complete a new verification payment before uploading documents.");
       navigate("/vendor/verification");
       return;
     }
@@ -199,10 +199,10 @@ export function RequiredDocuments({ className }: { className?: string }) {
         parent_document_id: fileId,
         file,
       });
-      toast.success("Document uploaded for review.");
+      showSuccess("Document uploaded for review.");
       await load();
     } catch {
-      toast.error("Could not upload document.");
+      showError("Could not upload document.");
     } finally {
       setUploadingKey(null);
     }
@@ -210,7 +210,7 @@ export function RequiredDocuments({ className }: { className?: string }) {
 
   const handleView = (file: VerificationFileRow) => {
     if (!file.fileUrl) {
-      toast.error("No file available to view.");
+      showError("No file available to view.");
       return;
     }
     window.open(file.fileUrl, "_blank", "noopener,noreferrer");

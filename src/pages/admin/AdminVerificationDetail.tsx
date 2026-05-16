@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import toast from "react-hot-toast";
+import { showError, showSuccess } from "@/lib/sweetAlert";
 
 import { FlagVerificationModal } from "@/components/Modal/FlagVerificationModal";
 import {
@@ -185,7 +185,7 @@ export default function AdminVerificationDetail() {
     try {
       setDetail(await adminViewVerification(id));
     } catch {
-      toast.error("Could not load verification details.");
+      showError("Could not load verification details.");
     } finally {
       setLoading(false);
     }
@@ -205,10 +205,10 @@ export default function AdminVerificationDetail() {
     setActing(true);
     try {
       await adminApproveVerification(detail.id);
-      toast.success("Business verification approved.");
+      showSuccess("Business verification approved.");
       await load();
     } catch {
-      toast.error("Could not approve.");
+      showError("Could not approve.");
     } finally {
       setActing(false);
     }
@@ -219,11 +219,11 @@ export default function AdminVerificationDetail() {
     setActing(true);
     try {
       await adminFlagVerification(detail.id, reason);
-      toast.success("Business flagged.");
+      showSuccess("Business flagged.");
       setFlagOpen(false);
       await load();
     } catch {
-      toast.error("Could not flag.");
+      showError("Could not flag.");
     } finally {
       setActing(false);
     }
@@ -237,10 +237,10 @@ export default function AdminVerificationDetail() {
     setActing(true);
     try {
       await adminReviewDocument(doc.id, "approve");
-      toast.success(`"${doc.title}" approved.`);
+      showSuccess(`"${doc.title}" approved.`);
       await load();
     } catch {
-      toast.error("Could not update document.");
+      showError("Could not update document.");
     } finally {
       setActing(false);
     }
@@ -251,12 +251,12 @@ export default function AdminVerificationDetail() {
     setActing(true);
     try {
       await adminReviewDocument(rejectDoc.id, "reject", rejectReason.trim());
-      toast.success(`"${rejectDoc.title}" rejected.`);
+      showSuccess(`"${rejectDoc.title}" rejected.`);
       setRejectDoc(null);
       setRejectReason("");
       await load();
     } catch {
-      toast.error("Could not reject document.");
+      showError("Could not reject document.");
     } finally {
       setActing(false);
     }
@@ -267,11 +267,11 @@ export default function AdminVerificationDetail() {
     setActing(true);
     try {
       await adminAddVerificationNote(detail.id, requestInfoNote.trim(), true);
-      toast.success("Request sent to vendor.");
+      showSuccess("Request sent to vendor.");
       setRequestInfoNote("");
       await load();
     } catch {
-      toast.error("Could not send request.");
+      showError("Could not send request.");
     } finally {
       setActing(false);
     }

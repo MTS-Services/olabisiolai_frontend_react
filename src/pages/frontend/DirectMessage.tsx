@@ -1,5 +1,5 @@
 import * as React from "react";
-import toast from "react-hot-toast";
+import { showError } from "@/lib/sweetAlert";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
@@ -34,7 +34,7 @@ export default function DirectMessage() {
           { replace: true, state: { from: state?.from } },
         );
       } catch {
-        toast.error("Could not start conversation");
+        showError("Could not start conversation");
       }
     })();
     return () => {

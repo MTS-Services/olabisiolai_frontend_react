@@ -21,6 +21,7 @@ import {
   type AdminBusinessStatusApi,
   type AdminFilterOption,
 } from "@/features/business/adminBusinessInfoApi";
+import { alert, showError } from "@/lib/sweetAlert";
 
 type Status = "active" | "inactive" | "suspended" | "pending";
 type Verification = "none" | "pending" | "verified" | "flagged";
@@ -194,9 +195,12 @@ export default function BusinessTable() {
     onSuccess: () => {
       setActionError(null);
       void queryClient.invalidateQueries({ queryKey: ["admin", "business-info"] });
+      alert.crud.updated("Business status");
     },
     onError: (error: unknown) => {
-      setActionError(error instanceof Error ? error.message : "Failed to update business status.");
+      const message = error instanceof Error ? error.message : "Failed to update business status.";
+      setActionError(message);
+      showError(message);
     },
     onSettled: () => {
       setActionBusinessId(null);
@@ -210,9 +214,12 @@ export default function BusinessTable() {
       setActionError(null);
       setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["admin", "business-info"] });
+      alert.crud.deleted("Business profile");
     },
     onError: (error: unknown) => {
-      setActionError(error instanceof Error ? error.message : "Failed to delete business profile.");
+      const message = error instanceof Error ? error.message : "Failed to delete business profile.";
+      setActionError(message);
+      showError(message);
     },
     onSettled: () => {
       setActionBusinessId(null);

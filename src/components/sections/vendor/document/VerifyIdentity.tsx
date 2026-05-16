@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CreditCard, Lock, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { showError, showSuccess } from "@/lib/sweetAlert";
 
 import { applyForVerification } from "@/features/verification/vendorVerificationApi";
 import { DOC_TITLE_TO_TYPE } from "@/features/verification/verificationDocuments";
@@ -21,7 +21,7 @@ export default function VerifyIdentity({
     const paymentId = paymentIdRaw ? Number(paymentIdRaw) : NaN;
 
     if (!paymentId || Number.isNaN(paymentId)) {
-      toast.error("Complete payment before submitting documents.");
+      showError("Complete payment before submitting documents.");
       navigate("/vendor/verification");
       return;
     }
@@ -35,7 +35,7 @@ export default function VerifyIdentity({
     );
 
     if (documents.length === 0) {
-      toast.error("Upload at least one document.");
+      showError("Upload at least one document.");
       return;
     }
 
@@ -45,10 +45,10 @@ export default function VerifyIdentity({
       sessionStorage.removeItem(PAYMENT_ID_KEY);
       sessionStorage.removeItem("verificationPlanId");
       sessionStorage.removeItem("paymentSource");
-      toast.success("Verification request submitted.");
+      showSuccess("Verification request submitted.");
       navigate("/vendor/after-verification");
     } catch {
-      toast.error("Could not submit verification request.");
+      showError("Could not submit verification request.");
     } finally {
       setSubmitting(false);
     }

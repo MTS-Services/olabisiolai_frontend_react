@@ -9,6 +9,7 @@ import {
   adminUpdateCategory,
 } from "@/features/categories/adminCategoriesApi";
 import type { CategoryDto } from "@/features/categories/types";
+import { alert, showError } from "@/lib/sweetAlert";
 
 const PER_PAGE = 10;
 
@@ -57,6 +58,7 @@ export default function CategoriesTable() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["admin", "categories"] });
       closeModal();
+      alert.crud.created("Category");
     },
     onError: (e: unknown) => setFormError(messageFromUnknown(e)),
   });
@@ -73,15 +75,19 @@ export default function CategoriesTable() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["admin", "categories"] });
       closeModal();
+      alert.crud.updated("Category");
     },
     onError: (e: unknown) => setFormError(messageFromUnknown(e)),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => adminDeleteCategory(id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin", "categories"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["admin", "categories"] });
+      alert.crud.deleted("Category");
+    },
     onError: (e: unknown) => {
-      window.alert(messageFromUnknown(e));
+      showError(messageFromUnknown(e));
     },
   });
 
@@ -107,8 +113,9 @@ export default function CategoriesTable() {
     setFormError(null);
   };
 
-  const handleDelete = (id: number, name: string) => {
-    if (!window.confirm(`Delete category “${name}”?`)) return;
+  const handleDelete = async (id: number, name: string) => {
+    const confirmed = await alert.confirmDelete(name);
+    if (!confirmed) return;
     deleteMut.mutate(id);
   };
 

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { showError } from '@/lib/sweetAlert'
 
 import { createConversation } from '@/api/conversations'
 import { Button } from '@/components/ui/button'
@@ -25,7 +25,7 @@ export function NewConversationModal({
       onClose()
       setUserId('')
     },
-    onError: () => toast.error('Could not start conversation'),
+    onError: () => showError('Could not start conversation'),
   })
 
   if (!open) return null

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { showError } from '@/lib/sweetAlert'
 
 import {
   deleteMessage as deleteMessageApi,
@@ -76,7 +76,7 @@ export function useMessageActions(
           isActiveConversation: true,
         })
       } catch {
-        toast.error('Failed to send message')
+        showError('Failed to send message')
         queryClient.setQueryData<InfiniteData<MessagesPage>>(
           QUERY_KEYS.messages(conversationUuid),
           (old) => {

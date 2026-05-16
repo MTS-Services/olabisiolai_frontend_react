@@ -1,8 +1,8 @@
-import toast from 'react-hot-toast'
+import { showInfo } from '@/lib/sweetAlert'
 
 export function notifyNewMessage(senderName: string, preview: string) {
   if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
     return
   }
-  toast(`${senderName}: ${preview}`, { duration: 4000 })
+  void showInfo(`${senderName}: ${preview}`)
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { Link } from "react-router-dom";
-import toast from "react-hot-toast";
+import { showError, showSuccess } from "@/lib/sweetAlert";
 
 import { FlagVerificationModal } from "@/components/Modal/FlagVerificationModal";
 import {
@@ -69,7 +69,7 @@ export default function VerificationGrid() {
       });
       setRows(result.items);
     } catch {
-      toast.error("Could not load verification requests.");
+      showError("Could not load verification requests.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ export default function VerificationGrid() {
     setActingId(row.id);
     try {
       const updated = await adminApproveVerification(row.id);
-      toast.success(`${row.business_name} approved.`);
+      showSuccess(`${row.business_name} approved.`);
       setRows((prev) =>
         prev.map((item) =>
           item.id === row.id
@@ -114,7 +114,7 @@ export default function VerificationGrid() {
         ),
       );
     } catch {
-      toast.error("Could not approve verification.");
+      showError("Could not approve verification.");
     } finally {
       setActingId(null);
     }
@@ -125,11 +125,11 @@ export default function VerificationGrid() {
     setActingId(flagTarget.id);
     try {
       await adminFlagVerification(flagTarget.id, reason);
-      toast.success(`${flagTarget.business_name} flagged.`);
+      showSuccess(`${flagTarget.business_name} flagged.`);
       setFlagTarget(null);
       await load();
     } catch {
-      toast.error("Could not flag verification.");
+      showError("Could not flag verification.");
     } finally {
       setActingId(null);
     }

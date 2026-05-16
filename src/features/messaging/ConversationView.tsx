@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { alert, showError } from '@/lib/sweetAlert'
 
 import { ChatHeader } from '@/components/chat/ChatHeader'
 import { InfiniteMessageList } from '@/components/chat/InfiniteMessageList'
@@ -84,7 +84,7 @@ export function ConversationView({
         setEditingMessage(null)
         setDraft('')
       } catch {
-        toast.error('Failed to edit')
+        showError('Failed to edit')
       }
       return
     }
@@ -106,7 +106,7 @@ export function ConversationView({
         })
         void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
       } catch {
-        toast.error('Failed to send with attachments')
+        showError('Failed to send with attachments')
       } finally {
         setFileBusy(false)
       }
@@ -132,11 +132,13 @@ export function ConversationView({
 
   const onDelete = React.useCallback(
     async (m: Message) => {
-      if (!window.confirm('Delete this message?')) return
+      const confirmed = await alert.confirmDelete('this message')
+      if (!confirmed) return
       try {
         await deleteMessage(m.uuid)
+        alert.crud.deleted('Message')
       } catch {
-        toast.error('Failed to delete')
+        showError('Failed to delete')
       }
     },
     [deleteMessage],

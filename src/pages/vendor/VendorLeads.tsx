@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { showError } from "@/lib/sweetAlert";
 
 import { getConversations } from "@/api/conversations";
 import { useAuth } from "@/auth/useAuth";
@@ -73,7 +73,7 @@ export default function VendorLeads() {
 
   useEffect(() => {
     if (conversationsQuery.isError) {
-      toast.error("Could not load conversations");
+      showError("Could not load conversations");
     }
   }, [conversationsQuery.isError]);
 

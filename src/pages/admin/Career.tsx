@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { alert } from "@/lib/sweetAlert";
 import { ChevronLeft, ChevronRight, MapPin, Briefcase } from "lucide-react";
 import { router } from "@/routes/router";
 
@@ -69,7 +70,12 @@ export default function DesignationsTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
-  const handleDelete = (id: number) => setRows((prev) => prev.filter((r) => r.id !== id));
+  const handleDelete = async (id: number, title: string) => {
+    const confirmed = await alert.confirmDelete(title);
+    if (!confirmed) return;
+    setRows((prev) => prev.filter((r) => r.id !== id));
+    alert.crud.deleted("Job posting");
+  };
 
   const pageNumbers = [1, 2, 3];
 
@@ -145,7 +151,7 @@ export default function DesignationsTable() {
                         <EditIcon />
                       </button>
                       <button
-                        onClick={() => handleDelete(row.id)}
+                        onClick={() => void handleDelete(row.id, row.title)}
                         className="rounded-lg hover:cursor-pointer p-2 hover:text-slate-400 transition-all hover:bg-red-50 text-red-500 active:scale-95"
                         aria-label={`Delete ${row.title}`}
                       >
@@ -190,7 +196,7 @@ export default function DesignationsTable() {
                     <EditIcon />
                   </button>
                   <button
-                    onClick={() => handleDelete(row.id)}
+                    onClick={() => void handleDelete(row.id, row.title)}
                     className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 active:scale-95 transition-all"
                   >
                     <DeleteIcon />
@@ -226,8 +232,8 @@ export default function DesignationsTable() {
                 key={n}
                 onClick={() => setCurrentPage(n)}
                 className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all ${currentPage === n
-                    ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
-                    : "text-slate-500 hover:bg-slate-100"
+                  ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                  : "text-slate-500 hover:bg-slate-100"
                   }`}
               >
                 {n}
@@ -241,8 +247,8 @@ export default function DesignationsTable() {
             <button
               onClick={() => setCurrentPage(TOTAL_PAGES)}
               className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all ${currentPage === TOTAL_PAGES
-                  ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
-                  : "text-slate-500 hover:bg-slate-100"
+                ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                : "text-slate-500 hover:bg-slate-100"
                 }`}
             >
               {TOTAL_PAGES}

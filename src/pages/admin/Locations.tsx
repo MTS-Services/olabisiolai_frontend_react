@@ -18,6 +18,7 @@ import {
   type AddLocationWizardSubmit,
 } from '@/components/admin/locations/AddLocationWizardModal'
 import { env } from '@/config/env'
+import { alert, showError } from '@/lib/sweetAlert'
 import {
   adminStoreLocation,
   adminListLocations,
@@ -262,6 +263,7 @@ export default function LocationHierarchy() {
         })
         setLastSavedMessage(`Updated boost configuration for ${updatedLga.name}`)
       }
+      alert.crud.updated('Location boost settings')
     } catch (error) {
       // Revert the local change on API failure
       setLocations((prev) =>
@@ -277,7 +279,9 @@ export default function LocationHierarchy() {
           }
         }),
       )
-      setSaveError(error instanceof Error ? error.message : 'Failed to update location.')
+      const message = error instanceof Error ? error.message : 'Failed to update location.'
+      setSaveError(message)
+      showError(message)
     }
   }, [locations])
 
@@ -339,16 +343,19 @@ export default function LocationHierarchy() {
       setOpenStates((prev) => new Set([...prev, stateId]))
       setShowAddModal(false)
       setLastSavedMessage(`Saved: ${saved.state.name} → ${saved.lga.name}`)
+      alert.crud.created('Location')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save location.'
       setSaveError(message)
+      showError(message)
     } finally {
       setSaving(false)
     }
   }
 
   const handleDeleteLocation = async (stateId: string, lgaRowId: string, lgaName: string) => {
-    if (!confirm(`Are you sure you want to delete "${lgaName}"? This action cannot be undone.`)) {
+    const confirmed = await alert.confirmDelete(lgaName)
+    if (!confirmed) {
       return
     }
 
@@ -375,8 +382,11 @@ export default function LocationHierarchy() {
       )
 
       setLastSavedMessage(`Deleted: ${lgaName}`)
+      alert.crud.deleted('Location')
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Failed to delete location.')
+      const message = error instanceof Error ? error.message : 'Failed to delete location.'
+      setSaveError(message)
+      showError(message)
     }
   }
 

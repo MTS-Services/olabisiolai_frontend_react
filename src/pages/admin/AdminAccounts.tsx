@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { alert, showError } from "@/lib/sweetAlert";
 import {
   createStaffAdmin,
   deleteStaffAdmin,
@@ -339,6 +340,7 @@ export default function AdminAccounts() {
       });
       setCreateOpen(false);
       await loadList();
+      alert.crud.created("Admin account");
     } catch (e) {
       setFormError(getAuthErrorMessage(e, "Create admin failed."));
     } finally {
@@ -354,17 +356,17 @@ export default function AdminAccounts() {
   const handleDeleteAdmin = useCallback(
     async (row: StaffAdminRow) => {
       const label = displayName(row);
-      const ok = window.confirm(
-        `Delete admin “${label}” (${row.email})? This cannot be undone. Tokens and access will be revoked.`,
-      );
+      const ok = await alert.confirmDelete(label, `Email: ${row.email}. Tokens and access will be revoked.`);
       if (!ok) return;
       setDeletingId(row.id);
       setError(null);
       try {
         await deleteStaffAdmin(row.id);
         await loadList();
+        alert.crud.deleted("Admin account");
       } catch (e) {
         setError(getAuthErrorMessage(e, "Could not delete admin."));
+        showError(getAuthErrorMessage(e, "Could not delete admin."));
       } finally {
         setDeletingId(null);
       }
@@ -381,8 +383,10 @@ export default function AdminAccounts() {
       try {
         await updateAdminStatus(row.id, { status: next });
         await loadList();
+        alert.crud.updated("Admin status");
       } catch (e) {
         setError(getAuthErrorMessage(e, "Could not update status."));
+        showError(getAuthErrorMessage(e, "Could not update status."));
       } finally {
         setStatusSavingId(null);
       }
@@ -405,6 +409,7 @@ export default function AdminAccounts() {
       await updateAdminRolePermissions(rbacTarget.id, payload);
       closeRbacModal();
       await loadList();
+      alert.crud.updated("Role & permissions");
     } catch (e) {
       setFormError(getAuthErrorMessage(e, "Update role/permissions failed (super-admin only on API)."));
     } finally {

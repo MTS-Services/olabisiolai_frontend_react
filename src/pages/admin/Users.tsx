@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { UserDetailsModal, type UserDetailsRow, type UserRole } from "@/components/Modal/UserDetailsModal";
 import { request } from "@/api/request";
+import { alert, showError, showSuccess } from "@/lib/sweetAlert";
 
 type UserRow = UserDetailsRow & {
   id: number;
@@ -336,9 +337,11 @@ export default function Users() {
           status: nextStatus === "blocked" ? "block" : "active",
         },
       );
+      showSuccess("User status updated.");
     } catch {
       setUsers((prev) => prev.map((row) => (row.id === user.id ? { ...row, status: previousStatus } : row)));
       setError("Failed to update user status.");
+      showError("Failed to update user status.");
     } finally {
       setActionUserId(null);
       setActionType(null);
@@ -360,8 +363,10 @@ export default function Users() {
       setDeleteTarget(null);
       await fetchUsers({ silent: true });
       void fetchSummary();
+      alert.crud.deleted("User");
     } catch {
       setError("Failed to delete user.");
+      showError("Failed to delete user.");
     } finally {
       setActionUserId(null);
       setActionType(null);

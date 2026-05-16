@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { alert } from "@/lib/sweetAlert";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
@@ -38,8 +39,11 @@ export default function CareerEdit() {
   const [type, setType] = useState<JobType>(designation?.type || "Full-Time");
 
   const handleSave = () => {
-    // Here, you would typically call an API to save the changes
-    // For now, just navigate back
+    if (isEditMode) {
+      alert.crud.updated("Job posting");
+    } else {
+      alert.crud.created("Job posting");
+    }
     navigate("/admin/career");
   };
 

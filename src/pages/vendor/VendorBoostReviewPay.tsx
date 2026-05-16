@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { showError, showInfo, showSuccess } from "@/lib/sweetAlert";
 
 import { useAuth } from "@/auth/useAuth";
 import { BillingInformationCard } from "@/components/sections/vendor/boost/boostPay/BillingInformationCard";
@@ -66,17 +66,17 @@ export default function VendorBoostReviewPayPage() {
 
   const onConfirmPay = async () => {
     if (selectedMethod === "bank") {
-      toast("Bank transfer checkout is coming soon. Please use Card for now.");
+      showInfo("Bank transfer checkout is coming soon. Please use Card for now.");
       return;
     }
 
     if (!env.flutterwavePublicKey) {
-      toast.error("Flutterwave public key is missing. Set VITE_FLUTTERWAVE_PUBLIC_KEY.");
+      showError("Flutterwave public key is missing. Set VITE_FLUTTERWAVE_PUBLIC_KEY.");
       return;
     }
 
     if (!isVerification) {
-      toast("Boost payment API is not wired yet.");
+      showInfo("Boost payment API is not wired yet.");
       return;
     }
 
@@ -101,16 +101,16 @@ export default function VendorBoostReviewPayPage() {
               (response as { id?: string | number })?.id;
 
             if (!txId) {
-              toast.error("Payment completed but transaction id was missing.");
+              showError("Payment completed but transaction id was missing.");
               return;
             }
 
             await confirmVerificationPayment(resolvedPaymentId, String(txId));
             closePaymentModal();
-            toast.success("Payment confirmed. Upload your documents next.");
+            showSuccess("Payment confirmed. Upload your documents next.");
             navigate("/vendor/document-upload");
           } catch {
-            toast.error("Payment succeeded but confirmation failed. Contact support.");
+            showError("Payment succeeded but confirmation failed. Contact support.");
           } finally {
             setIsPaying(false);
           }
@@ -119,7 +119,7 @@ export default function VendorBoostReviewPayPage() {
       });
     } catch {
       setIsPaying(false);
-      toast.error("Unable to start payment.");
+      showError("Unable to start payment.");
     }
   };
 

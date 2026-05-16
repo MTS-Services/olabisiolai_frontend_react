@@ -8,12 +8,81 @@ export type AdminBusinessInfo = {
   category: string;
   type: string;
   location: string;
-  status: "pending" | "active" | "suspended";
-  verification: "pending" | "verified" | "rejected";
+  status: "pending" | "active" | "inactive" | "suspended";
+  /** `verified` includes API value `approved`. */
+  verification: "none" | "pending" | "verified" | "rejected";
   boost: "none" | "active";
   plan: "free" | "premium";
   joinDate: string;
 };
+
+export type AdminBusinessListSummary = {
+  total: number;
+  pending_verification: number;
+  approved_verification: number;
+  free_plan: number;
+  premium_plan: number;
+};
+
+export type AdminBusinessListPagination = {
+  current_page: number;
+  per_page: number;
+  last_page: number;
+  total: number;
+};
+
+export type AdminBusinessListParams = {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  /** API: none | pending | approved | rejected */
+  verification_status?: string;
+  /** API: active | inactive | suspended (BusinessStatus) */
+  business_status?: string;
+  category_id?: number;
+  /** API: active | none */
+  boost_status?: string;
+};
+
+export type AdminFilterOption = { value: string; label: string };
+
+export type AdminBusinessFilterOptions = {
+  verification_statuses: AdminFilterOption[];
+  business_statuses: AdminFilterOption[];
+  boost_statuses: AdminFilterOption[];
+  categories: AdminCategoryOption[];
+};
+
+export type AdminBusinessListResponse = {
+  items: AdminBusinessInfo[];
+  summary: AdminBusinessListSummary;
+  pagination: AdminBusinessListPagination;
+  filterOptions: AdminBusinessFilterOptions;
+};
+
+export type AdminCategoryOption = { id: number; name: string };
+
+const DEFAULT_FILTER_OPTIONS: AdminBusinessFilterOptions = {
+  verification_statuses: [
+    { value: "none", label: "Not applied" },
+    { value: "pending", label: "Pending review" },
+    { value: "approved", label: "Verified" },
+    { value: "rejected", label: "Rejected" },
+  ],
+  business_statuses: [
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+    { value: "suspended", label: "Suspended" },
+  ],
+  boost_statuses: [
+    { value: "active", label: "Active boost" },
+    { value: "none", label: "No boost" },
+  ],
+  categories: [],
+};
+
+/** Matches `App\Enums\BusinessStatus` API values. */
+export type AdminBusinessStatusApi = "active" | "inactive" | "suspended";
 
 function asRecord(value: unknown): RawRecord | null {
   if (!value || typeof value !== "object") return null;
@@ -80,14 +149,17 @@ function pickRecord(source: RawRecord, keys: string[]): RawRecord | null {
 }
 
 function toStatus(raw: string): AdminBusinessInfo["status"] {
-  if (raw === "active" || raw === "suspended" || raw === "pending") return raw;
-  if (raw === "inactive") return "suspended";
-  return "pending";
+  if (raw === "active" || raw === "inactive" || raw === "suspended" || raw === "pending") return raw;
+  return "active";
 }
 
 function toVerification(raw: string): AdminBusinessInfo["verification"] {
-  if (raw === "verified" || raw === "rejected" || raw === "pending") return raw;
-  return "pending";
+  const n = raw.trim().toLowerCase();
+  if (n === "none") return "none";
+  if (n === "pending") return "pending";
+  if (n === "approved" || n === "verified") return "verified";
+  if (n === "rejected") return "rejected";
+  return "none";
 }
 
 function toBoost(raw: string): AdminBusinessInfo["boost"] {
@@ -129,17 +201,15 @@ function parseBusiness(raw: unknown, index: number): AdminBusinessInfo | null {
     "N/A";
   const joinDate = pickString(item, ["join_date", "created_at"], "");
 
-  const status = toStatus(
-    pickString(item, ["business_status", "status"], pickString(verificationObj ?? {}, ["status"], "pending")).toLowerCase(),
-  );
+  const status = toStatus(pickString(item, ["business_status", "status"], "active").toLowerCase());
 
   const verificationBool = asBoolean(item.is_verified ?? item.verified ?? verificationObj?.is_verified);
   const verification = toVerification(
     (
       pickString(item, ["verification_status"], "") ||
       pickString(verificationObj ?? {}, ["status"], "") ||
-      (verificationBool === null ? "" : verificationBool ? "verified" : "pending") ||
-      pickString(item, ["verification"], "pending")
+      (verificationBool === null ? "" : verificationBool ? "verified" : "") ||
+      pickString(item, ["verification"], "")
     ).toLowerCase(),
   );
   const boost = toBoost(
@@ -225,44 +295,192 @@ function extractBusinessList(payload: unknown): unknown[] {
   return toUnknownArray(inner.data);
 }
 
+function extractPaginationBlock(payload: unknown): AdminBusinessListPagination {
+  const root = asRecord(payload);
+  const data = asRecord(root?.data);
+  const p = asRecord(data?.pagination);
+  return {
+    current_page: Math.max(1, asNumber(p?.current_page) ?? 1),
+    per_page: Math.max(1, asNumber(p?.per_page) ?? 15),
+    last_page: Math.max(1, asNumber(p?.last_page) ?? 1),
+    total: Math.max(0, asNumber(p?.total) ?? 0),
+  };
+}
+
+function parseFilterOption(raw: unknown): AdminFilterOption | null {
+  const item = asRecord(raw);
+  if (!item) return null;
+  const value = pickString(item, ["value"], "");
+  if (!value) return null;
+  const label = pickString(item, ["label"], value);
+  return { value, label };
+}
+
+function extractFilterOptionsBlock(payload: unknown): AdminBusinessFilterOptions {
+  const root = asRecord(payload);
+  const data = asRecord(root?.data);
+  const block = asRecord(data?.filter_options);
+  if (!block) return DEFAULT_FILTER_OPTIONS;
+
+  const verification = (Array.isArray(block.verification_statuses) ? block.verification_statuses : [])
+    .map((row) => parseFilterOption(row))
+    .filter((row): row is AdminFilterOption => row !== null);
+
+  const business = (Array.isArray(block.business_statuses) ? block.business_statuses : [])
+    .map((row) => parseFilterOption(row))
+    .filter((row): row is AdminFilterOption => row !== null);
+
+  const boost = (Array.isArray(block.boost_statuses) ? block.boost_statuses : [])
+    .map((row) => parseFilterOption(row))
+    .filter((row): row is AdminFilterOption => row !== null);
+
+  const categories = (Array.isArray(block.categories) ? block.categories : [])
+    .map((row) => parseCategoryOption(row))
+    .filter((row): row is AdminCategoryOption => row !== null);
+
+  return {
+    verification_statuses: verification.length > 0 ? verification : DEFAULT_FILTER_OPTIONS.verification_statuses,
+    business_statuses: business.length > 0 ? business : DEFAULT_FILTER_OPTIONS.business_statuses,
+    boost_statuses: boost.length > 0 ? boost : DEFAULT_FILTER_OPTIONS.boost_statuses,
+    categories,
+  };
+}
+
+function extractSummaryBlock(payload: unknown): AdminBusinessListSummary {
+  const root = asRecord(payload);
+  const data = asRecord(root?.data);
+  const s = asRecord(data?.summary);
+  return {
+    total: Math.max(0, asNumber(s?.total) ?? 0),
+    pending_verification: Math.max(0, asNumber(s?.pending_verification) ?? 0),
+    approved_verification: Math.max(0, asNumber(s?.approved_verification) ?? 0),
+    free_plan: Math.max(0, asNumber(s?.free_plan) ?? 0),
+    premium_plan: Math.max(0, asNumber(s?.premium_plan) ?? 0),
+  };
+}
+
+function parseCategoryOption(raw: unknown): AdminCategoryOption | null {
+  const item = asRecord(raw);
+  if (!item) return null;
+  const id = asNumber(item.id);
+  if (id === null || id <= 0) return null;
+  const name = pickString(item, ["name", "title"], `Category ${id}`);
+  return { id, name };
+}
+
+export async function fetchAdminBusinessList(
+  params: AdminBusinessListParams = {},
+): Promise<AdminBusinessListResponse> {
+  const page = params.page ?? 1;
+  const perPage = params.per_page ?? 15;
+
+  const body: Record<string, unknown> = {
+    page,
+    per_page: perPage,
+  };
+
+  const search = params.search?.trim();
+  if (search) body.search = search;
+
+  if (params.verification_status && params.verification_status !== "all") {
+    body.verification_status = params.verification_status;
+  }
+  if (params.business_status && params.business_status !== "all") {
+    body.business_status = params.business_status;
+  }
+  if (params.category_id != null && params.category_id > 0) {
+    body.category_id = params.category_id;
+  }
+  if (params.boost_status && params.boost_status !== "all") {
+    body.boost_status = params.boost_status;
+  }
+
+  const res = await request.post("/admin/business-info", body);
+  const root = asRecord(res.data);
+
+  if (!root || root.success !== true) {
+    const msg =
+      pickString(root ?? {}, ["message"], "") ||
+      pickString(asRecord(root?.data) ?? {}, ["message"], "") ||
+      "Failed to load businesses.";
+    throw new Error(msg);
+  }
+
+  const rows = extractBusinessList(res.data);
+  const items = rows
+    .map((row, index) => parseBusiness(row, index))
+    .filter((item): item is AdminBusinessInfo => item !== null);
+
+  return {
+    items,
+    summary: extractSummaryBlock(res.data),
+    pagination: extractPaginationBlock(res.data),
+    filterOptions: extractFilterOptionsBlock(res.data),
+  };
+}
+
+function extractCategoryRows(payload: unknown): unknown[] {
+  const root = asRecord(payload);
+  if (!root || root.success !== true) return [];
+  const data = asRecord(root.data);
+  if (!data) return [];
+  const direct = pickFirstArray([data.categories, data.data]);
+  if (direct.length > 0) return direct;
+  const nested = asRecord(data.categories);
+  if (nested) {
+    const inner = pickFirstArray([nested.data, nested.items]);
+    if (inner.length > 0) return inner;
+  }
+  return [];
+}
+
+export async function fetchAdminCategoryOptions(maxRows = 200): Promise<AdminCategoryOption[]> {
+  const res = await request.post("/admin/categories", { page: 1, per_page: maxRows });
+  const rows = extractCategoryRows(res.data);
+  return rows
+    .map((row) => parseCategoryOption(row))
+    .filter((item): item is AdminCategoryOption => item !== null);
+}
+
+/** @deprecated Use fetchAdminBusinessList for paginated admin directory. */
 export async function fetchAdminBusinessInfo(): Promise<AdminBusinessInfo[]> {
-  // Backend style in this project commonly uses POST for admin listing endpoints.
-  const attempts: Array<() => Promise<unknown>> = [
-    () => request.post("/admin/business-info", {}).then((res) => res.data),
-    () => request.post("/admin/businesses", {}).then((res) => res.data),
-    () => request.post("/admin/businesses/list", {}).then((res) => res.data),
-    () => request.get("/admin/business-info").then((res) => res.data),
-  ];
+  const { items } = await fetchAdminBusinessList({ page: 1, per_page: 100 });
+  return items;
+}
 
-  let lastError: unknown = null;
-
-  for (const attempt of attempts) {
-    try {
-      const data = await attempt();
-      const rows = extractBusinessList(data);
-      const parsed = rows
-        .map((row, index) => parseBusiness(row, index))
-        .filter((item): item is AdminBusinessInfo => item !== null);
-      if (parsed.length > 0) return parsed;
-
-      const root = asRecord(data);
-      if (root && root.success === true) {
-        // Valid API success with no rows.
-        return [];
-      }
-      const message =
-        pickString(root ?? {}, ["message", "error"], "") ||
-        pickString(asRecord(root?.data) ?? {}, ["message", "error"], "");
-      if (message) {
-        throw new Error(message);
-      }
-    } catch (error) {
-      lastError = error;
-    }
+function assertApiSuccess(payload: unknown, fallbackMessage: string): Record<string, unknown> {
+  const root = asRecord(payload);
+  if (!root || root.success !== true) {
+    const msg =
+      pickString(root ?? {}, ["message"], "") ||
+      pickString(asRecord(root?.data) ?? {}, ["message"], "") ||
+      fallbackMessage;
+    throw new Error(msg);
   }
+  return root;
+}
 
-  if (lastError instanceof Error) {
-    throw lastError;
+export async function changeAdminBusinessStatus(
+  businessInfoId: number,
+  status: AdminBusinessStatusApi,
+): Promise<AdminBusinessInfo> {
+  const res = await request.post("/admin/business-info/status-change", {
+    business_info_id: businessInfoId,
+    status,
+  });
+  assertApiSuccess(res.data, "Failed to update business status.");
+  const data = asRecord(asRecord(res.data)?.data);
+  const businessRaw = data?.business ?? data;
+  const parsed = parseBusiness(businessRaw, 0);
+  if (!parsed) {
+    throw new Error("Could not read business after status update.");
   }
-  throw new Error("Failed to load businesses from admin endpoints.");
+  return parsed;
+}
+
+export async function deleteAdminBusiness(businessInfoId: number): Promise<void> {
+  const res = await request.post("/admin/business-info/delete", {
+    business_info_id: businessInfoId,
+  });
+  assertApiSuccess(res.data, "Failed to delete business profile.");
 }

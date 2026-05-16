@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 
-type Status = "pending" | "active" | "suspended";
-type Verification = "pending" | "verified" | "rejected";
+type Status = "pending" | "active" | "inactive" | "suspended";
+type Verification = "none" | "pending" | "verified" | "rejected";
 type Boost = "none" | "active";
 
 export type BusinessDetailsModalBusiness = {
@@ -24,10 +24,19 @@ interface BusinessDetailsModalProps {
 const statusStyles: Record<Status, string> = {
   pending: "bg-orange-50 text-orange-500 border border-orange-200",
   active: "bg-green-50 text-green-600 border border-green-200",
+  inactive: "bg-amber-50 text-amber-700 border border-amber-200",
   suspended: "bg-red-50 text-red-500 border border-red-200",
 };
 
+function statusLabel(status: Status): string {
+  if (status === "inactive") return "Inactive";
+  if (status === "suspended") return "Suspended";
+  if (status === "active") return "Active";
+  return "Pending";
+}
+
 const verificationStyles: Record<Verification, string> = {
+  none: "bg-gray-100 text-gray-600 border border-gray-200",
   pending: "bg-orange-50 text-orange-500 border border-orange-200",
   verified: "bg-green-50 text-green-600 border border-green-200",
   rejected: "bg-red-50 text-red-500 border border-red-200",
@@ -86,7 +95,7 @@ export function BusinessDetailsModal({ open, onClose, business }: BusinessDetail
 
             <div>
               <p className="text-sm font-medium text-gray-900">Status</p>
-              <Badge label={business.status} className={statusStyles[business.status]} />
+              <Badge label={statusLabel(business.status)} className={statusStyles[business.status]} />
             </div>
 
             <div>

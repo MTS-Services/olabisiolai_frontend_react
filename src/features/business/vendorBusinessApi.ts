@@ -2,6 +2,8 @@ import { request } from "@/api/request";
 
 export type CreateVendorBusinessPayload = {
   category_id: string;
+  /** Must match `locations.id` from form-options (required by API). */
+  location_id: string;
   business_name: string;
   location: string;
   state: string;
@@ -27,6 +29,7 @@ export async function createVendorBusiness(payload: CreateVendorBusinessPayload)
   const formData = new FormData();
 
   formData.append("category_id", payload.category_id);
+  formData.append("location_id", payload.location_id.trim());
   formData.append("business_name", payload.business_name.trim());
   formData.append("location", payload.location.trim());
   formData.append("state", payload.state.trim());

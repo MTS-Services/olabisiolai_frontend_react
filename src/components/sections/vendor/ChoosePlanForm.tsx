@@ -21,6 +21,15 @@ function Label({ children }: { children: ReactNode }) {
   );
 }
 
+function FieldErrorText({ message, id }: { message?: string | null; id?: string }) {
+  if (!message?.trim()) return null;
+  return (
+    <p id={id} className="mt-1.5 text-xs text-destructive" role="alert">
+      {message.trim()}
+    </p>
+  );
+}
+
 function SelectField({
   label,
   children,
@@ -159,6 +168,8 @@ export default function ChoosePlanForm() {
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [coverPreviewUrls, setCoverPreviewUrls] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  /** Server or client validation messages keyed by API field name (e.g. location_id, services). */
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const showLocationSection = true;
 
   const addService = () => setServices((s) => [...s, ""]);
@@ -196,6 +207,15 @@ export default function ChoosePlanForm() {
     () => (selectedTopSlot?.priceAmount ?? 0) + (selectedDuration?.priceAmount ?? 0),
     [selectedDuration?.priceAmount, selectedTopSlot?.priceAmount],
   );
+
+  const orphanFieldErrorSummary = useMemo(() => {
+    const parts = Object.entries(fieldErrors)
+      .filter(([key]) => !VENDOR_FORM_INLINE_ERROR_KEYS.has(key))
+      .map(([, msg]) => msg.trim())
+      .filter(Boolean);
+    if (parts.length === 0) return null;
+    return parts.join(" ");
+  }, [fieldErrors]);
 
   useEffect(() => {
     if (!selectedLocation) {
@@ -236,32 +256,49 @@ export default function ChoosePlanForm() {
       navigate("/vendor/dashboard");
     },
     onError: (error: unknown) => {
-      setSubmitError(getMessageFromUnknown(error));
+      const parsed = parseVendorBusinessApiFailure(error);
+      setFieldErrors(parsed.fieldErrors);
+      setSubmitError(parsed.general);
     },
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitError(null);
+    setFieldErrors({});
     const formData = new FormData(e.currentTarget);
     const normalizedServices = services.map((service) => service.trim()).filter(Boolean);
 
     const lga = showLocationSection ? String(formData.get("lga") ?? "").trim() : "";
-    if (!categoryId || !locationId) {
-      setSubmitError("Please select category and location.");
+    if (!categoryId && !locationId) {
+      setFieldErrors({
+        category_id: "Please select a category.",
+        location_id: "Please select a location.",
+      });
+      return;
+    }
+    if (!categoryId) {
+      setFieldErrors({ category_id: "Please select a category." });
+      return;
+    }
+    if (!locationId) {
+      setFieldErrors({ location_id: "Please select a location." });
       return;
     }
     if (showLocationSection && (!state || !city || !lga)) {
-      setSubmitError("Please complete location details (state, city, and LGA) or collapse the section to skip.");
+      setFieldErrors({
+        location_id: "Please complete location details (state, city, and LGA).",
+      });
       return;
     }
     if (normalizedServices.length === 0) {
-      setSubmitError("Please add at least one service.");
+      setFieldErrors({ services: "Please add at least one service." });
       return;
     }
 
     createBusinessMutation.mutate({
       category_id: categoryId,
+      location_id: locationId,
       business_name: String(formData.get("businessName") ?? ""),
       location: selectedLocation?.location ?? "",
       state: showLocationSection ? state : "",
@@ -306,7 +343,10 @@ export default function ChoosePlanForm() {
               placeholder="e.g. Swift Plumbing Services"
               className="h-11 border-border-light bg-secondary/80 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
               required
+              aria-invalid={Boolean(fieldErrors.business_name)}
+              aria-describedby={fieldErrors.business_name ? "err-business_name" : undefined}
             />
+            <FieldErrorText id="err-business_name" message={fieldErrors.business_name} />
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -318,7 +358,14 @@ export default function ChoosePlanForm() {
                   </>
                 }
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onChange={(e) => {
+                  setCategoryId(e.target.value);
+                  setFieldErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.category_id;
+                    return next;
+                  });
+                }}
                 disabled={formOptionsLoading || categories.length === 0}
                 required
               >
@@ -340,33 +387,44 @@ export default function ChoosePlanForm() {
                   Form options failed to load. Try again or contact support if this continues.
                 </p>
               ) : null}
+              <FieldErrorText id="err-category_id" message={fieldErrors.category_id} />
             </div>
 
-            <SelectField
-              label={
-                <>
-                  Location <span className="text-destructive">*</span>
-                </>
-              }
-              rightIcon={MapPin}
-              value={locationId}
-              onChange={(e) => setLocationId(e.target.value)}
-              disabled={formOptionsLoading || locationOptions.length === 0}
-              required
-            >
-              <option value="">
-                {formOptionsLoading
-                  ? "Loading locations…"
-                  : locationOptions.length === 0
-                    ? "No locations"
-                    : "Select location"}
-              </option>
-              {locationOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+            <div className="space-y-0">
+              <SelectField
+                label={
+                  <>
+                    Location <span className="text-destructive">*</span>
+                  </>
+                }
+                rightIcon={MapPin}
+                value={locationId}
+                onChange={(e) => {
+                  setLocationId(e.target.value);
+                  setFieldErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.location_id;
+                    return next;
+                  });
+                }}
+                disabled={formOptionsLoading || locationOptions.length === 0}
+                required
+              >
+                <option value="">
+                  {formOptionsLoading
+                    ? "Loading locations…"
+                    : locationOptions.length === 0
+                      ? "No locations"
+                      : "Select location"}
                 </option>
-              ))}
-            </SelectField>
+                {locationOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </SelectField>
+              <FieldErrorText id="err-location_id" message={fieldErrors.location_id} />
+            </div>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -412,7 +470,10 @@ export default function ChoosePlanForm() {
               className="h-11 border-border-light bg-secondary/80 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
               readOnly={Boolean(selectedLocation?.lga)}
               required
+              aria-invalid={Boolean(fieldErrors.lga)}
+              aria-describedby={fieldErrors.lga ? "err-lga" : undefined}
             />
+            <FieldErrorText id="err-lga" message={fieldErrors.lga} />
           </div>
 
           {selectedLocation ? (
@@ -548,7 +609,10 @@ export default function ChoosePlanForm() {
               rows={5}
               className="min-h-[120px] resize-y border-border-light bg-secondary/80 text-sm leading-relaxed shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
               required
+              aria-invalid={Boolean(fieldErrors.business_description)}
+              aria-describedby={fieldErrors.business_description ? "err-business_description" : undefined}
             />
+            <FieldErrorText id="err-business_description" message={fieldErrors.business_description} />
           </div>
         </CardContent>
       </Card>
@@ -560,6 +624,7 @@ export default function ChoosePlanForm() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 p-6">
+          <FieldErrorText id="err-services" message={fieldErrors.services} />
           {services.map((value, index) => (
             <div key={index}>
               <Label>{`Service ${index + 1}`}</Label>
@@ -601,7 +666,10 @@ export default function ChoosePlanForm() {
                 placeholder="+234 800 123 4567"
                 className="h-11 border-border-light bg-secondary/80 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
                 required
+                aria-invalid={Boolean(fieldErrors.phone)}
+                aria-describedby={fieldErrors.phone ? "err-phone" : undefined}
               />
+              <FieldErrorText id="err-phone" message={fieldErrors.phone} />
             </div>
             <div>
               <Label>WhatsApp number</Label>
@@ -610,7 +678,10 @@ export default function ChoosePlanForm() {
                 name="whatsapp"
                 placeholder="+234 800 123 4567"
                 className="h-11 border-border-light bg-secondary/80 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
+                aria-invalid={Boolean(fieldErrors.whatsapp)}
+                aria-describedby={fieldErrors.whatsapp ? "err-whatsapp" : undefined}
               />
+              <FieldErrorText id="err-whatsapp" message={fieldErrors.whatsapp} />
             </div>
             <div>
               <Label>Website (optional)</Label>
@@ -619,7 +690,10 @@ export default function ChoosePlanForm() {
                 name="website"
                 placeholder="https://yourbusiness.com"
                 className="h-11 border-border-light bg-secondary/80 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
+                aria-invalid={Boolean(fieldErrors.website)}
+                aria-describedby={fieldErrors.website ? "err-website" : undefined}
               />
+              <FieldErrorText id="err-website" message={fieldErrors.website} />
             </div>
           </div>
         </CardContent>
@@ -644,17 +718,22 @@ export default function ChoosePlanForm() {
                 return;
               }
               if (!isAcceptedImage(file)) {
-                setSubmitError("Logo must be JPG, PNG, or WebP.");
+                setFieldErrors((prev) => ({ ...prev, logo: "Logo must be JPG, PNG, or WebP." }));
                 e.currentTarget.value = "";
                 setLogo(null);
                 return;
               }
               if (!isWithinSizeLimit(file, 10)) {
-                setSubmitError("Logo must be 10MB or smaller.");
+                setFieldErrors((prev) => ({ ...prev, logo: "Logo must be 10MB or smaller." }));
                 e.currentTarget.value = "";
                 setLogo(null);
                 return;
               }
+              setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.logo;
+                return next;
+              });
               setSubmitError(null);
               setLogo(file);
             }}
@@ -673,7 +752,14 @@ export default function ChoosePlanForm() {
                       </label>
                       <button
                         type="button"
-                        onClick={() => setLogo(null)}
+                        onClick={() => {
+                          setLogo(null);
+                          setFieldErrors((prev) => {
+                            const next = { ...prev };
+                            delete next.logo;
+                            return next;
+                          });
+                        }}
                         className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/75"
                         aria-label="Remove logo"
                       >
@@ -685,6 +771,7 @@ export default function ChoosePlanForm() {
               ) : undefined
             }
           />
+          <FieldErrorText id="err-logo" message={fieldErrors.logo} />
         </CardContent>
       </Card>
 
@@ -704,24 +791,38 @@ export default function ChoosePlanForm() {
             onChange={(e) => {
               const files = Array.from(e.target.files ?? []);
               if (files.length > 5) {
-                setSubmitError("You can upload up to 5 cover photos.");
+                setFieldErrors((prev) => ({
+                  ...prev,
+                  cover_photos: "You can upload up to 5 cover photos.",
+                }));
                 setCoverPhotos(files.slice(0, 5));
                 return;
               }
               const hasBadType = files.some((file) => !isAcceptedImage(file));
               if (hasBadType) {
-                setSubmitError("Cover photos must be JPG, PNG, or WebP.");
+                setFieldErrors((prev) => ({
+                  ...prev,
+                  cover_photos: "Cover photos must be JPG, PNG, or WebP.",
+                }));
                 e.currentTarget.value = "";
                 setCoverPhotos([]);
                 return;
               }
               const hasBigFile = files.some((file) => !isWithinSizeLimit(file, 10));
               if (hasBigFile) {
-                setSubmitError("Each cover photo must be 10MB or smaller.");
+                setFieldErrors((prev) => ({
+                  ...prev,
+                  cover_photos: "Each cover photo must be 10MB or smaller.",
+                }));
                 e.currentTarget.value = "";
                 setCoverPhotos([]);
                 return;
               }
+              setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.cover_photos;
+                return next;
+              });
               setSubmitError(null);
               setCoverPhotos(files);
             }}
@@ -763,6 +864,7 @@ export default function ChoosePlanForm() {
               ) : undefined
             }
           />
+          <FieldErrorText id="err-cover_photos" message={fieldErrors.cover_photos} />
         </CardContent>
       </Card>
 
@@ -777,8 +879,10 @@ export default function ChoosePlanForm() {
             </span>
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            {submitError ? (
-              <p className="text-sm text-destructive sm:mr-auto">{submitError}</p>
+            {submitError || orphanFieldErrorSummary ? (
+              <p className="text-sm text-destructive sm:mr-auto">
+                {[submitError, orphanFieldErrorSummary].filter(Boolean).join(" ")}
+              </p>
             ) : null}
             <Button
               type="button"
@@ -797,6 +901,100 @@ export default function ChoosePlanForm() {
       </Card>
     </form>
   );
+}
+
+/** API / client keys for which we render an inline message next to the control. */
+const VENDOR_FORM_INLINE_ERROR_KEYS = new Set([
+  "business_name",
+  "category_id",
+  "location_id",
+  "lga",
+  "business_description",
+  "services",
+  "phone",
+  "whatsapp",
+  "website",
+  "logo",
+  "cover_photos",
+]);
+
+function parseVendorBusinessApiFailure(error: unknown): {
+  fieldErrors: Record<string, string>;
+  general: string | null;
+} {
+  const data = getAxiosResponseData(error);
+  if (!data) {
+    return { fieldErrors: {}, general: getMessageFromUnknown(error) };
+  }
+
+  const fieldErrors = extractLaravelValidationErrors(data);
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, general: null };
+  }
+
+  const msg =
+    typeof data.message === "string" && data.message.trim() ? data.message.trim() : null;
+  return { fieldErrors: {}, general: msg ?? getMessageFromUnknown(error) };
+}
+
+function getAxiosResponseData(error: unknown): Record<string, unknown> | null {
+  if (
+    error &&
+    typeof error === "object" &&
+    "response" in error &&
+    error.response &&
+    typeof error.response === "object" &&
+    "data" in error.response &&
+    error.response.data &&
+    typeof error.response.data === "object" &&
+    !Array.isArray(error.response.data)
+  ) {
+    return error.response.data as Record<string, unknown>;
+  }
+  return null;
+}
+
+function firstValidationMessage(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item === "string" && item.trim()) return item.trim();
+    }
+  }
+  return null;
+}
+
+function extractLaravelValidationErrors(payload: Record<string, unknown>): Record<string, string> {
+  let raw: unknown = payload.errors;
+  if (
+    (!raw || typeof raw !== "object" || Array.isArray(raw)) &&
+    payload.data &&
+    typeof payload.data === "object" &&
+    !Array.isArray(payload.data)
+  ) {
+    const inner = (payload.data as Record<string, unknown>).errors;
+    if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+      raw = inner;
+    }
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+
+  const out: Record<string, string> = {};
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    const msg = firstValidationMessage(val);
+    if (!msg) continue;
+
+    if (key.startsWith("services.")) {
+      if (!out.services) out.services = msg;
+      continue;
+    }
+    if (key.startsWith("cover_photos.")) {
+      if (!out.cover_photos) out.cover_photos = msg;
+      continue;
+    }
+    out[key] = msg;
+  }
+  return out;
 }
 
 function getMessageFromUnknown(error: unknown): string {

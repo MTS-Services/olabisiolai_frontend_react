@@ -8,16 +8,30 @@ const BUTTONS = {
   cancelButtonColor: "#64748b",
 } as const;
 
+const DISMISS = {
+  showCloseButton: true,
+  closeButtonAriaLabel: "Close",
+  allowEscapeKey: true,
+  allowOutsideClick: true,
+} as const;
+
 const toast = Swal.mixin({
   toast: true,
   position: "top-end",
   showConfirmButton: false,
+  showCloseButton: true,
+  closeButtonAriaLabel: "Close",
   timer: 4000,
   timerProgressBar: true,
   didOpen: (popup) => {
     popup.onmouseenter = Swal.stopTimer;
     popup.onmouseleave = Swal.resumeTimer;
   },
+});
+
+const modal = Swal.mixin({
+  ...DISMISS,
+  ...BUTTONS,
 });
 
 function showToast(icon: SweetAlertIcon, message: string) {
@@ -37,38 +51,38 @@ export type ConfirmOptions = {
 /** Global alerts — import from `@/lib/sweetAlert` anywhere in the app. */
 export const alert = {
   success(message: string, title = "Success") {
-    return Swal.fire({
+    return modal.fire({
       icon: "success",
       title,
       text: message,
-      ...BUTTONS,
+      confirmButtonText: "OK",
     });
   },
 
   error(message: string, title = "Error") {
-    return Swal.fire({
+    return modal.fire({
       icon: "error",
       title,
       text: message,
-      ...BUTTONS,
+      confirmButtonText: "OK",
     });
   },
 
   warning(message: string, title = "Warning") {
-    return Swal.fire({
+    return modal.fire({
       icon: "warning",
       title,
       text: message,
-      ...BUTTONS,
+      confirmButtonText: "OK",
     });
   },
 
   info(message: string, title = "Info") {
-    return Swal.fire({
+    return modal.fire({
       icon: "info",
       title,
       text: message,
-      ...BUTTONS,
+      confirmButtonText: "OK",
     });
   },
 
@@ -80,7 +94,7 @@ export const alert = {
   },
 
   async confirm(options: ConfirmOptions): Promise<boolean> {
-    const result = await Swal.fire({
+    const result = await modal.fire({
       icon: options.icon ?? "question",
       title: options.title ?? "Are you sure?",
       text: options.text,

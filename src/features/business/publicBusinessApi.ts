@@ -12,7 +12,11 @@ export type PublicBusiness = {
   rating: number;
   reviews: number;
   description: string;
+  /** Card thumbnail: first cover, else logo. */
   image: string;
+  logoUrl: string;
+  coverPhotoUrls: string[];
+  servicesOffered: string[];
   verified: boolean;
   /** From API e.g. `is_favorite` on GET /businesses/home when authenticated. */
   isFavorite: boolean;
@@ -46,6 +50,24 @@ function num(v: unknown, fallback = 0): number {
 function rec(v: unknown): Raw | null {
   if (v && typeof v === 'object' && !Array.isArray(v)) return v as Raw;
   return null;
+}
+
+function parseStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      const obj = rec(item);
+      return str(obj?.url ?? obj?.image_path ?? obj?.path, '').trim();
+    })
+    .filter((item) => item.length > 0);
+}
+
+function parseCoverPhotoUrls(r: Raw): string[] {
+  const rawList = parseStringList(r.cover_photo_urls ?? r.cover_photos);
+  return rawList
+    .map((path) => resolveMediaUrl(path, ''))
+    .filter((url) => url.length > 0);
 }
 
 function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
@@ -84,19 +106,10 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     : num(r.reviews_count ?? r.total_reviews ?? r.reviews, 0);
   const description = str(r.business_description ?? r.description, '');
 
-  // cover_photo_urls can be string[] or object[]
-  const coverArr: unknown[] = Array.isArray(r.cover_photo_urls)
-    ? r.cover_photo_urls
-    : Array.isArray(r.cover_photos)
-      ? r.cover_photos
-      : [];
-
-  const firstCover = rec(coverArr[0]);
-  const imageRaw =
-    (typeof coverArr[0] === 'string' && coverArr[0] ? coverArr[0] : '') ||
-    str(firstCover?.url ?? firstCover?.image_path, '') ||
-    str(r.logo_url ?? r.logo ?? r.image, '');
-  const image = resolveMediaUrl(imageRaw, '/images/feature/1.jpg');
+  const logoUrl = resolveMediaUrl(str(r.logo_url ?? r.logo, ''), '/images/service/avatar.jpg');
+  const coverPhotoUrls = parseCoverPhotoUrls(r);
+  const image = coverPhotoUrls[0] ?? logoUrl;
+  const servicesOffered = parseStringList(r.services_offered);
 
   const verified =
     r.verification_status === 'approved' ||
@@ -120,6 +133,9 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     reviews,
     description,
     image,
+    logoUrl,
+    coverPhotoUrls,
+    servicesOffered,
     verified,
     isFavorite,
   };

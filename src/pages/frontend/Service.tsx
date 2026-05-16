@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPublicBusinessById } from "@/features/business/publicBusinessApi";
@@ -26,18 +26,9 @@ import { Button } from "@/components/ui/button";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-const IMAGES = {
-  hero: "/images/service/hero.jpg",
-  avatar: "/images/service/avatar.jpg",
-  photo1: "/images/service/photo1.jpg",
-  photo2: "/images/service/photo2.jpg",
-  photo3: "/images/service/photo3.jpg",
-  photo4: "/images/service/photo4.jpg",
-  photo5: "/images/service/photo5.jpg",
-  map: "/images/service/map.jpg",
-  review1: "/images/service/review1.jpg",
-  review2: "/images/service/review2.jpg",
-} as const;
+const FALLBACK_COVER = "/images/service/hero.jpg";
+const FALLBACK_LOGO = "/images/service/avatar.jpg";
+const FALLBACK_MAP = "/images/service/map.jpg";
 
 const SERVICES = [
   "Pipe Installation",
@@ -106,6 +97,9 @@ interface StateBusinessData {
   reviews: number;
   description: string;
   image: string;
+  logoUrl?: string;
+  coverPhotoUrls?: string[];
+  servicesOffered?: string[];
   verified: boolean;
   isFavorite?: boolean;
 }
@@ -155,8 +149,28 @@ export default function Service() {
         ? `${reviewCount} ${reviewCount === 1 ? "Review" : "Reviews"}`
         : "No reviews yet";
   const locationText = business?.location ?? stateData?.location ?? "";
-  const logo = business?.image ?? stateData?.image ?? IMAGES.avatar;
   const verified = business?.verified ?? stateData?.verified ?? false;
+
+  const coverPhotos = useMemo(() => {
+    const fromApi = business?.coverPhotoUrls ?? [];
+    if (fromApi.length > 0) return fromApi;
+    const fromState = stateData?.coverPhotoUrls ?? [];
+    if (fromState.length > 0) return fromState;
+    const legacyImage = business?.image ?? stateData?.image;
+    return legacyImage && legacyImage !== FALLBACK_LOGO ? [legacyImage] : [];
+  }, [business, stateData]);
+
+  const logoUrl =
+    business?.logoUrl ??
+    stateData?.logoUrl ??
+    business?.image ??
+    stateData?.image ??
+    FALLBACK_LOGO;
+
+  const heroCover = coverPhotos[0] ?? FALLBACK_COVER;
+  const servicesList =
+    (business?.servicesOffered?.length ? business.servicesOffered : stateData?.servicesOffered) ??
+    SERVICES;
 
   return (
     <div className="bg-bg-section font-sans text-ink">
@@ -173,23 +187,25 @@ export default function Service() {
           <div className="min-w-0 flex-1 space-y-10">
             <div className="relative">
               <AspectCover
-                src={logo}
+                src={heroCover}
                 className="w-full rounded-2xl shadow-md aspect-16/10 sm:aspect-2/1 lg:aspect-[2.65/1]"
               />
               <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-black/5" aria-hidden />
-              <div className="absolute bottom-4 right-4 z-20 sm:bottom-6 sm:right-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="pointer-events-auto rounded-xl border-brand bg-ice px-6 py-4 text-base font-medium text-brand shadow-sm hover:bg-ice"
-                  onClick={() => setPhotosOpen(true)}
-                >
-                  See all Photos
-                </Button>
-              </div>
+              {coverPhotos.length > 0 ? (
+                <div className="absolute bottom-4 right-4 z-20 sm:bottom-6 sm:right-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="pointer-events-auto rounded-xl border-brand bg-ice px-6 py-4 text-base font-medium text-brand shadow-sm hover:bg-ice"
+                    onClick={() => setPhotosOpen(true)}
+                  >
+                    See all Photos{coverPhotos.length > 1 ? ` (${coverPhotos.length})` : ""}
+                  </Button>
+                </div>
+              ) : null}
               <div className="absolute -bottom-1 left-4 z-20 overflow-hidden rounded-xl border border-stat-muted bg-card shadow-sm sm:left-8 md:left-12">
                 <AspectCover
-                  src={logo}
+                  src={logoUrl}
                   className="size-20 sm:size-24 md:h-[90px] md:w-[110px] md:max-w-[110px]"
                 />
               </div>
@@ -339,7 +355,7 @@ export default function Service() {
             <section className="border-t border-border-gray pt-6">
               <h2 className="font-heading text-xl font-semibold text-ink-heading">Services</h2>
               <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                {SERVICES.map((item) => (
+                {servicesList.map((item) => (
                   <li key={item} className="flex items-center gap-3 text-base text-body-secondary">
                     <span className="size-1.5 shrink-0 rounded-full bg-footer-bar" aria-hidden />
                     {item}
@@ -350,28 +366,50 @@ export default function Service() {
           </div>
         </div>
 
-        <section className="mt-12 space-y-4 rounded-2xl border border-stat-muted bg-card-ice p-6 md:p-8">
-          <h2 className="font-heading text-3xl font-semibold tracking-tight text-ink md:text-4xl">Photos</h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            <AspectCover src={IMAGES.photo1} className="aspect-4/3 w-full rounded-xl md:min-h-[280px] md:aspect-auto md:h-[min(432px,50vw)]" />
-            <AspectCover src={IMAGES.photo2} className="aspect-4/3 w-full rounded-xl md:min-h-[280px] md:aspect-auto md:h-[min(432px,50vw)]" />
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            <AspectCover src={IMAGES.photo3} className="aspect-4/3 w-full rounded-xl md:aspect-5/4 md:min-h-[240px]" />
-            <AspectCover src={IMAGES.photo4} className="aspect-4/3 w-full rounded-xl md:aspect-5/4 md:min-h-[240px]" />
-            <button
-              type="button"
-              className="relative w-full cursor-pointer overflow-hidden rounded-xl border-0 p-0 text-left outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-brand"
-              onClick={() => setPhotosOpen(true)}
-            >
-              <AspectCover src={IMAGES.photo5} className="aspect-4/3 w-full rounded-xl md:aspect-5/4 md:min-h-[240px]" />
-              <div className="pointer-events-none absolute inset-0 rounded-xl bg-black/30" aria-hidden />
-              <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-heading text-4xl font-semibold text-white drop-shadow-md">
-                +20
-              </span>
-            </button>
-          </div>
-        </section>
+        {coverPhotos.length > 0 ? (
+          <section className="mt-12 space-y-4 rounded-2xl border border-stat-muted bg-card-ice p-6 md:p-8">
+            <h2 className="font-heading text-3xl font-semibold tracking-tight text-ink md:text-4xl">
+              Photos
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {coverPhotos.slice(0, 6).map((src, index) => {
+                const isLastWithMore = index === 5 && coverPhotos.length > 6;
+                const cell = (
+                  <AspectCover
+                    src={src}
+                    className="aspect-4/3 w-full rounded-xl md:aspect-5/4 md:min-h-[200px]"
+                  />
+                );
+                if (!isLastWithMore) {
+                  return (
+                    <button
+                      key={`${src}-${index}`}
+                      type="button"
+                      className="w-full cursor-pointer overflow-hidden rounded-xl border-0 p-0 text-left outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-brand"
+                      onClick={() => setPhotosOpen(true)}
+                    >
+                      {cell}
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    key={`${src}-${index}`}
+                    type="button"
+                    className="relative w-full cursor-pointer overflow-hidden rounded-xl border-0 p-0 text-left outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-brand"
+                    onClick={() => setPhotosOpen(true)}
+                  >
+                    {cell}
+                    <div className="pointer-events-none absolute inset-0 rounded-xl bg-black/30" aria-hidden />
+                    <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-heading text-4xl font-semibold text-white drop-shadow-md">
+                      +{coverPhotos.length - 5}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         <section className="mt-12 space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -381,7 +419,7 @@ export default function Service() {
             </button>
           </div>
           <div className="relative h-80 overflow-hidden rounded-2xl border border-stat-muted shadow-inner md:h-96">
-            <img src={IMAGES.map} alt="" className="absolute inset-0 block size-full object-cover" loading="lazy" decoding="async" />
+            <img src={FALLBACK_MAP} alt="" className="absolute inset-0 block size-full object-cover" loading="lazy" decoding="async" />
             <div className="pointer-events-none absolute inset-0 bg-white/40 mix-blend-saturation" aria-hidden />
             <MapPin className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2 text-brand drop-shadow-md" strokeWidth={1.5} aria-hidden />
             <div className="absolute bottom-4 left-4 rounded-lg bg-white/90 px-4 py-2 shadow-md backdrop-blur-sm">
@@ -519,14 +557,8 @@ export default function Service() {
       <ServicePhotosModal
         open={photosOpen}
         onClose={() => setPhotosOpen(false)}
-        images={{
-          hero: IMAGES.hero,
-          photo1: IMAGES.photo1,
-          photo2: IMAGES.photo2,
-          photo3: IMAGES.photo3,
-          photo4: IMAGES.photo4,
-          photo5: IMAGES.photo5,
-        }}
+        businessName={name}
+        photos={coverPhotos}
       />
     </div>
   );

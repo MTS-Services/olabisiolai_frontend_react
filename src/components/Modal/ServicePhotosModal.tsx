@@ -1,30 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const FILTER_CHIPS = [
-  "Boiler service",
-  "Unvented cylinder",
-  "Motorised valve",
-  "Fix leak",
-  "Install boiler",
-  "Boiler repair",
-] as const;
-
 type ServicePhotosModalProps = {
   open: boolean;
   onClose: () => void;
-  images: {
-    hero: string;
-    photo1: string;
-    photo2: string;
-    photo3: string;
-    photo4: string;
-    photo5: string;
-  };
+  businessName?: string;
+  photos: string[];
 };
 
 function GalleryImage({
@@ -57,10 +42,9 @@ function GalleryImage({
 export function ServicePhotosModal({
   open,
   onClose,
-  images,
+  businessName,
+  photos,
 }: ServicePhotosModalProps) {
-  const [activeFilter, setActiveFilter] = useState<string>("Boiler repair");
-
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -76,6 +60,8 @@ export function ServicePhotosModal({
   }, [open, onClose]);
 
   if (!open) return null;
+
+  const title = businessName ? `${businessName} photos` : "Photos";
 
   const modal = (
     <div
@@ -94,7 +80,7 @@ export function ServicePhotosModal({
             id="service-photos-modal-title"
             className="font-heading text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
           >
-            Photos
+            {title}
           </h2>
           <Button
             type="button"
@@ -111,72 +97,20 @@ export function ServicePhotosModal({
           </Button>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {FILTER_CHIPS.map((label) => {
-            const isActive = activeFilter === label;
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveFilter(label);
-                }}
-                className={cn(
-                  "rounded-full px-4 py-2.5 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-brand text-ice"
-                    : "border border-border-gray bg-bg-section text-ink hover:bg-border-light",
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 space-y-3">
-          <div className="grid grid-cols-1 gap-3 md:h-[min(420px,52vh)] md:min-h-[280px] md:grid-cols-12 md:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="min-h-0 md:col-span-7 md:row-span-2">
+        {photos.length === 0 ? (
+          <p className="mt-8 text-center text-body-secondary">No photos uploaded yet.</p>
+        ) : (
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {photos.map((src, index) => (
               <GalleryImage
-                src={images.hero}
-                alt=""
-                className="aspect-[4/3] w-full md:aspect-auto md:h-full md:min-h-[200px]"
+                key={`${src}-${index}`}
+                src={src}
+                alt={`${businessName ?? "Business"} photo ${index + 1}`}
+                className="aspect-4/3 w-full"
               />
-            </div>
-            <div className="min-h-0 md:col-span-5 md:row-span-1">
-              <GalleryImage
-                src={images.photo1}
-                alt=""
-                className="aspect-[4/3] w-full md:aspect-auto md:h-full md:min-h-0"
-              />
-            </div>
-            <div className="min-h-0 md:col-span-5 md:row-span-1">
-              <GalleryImage
-                src={images.photo2}
-                alt=""
-                className="aspect-[4/3] w-full md:aspect-auto md:h-full md:min-h-0"
-              />
-            </div>
+            ))}
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <GalleryImage
-              src={images.photo3}
-              alt=""
-              className="aspect-[4/3] w-full sm:aspect-[5/4]"
-            />
-            <GalleryImage
-              src={images.photo4}
-              alt=""
-              className="aspect-[4/3] w-full sm:aspect-[5/4]"
-            />
-            <GalleryImage
-              src={images.photo5}
-              alt=""
-              className="aspect-[4/3] w-full sm:aspect-[5/4]"
-            />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

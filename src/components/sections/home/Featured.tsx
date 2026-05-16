@@ -72,6 +72,8 @@ export default function Featured() {
                   reviews={business.reviews}
                   description={business.description}
                   image={business.image}
+                  logoUrl={business.logoUrl}
+                  coverPhotoUrls={business.coverPhotoUrls}
                   verified={business.verified}
                   favorited={business.isFavorite}
                 />

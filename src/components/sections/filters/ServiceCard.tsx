@@ -13,6 +13,8 @@ interface ServiceCardProps {
   reviews: number;
   description: string;
   image: string;
+  logoUrl?: string;
+  coverPhotoUrls?: string[];
   verified: boolean;
   favorited?: boolean;
 }
@@ -26,6 +28,8 @@ export default function ServiceCard({
   reviews,
   description,
   image,
+  logoUrl,
+  coverPhotoUrls,
   verified,
   favorited = false,
 }: ServiceCardProps) {
@@ -45,6 +49,8 @@ export default function ServiceCard({
           reviews,
           description,
           image,
+          logoUrl: logoUrl ?? image,
+          coverPhotoUrls: coverPhotoUrls ?? (image ? [image] : []),
           verified,
           isFavorite: favorited,
         },

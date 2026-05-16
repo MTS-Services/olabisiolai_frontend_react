@@ -22,6 +22,8 @@ interface FeaturedCardProps {
   reviews: number;
   description: string;
   image: string;
+  logoUrl?: string;
+  coverPhotoUrls?: string[];
   verified: boolean;
   favorited?: boolean;
 }
@@ -35,6 +37,8 @@ export function FeaturedCard({
   reviews,
   description,
   image,
+  logoUrl,
+  coverPhotoUrls,
   verified,
   favorited = false,
 }: FeaturedCardProps) {
@@ -61,6 +65,8 @@ export function FeaturedCard({
           reviews,
           description,
           image,
+          logoUrl: logoUrl ?? image,
+          coverPhotoUrls: coverPhotoUrls ?? (image ? [image] : []),
           verified,
           isFavorite: isFavorited,
         },

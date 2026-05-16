@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, MapPin, Plus, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -249,10 +249,13 @@ export default function ChoosePlanForm() {
     };
   }, [coverPhotos]);
 
+  const queryClient = useQueryClient();
+
   const createBusinessMutation = useMutation({
     mutationFn: createVendorBusiness,
     onSuccess: () => {
       localStorage.setItem("vendorBusinessCreated", "true");
+      void queryClient.invalidateQueries({ queryKey: ["vendor", "business", "profile"] });
       navigate("/vendor/dashboard");
     },
     onError: (error: unknown) => {

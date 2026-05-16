@@ -1,9 +1,11 @@
 import type { LucideIcon } from "lucide-react";
-import { Globe, Link2, Phone } from "lucide-react";
+import { Globe, Mail, Phone } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/auth/useAuth";
+import { useVendorProfileContext } from "@/components/sections/vendor/profile/VendorProfileContext";
 
 function Label({ children }: { children: string }) {
   return (
@@ -16,15 +18,21 @@ function Label({ children }: { children: string }) {
 function IconInput({
   label,
   icon: Icon,
-  defaultValue,
+  value,
+  onChange,
+  readOnly,
   placeholder,
   iconClassName,
+  error,
 }: {
   label: string;
   icon: LucideIcon;
-  defaultValue?: string;
+  value: string;
+  onChange?: (value: string) => void;
+  readOnly?: boolean;
   placeholder?: string;
   iconClassName?: string;
+  error?: string;
 }) {
   return (
     <div className="space-y-0">
@@ -38,16 +46,29 @@ function IconInput({
           aria-hidden
         />
         <Input
-          defaultValue={defaultValue}
+          value={value}
+          readOnly={readOnly}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
           placeholder={placeholder}
           className="h-11 border-border-light bg-background pl-10 pr-3 text-sm shadow-sm transition-shadow focus-visible:ring-2 focus-visible:ring-sky-500/25"
         />
       </div>
+      {error ? <p className="mt-1 text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }
 
 export function ContactLinksCard() {
+  const { profile, isEditing, draft, setDraftField, fieldErrors } = useVendorProfileContext();
+  const { user } = useAuth();
+
+  if (!profile) return null;
+
+  const email = user?.email ?? "";
+  const phone = isEditing && draft ? draft.phone : profile.phone;
+  const whatsapp = isEditing && draft ? draft.whatsapp : profile.whatsapp;
+  const website = isEditing && draft ? draft.website : profile.website;
+
   return (
     <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
       <CardHeader className="border-b border-border-light px-6 py-5">
@@ -58,14 +79,20 @@ export function ContactLinksCard() {
           <IconInput
             label="Phone Number"
             icon={Phone}
-            defaultValue="+234 800 123 4567"
-            placeholder="+234 800 123 4567"
+            value={phone}
+            readOnly={!isEditing}
+            onChange={(v) => setDraftField("phone", v)}
+            placeholder="Not set"
+            error={fieldErrors.phone}
           />
           <IconInput
             label="WhatsApp Number"
             icon={Phone}
-            defaultValue="+234 800 123 4567"
-            placeholder="+234 800 123 4567"
+            value={whatsapp}
+            readOnly={!isEditing}
+            onChange={(v) => setDraftField("whatsapp", v)}
+            placeholder="Not set"
+            error={fieldErrors.whatsapp}
           />
         </div>
 
@@ -73,30 +100,13 @@ export function ContactLinksCard() {
           <IconInput
             label="Website"
             icon={Globe}
-            defaultValue="https://zenithrealestate.com"
+            value={website}
+            readOnly={!isEditing}
+            onChange={(v) => setDraftField("website", v)}
             placeholder="https://yourbusiness.com"
+            error={fieldErrors.website}
           />
-          <IconInput
-            label="Social Media"
-            icon={Link2}
-            defaultValue="https://facebook.com/zenithrealestate"
-            placeholder="https://facebook.com/yourbusiness"
-          />
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-1 md:grid-cols-2">
-          <IconInput
-            label="Email Address"
-            icon={Globe}
-            defaultValue="contact@zenithrealestate.com"
-            placeholder="contact@yourbusiness.com"
-          />
-          <IconInput
-            label="Instagram"
-            icon={Link2}
-            defaultValue="@zenithrealestate"
-            placeholder="@yourbusiness"
-          />
+          <IconInput label="Account email" icon={Mail} value={email} readOnly placeholder="Not set" />
         </div>
       </CardContent>
     </Card>

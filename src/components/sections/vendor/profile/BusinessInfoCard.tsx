@@ -1,12 +1,14 @@
-import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
-import { ChevronRight, Upload } from "lucide-react";
+import { useRef, type ReactNode } from "react";
+import { Plus, Upload, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
+import { useVendorProfileContext } from "@/components/sections/vendor/profile/VendorProfileContext";
+import { VendorProfileLocationSection } from "@/components/sections/vendor/profile/VendorProfileLocationSection";
 
 function Label({ children }: { children: string }) {
   return (
@@ -16,45 +18,6 @@ function Label({ children }: { children: string }) {
   );
 }
 
-function SelectField({
-  label,
-  children,
-  value,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  children: ReactNode;
-  value?: string;
-  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
-  disabled?: boolean;
-}) {
-  return (
-    <div>
-      <Label>{label}</Label>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
-          className={cn(
-            "h-11 w-full appearance-none rounded-md border border-border-light bg-background px-3 pr-10 text-sm text-foreground shadow-sm transition-shadow",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/25",
-            disabled && "cursor-not-allowed opacity-70",
-          )}
-        >
-          {children}
-        </select>
-        <ChevronRight
-          className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 rotate-90 text-muted-foreground"
-          aria-hidden
-        />
-      </div>
-    </div>
-  );
-}
-
-/** Ring of longer dashes around upload (2px "border" from striped background + inset fill). */
 function DashedFrame({ className, children }: { className?: string; children: ReactNode }) {
   return (
     <div
@@ -69,20 +32,31 @@ function DashedFrame({ className, children }: { className?: string; children: Re
 }
 
 export function BusinessInfoCard() {
-  const { data, isPending, isError } = useVendorBusinessFormOptions();
-  const categories = data?.categories ?? [];
-  const [categoryId, setCategoryId] = useState("");
-  const [subcategory, setSubcategory] = useState("");
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const {
+    profile,
+    isEditing,
+    draft,
+    setDraftField,
+    setServices,
+    setLogoFile,
+    fieldErrors,
+  } = useVendorProfileContext();
+  const { data: formOptions, isPending, isError } = useVendorBusinessFormOptions();
+  const categories = formOptions?.categories ?? [];
 
-  const selectedCategory = categories.find((c) => String(c.id) === categoryId);
-  const subOptions = selectedCategory?.subcategories ?? [];
+  if (!profile) return null;
 
-  useEffect(() => {
-    setSubcategory("");
-  }, [categoryId]);
+  const openLogoPicker = () => logoInputRef.current?.click();
+
+  const businessName = isEditing && draft ? draft.businessName : profile.businessName;
+  const categoryId = isEditing && draft ? draft.categoryId : String(profile.categoryId);
+  const description = isEditing && draft ? draft.description : profile.description;
+  const services = isEditing && draft ? draft.services : profile.services;
+  const logoPreview = isEditing && draft ? draft.logoPreview : profile.logoUrl;
 
   return (
-    <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
+    <Card className="h-fit w-full overflow-hidden rounded-xl border-border-light shadow-sm">
       <CardHeader className="space-y-1 border-b border-border-light bg-card px-6 py-5">
         <CardTitle className="text-lg font-bold text-foreground font-manrope">Business Information</CardTitle>
       </CardHeader>
@@ -90,84 +64,182 @@ export function BusinessInfoCard() {
         <div>
           <Label>Business Name</Label>
           <Input
-            defaultValue="Zenith Real Estate"
+            value={businessName}
+            readOnly={!isEditing}
+            onChange={(e) => setDraftField("businessName", e.target.value)}
             className="h-11 border-border-light bg-background text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
           />
+          {fieldErrors.business_name ? (
+            <p className="mt-1 text-xs text-destructive">{fieldErrors.business_name}</p>
+          ) : null}
         </div>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <SelectField
-            label="Category"
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            disabled={isPending || isError}
-          >
-            <option value="">
-              {isPending ? "Loading…" : isError ? "Unavailable" : "Select category"}
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={String(c.id)}>
-                {c.name}
-              </option>
-            ))}
-          </SelectField>
-          <SelectField
-            label="Subcategory"
-            value={subcategory}
-            onChange={(e) => setSubcategory(e.target.value)}
-            disabled={!categoryId || subOptions.length === 0}
-          >
-            <option value="">
-              {!categoryId
-                ? "Select a category first"
-                : subOptions.length === 0
-                  ? "No subcategories"
-                  : "Select subcategory"}
-            </option>
-            {subOptions.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </SelectField>
-        </div>
-        {isError ? (
-          <p className="text-xs text-destructive">
-            Could not load categories. Sign in as a vendor and ensure business form options load correctly.
-          </p>
-        ) : null}
 
         <div>
-          <Label>Location (Area)</Label>
-          <Input
-            defaultValue="Victoria Island, Lagos"
-            className="h-11 border-border-light bg-background text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
-          />
+          <Label>Category</Label>
+          {isEditing ? (
+            <select
+              value={categoryId}
+              onChange={(e) => setDraftField("categoryId", e.target.value)}
+              disabled={isPending || isError}
+              className="h-11 w-full rounded-md border border-border-light bg-background px-3 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
+            >
+              <option value="">{isPending ? "Loading…" : "Select category"}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Input value={profile.categoryName} readOnly className="h-11 border-border-light bg-background text-sm shadow-sm" />
+          )}
+          {fieldErrors.category_id ? (
+            <p className="mt-1 text-xs text-destructive">{fieldErrors.category_id}</p>
+          ) : null}
         </div>
+
+        <VendorProfileLocationSection />
 
         <div>
           <Label>Business Description</Label>
           <Textarea
-            defaultValue="Gidira Logistics provides seamless haulage and last-mile delivery services across Lagos. With a fleet of over 50 vehicles, we ensure your goods arrive safely and on time."
+            value={description}
+            readOnly={!isEditing}
+            onChange={(e) => setDraftField("description", e.target.value)}
             rows={5}
-            className="min-h-[120px] resize-y border-border-light bg-background text-sm leading-relaxed shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
+            className="min-h-[120px] max-h-56 resize-none border-border-light bg-background text-sm leading-relaxed shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
           />
+          {fieldErrors.business_description ? (
+            <p className="mt-1 text-xs text-destructive">{fieldErrors.business_description}</p>
+          ) : null}
+        </div>
+
+        <div>
+          <Label>Services offered</Label>
+          {isEditing && draft ? (
+            <div className="space-y-2">
+              {services.map((service, index) => (
+                <div key={`service-${index}`} className="flex gap-2">
+                  <Input
+                    value={service}
+                    onChange={(e) => {
+                      const next = [...services];
+                      next[index] = e.target.value;
+                      setServices(next);
+                    }}
+                    placeholder="Service name"
+                    className="h-10 border-border-light bg-background text-sm"
+                  />
+                  {services.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => setServices(services.filter((_, i) => i !== index))}
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  ) : null}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-1"
+                onClick={() => setServices([...services, ""])}
+              >
+                <Plus className="mr-1 size-4" />
+                Add service
+              </Button>
+              {fieldErrors.services ? (
+                <p className="text-xs text-destructive">{fieldErrors.services}</p>
+              ) : null}
+            </div>
+          ) : services.length > 0 ? (
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {services.map((service) => (
+                <li
+                  key={service}
+                  className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700"
+                >
+                  {service}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">No services listed.</p>
+          )}
         </div>
 
         <div>
           <Label>Business Logo</Label>
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            tabIndex={-1}
+            aria-hidden
+            onChange={(e) => {
+              setLogoFile(e.target.files?.[0] ?? null);
+              e.target.value = "";
+            }}
+          />
           <DashedFrame>
-            <label className="flex min-h-[168px] w-full cursor-pointer flex-col items-center justify-center gap-2 px-4 py-10 transition-colors hover:bg-neutral-100/60">
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" />
-              <span className="flex size-11 items-center justify-center rounded-full bg-neutral-200/80 text-foreground">
-                <Upload className="size-5" aria-hidden />
-              </span>
-              <span className="text-sm font-semibold text-emerald-600">Click to upload images</span>
-              <span className="text-center text-xs text-muted-foreground">
-                Upload images (JPG, PNG, WebP)
-              </span>
-            </label>
+            {isEditing ? (
+              <div className="flex min-h-[168px] w-full flex-col items-center justify-center gap-3 px-4 py-8">
+                {logoPreview ? (
+                  <>
+                    <img
+                      src={logoPreview}
+                      alt="Logo preview"
+                      className="max-h-32 max-w-full rounded-lg object-contain"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 rounded-lg"
+                      onClick={openLogoPicker}
+                    >
+                      Change logo
+                    </Button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openLogoPicker}
+                    className="flex w-full flex-col items-center justify-center gap-2 rounded-[10px] transition-colors hover:bg-neutral-100/60"
+                  >
+                    <span className="flex size-11 items-center justify-center rounded-full bg-neutral-200/80 text-foreground">
+                      <Upload className="size-5" aria-hidden />
+                    </span>
+                    <span className="text-sm font-semibold text-emerald-600">Click to upload logo</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex min-h-[168px] w-full flex-col items-center justify-center gap-3 px-4 py-8">
+                {logoPreview ? (
+                  <img
+                    src={logoPreview}
+                    alt={`${profile.businessName} logo`}
+                    className="max-h-32 max-w-full rounded-lg object-contain"
+                  />
+                ) : (
+                  <>
+                    <span className="flex size-11 items-center justify-center rounded-full bg-neutral-200/80 text-foreground">
+                      <Upload className="size-5" aria-hidden />
+                    </span>
+                    <span className="text-sm text-muted-foreground">No logo uploaded</span>
+                  </>
+                )}
+              </div>
+            )}
           </DashedFrame>
+          {fieldErrors.logo ? <p className="mt-1 text-xs text-destructive">{fieldErrors.logo}</p> : null}
         </div>
       </CardContent>
     </Card>

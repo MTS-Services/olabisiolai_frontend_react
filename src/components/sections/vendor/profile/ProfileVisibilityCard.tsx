@@ -2,6 +2,7 @@ import { BadgeCheck, Eye } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useVendorProfileContext } from "@/components/sections/vendor/profile/VendorProfileContext";
 
 function Label({ children }: { children: string }) {
   return (
@@ -11,16 +12,17 @@ function Label({ children }: { children: string }) {
   );
 }
 
-function VisibilityToggle({ checked, onCheckedChange }: { checked: boolean; onCheckedChange: (v: boolean) => void }) {
+function VisibilityToggle({ checked, disabled }: { checked: boolean; disabled?: boolean }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      onClick={() => onCheckedChange(!checked)}
+      disabled={disabled}
       className={cn(
         "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-2",
         checked ? "bg-sky-600" : "bg-muted",
+        disabled && "cursor-not-allowed opacity-60",
       )}
     >
       <span
@@ -33,7 +35,21 @@ function VisibilityToggle({ checked, onCheckedChange }: { checked: boolean; onCh
   );
 }
 
+function verificationLabel(status: string): string {
+  if (status === "approved") return "Verified";
+  if (status === "pending") return "Pending verification";
+  if (status === "rejected") return "Verification rejected";
+  return "Not verified yet";
+}
+
 export function ProfileVisibilityCard() {
+  const { profile } = useVendorProfileContext();
+  if (!profile) return null;
+
+  const isActive = profile.businessStatus === "active";
+  const isVerified = profile.verificationStatus === "approved";
+  const isPending = profile.verificationStatus === "pending";
+
   return (
     <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
       <CardHeader className="space-y-1 border-b border-border-light px-6 py-5">
@@ -46,43 +62,70 @@ export function ProfileVisibilityCard() {
               <Eye className="size-5" aria-hidden />
             </div>
             <div>
-              <p className="font-semibold text-foreground font-manrope">Profile Visible</p>
+              <p className="font-semibold text-foreground font-manrope">
+                {isActive ? "Profile visible" : "Profile hidden"}
+              </p>
               <p className="text-sm text-muted-foreground font-inter">
-                Your profile is currently visible to customers
+                {isActive
+                  ? "Your profile is visible to customers in search"
+                  : "Your profile is not shown while status is inactive or suspended"}
               </p>
             </div>
           </div>
-          <VisibilityToggle checked={true} onCheckedChange={() => {}} />
+          <VisibilityToggle checked={isActive} disabled />
         </div>
 
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+        <div
+          className={cn(
+            "rounded-lg border p-4",
+            isVerified
+              ? "border-emerald-200 bg-emerald-50"
+              : isPending
+                ? "border-amber-200 bg-amber-50"
+                : "border-gray-200 bg-gray-50",
+          )}
+        >
           <div className="flex gap-3">
-            <BadgeCheck className="size-5 text-emerald-600" aria-hidden />
+            <BadgeCheck
+              className={cn(
+                "size-5",
+                isVerified ? "text-emerald-600" : isPending ? "text-amber-600" : "text-gray-500",
+              )}
+              aria-hidden
+            />
             <div>
-              <p className="font-semibold text-emerald-800 font-manrope">Verified Profile</p>
-              <p className="text-sm text-emerald-700 font-inter">
-                Your profile is verified and gets 3x more visibility
+              <p
+                className={cn(
+                  "font-semibold font-manrope",
+                  isVerified ? "text-emerald-800" : isPending ? "text-amber-800" : "text-gray-800",
+                )}
+              >
+                {verificationLabel(profile.verificationStatus)}
+              </p>
+              <p
+                className={cn(
+                  "text-sm font-inter",
+                  isVerified ? "text-emerald-700" : isPending ? "text-amber-700" : "text-gray-600",
+                )}
+              >
+                {isVerified
+                  ? "Your business is verified on the platform"
+                  : isPending
+                    ? "Verification is under admin review"
+                    : "Apply for verification to build more trust with customers"}
               </p>
             </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          <Label>Visibility Settings</Label>
-          <div className="space-y-3">
-            <label className="flex items-center gap-3">
-              <input type="checkbox" defaultChecked className="size-4 rounded border-gray-300 text-sky-600" />
-              <span className="text-sm text-foreground font-inter">Show in search results</span>
-            </label>
-            <label className="flex items-center gap-3">
-              <input type="checkbox" defaultChecked className="size-4 rounded border-gray-300 text-sky-600" />
-              <span className="text-sm text-foreground font-inter">Display contact information</span>
-            </label>
-            <label className="flex items-center gap-3">
-              <input type="checkbox" defaultChecked className="size-4 rounded border-gray-300 text-sky-600" />
-              <span className="text-sm text-foreground font-inter">Allow customer reviews</span>
-            </label>
-          </div>
+          <Label>Listing status</Label>
+          <p className="text-sm capitalize text-foreground">
+            Business: <span className="font-medium">{profile.businessStatus}</span>
+            {profile.boostStatus === "active" ? (
+              <span className="ml-2 text-sky-600">· Boost active</span>
+            ) : null}
+          </p>
         </div>
       </CardContent>
     </Card>

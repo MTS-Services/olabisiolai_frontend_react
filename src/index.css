@@ -274,11 +274,17 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     margin: 0;
-    /* height: 100%;       
-    overflow: hidden; */
   }
-  /* #root {            
+
+  /* Vendor dashboard: single scroll container (main), not body + main */
+  html.vendor-app-shell,
+  html.vendor-app-shell body {
     height: 100%;
     overflow: hidden;
-  } */
+  }
+
+  html.vendor-app-shell #root {
+    height: 100dvh;
+    overflow: hidden;
+  }
 }

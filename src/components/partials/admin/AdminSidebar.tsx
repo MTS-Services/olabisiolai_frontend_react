@@ -1,8 +1,10 @@
 import {
   Bell,
   Building2,
+  ChevronDown,
   CircleDollarSign,
   ClipboardCheck,
+  FileText,
   Gauge,
   KeyRound,
   ListChecks,
@@ -15,17 +17,18 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import type { ComponentType } from "react";
 import { isSpatieSuperAdmin } from "@/auth/adminSpatie";
 import { useAuth } from "@/auth/useAuth";
+import { CMS_PAGES } from "@/features/cms/cmsConfig";
 import { cn } from "@/lib/utils";
 
 type SidebarItem = {
   label: string;
   to: string;
   icon: ComponentType<{ className?: string }>;
-  /** Spatie admin-guard permission from API; if set, link is hidden without it */
   permission?: string;
 };
 
@@ -47,17 +50,58 @@ const staticItems: SidebarItem[] = [
   { label: "Settings", to: "/admin/settings", icon: ShieldCheck },
 ];
 
+const SETTINGS_PATH = "/admin/settings";
+
 type AdminSidebarProps = {
   mobileOpen?: boolean;
   onNavigate?: () => void;
 };
 
+function SidebarLink({
+  item,
+  onNavigate,
+}: {
+  item: SidebarItem;
+  onNavigate?: () => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <NavLink
+      to={item.to}
+      onClick={() => onNavigate?.()}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          isActive ? "bg-surface-soft text-chat-accent" : "text-body-secondary hover:bg-muted",
+        )
+      }
+    >
+      <Icon className="size-4 shrink-0" aria-hidden />
+      <span className="truncate">{item.label}</span>
+    </NavLink>
+  );
+}
+
 export function AdminSidebar({ mobileOpen = false, onNavigate }: AdminSidebarProps) {
   const { can, user } = useAuth();
+  const location = useLocation();
   const superAdmin = isSpatieSuperAdmin(user);
-  const visibleItems = staticItems.filter(
-    (item) => !item.permission || superAdmin || can(item.permission),
+
+  const isVisible = (item: SidebarItem) =>
+    !item.permission || superAdmin || can(item.permission);
+
+  const itemsBeforeSettings = staticItems.filter(
+    (item) => item.to !== SETTINGS_PATH && isVisible(item),
   );
+  const settingsItem = staticItems.find((item) => item.to === SETTINGS_PATH);
+  const showSettings = settingsItem && isVisible(settingsItem);
+
+  const cmsActive = location.pathname.startsWith("/admin/cms");
+  const [cmsOpen, setCmsOpen] = useState(cmsActive);
+
+  useEffect(() => {
+    if (cmsActive) setCmsOpen(true);
+  }, [cmsActive]);
 
   return (
     <aside
@@ -75,26 +119,56 @@ export function AdminSidebar({ mobileOpen = false, onNavigate }: AdminSidebarPro
       </div>
 
       <nav className="space-y-1 px-2 pb-4">
-        {visibleItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => onNavigate?.()}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  isActive ? "bg-surface-soft text-chat-accent" : "text-body-secondary hover:bg-muted",
-                )
-              }
-            >
-              <Icon className="size-4 shrink-0" aria-hidden />
-              <span className="truncate">{item.label}</span>
-            </NavLink>
-          );
-        })}
+        {itemsBeforeSettings.map((item) => (
+          <SidebarLink key={item.to} item={item} onNavigate={onNavigate} />
+        ))}
+
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => setCmsOpen((open) => !open)}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              cmsActive ? "bg-surface-soft text-chat-accent" : "text-body-secondary hover:bg-muted",
+            )}
+            aria-expanded={cmsOpen}
+          >
+            <FileText className="size-4 shrink-0" aria-hidden />
+            <span className="flex-1 truncate text-left">CMS</span>
+            <ChevronDown
+              className={cn("size-4 shrink-0 transition-transform", cmsOpen && "rotate-180")}
+              aria-hidden
+            />
+          </button>
+
+          {cmsOpen ? (
+            <div className="mt-1 space-y-0.5 pl-4">
+              {CMS_PAGES.map((page) => (
+                <NavLink
+                  key={page.slug}
+                  to={page.adminPath}
+                  onClick={() => onNavigate?.()}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center rounded-lg py-2 pl-7 pr-3 text-sm transition-colors",
+                      isActive
+                        ? "bg-surface-soft font-medium text-chat-accent"
+                        : "text-body-secondary hover:bg-muted",
+                    )
+                  }
+                >
+                  {page.label}
+                </NavLink>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        {showSettings && settingsItem ? (
+          <SidebarLink item={settingsItem} onNavigate={onNavigate} />
+        ) : null}
       </nav>
     </aside>
   );
 }
+

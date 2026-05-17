@@ -15,7 +15,7 @@ type CmsPublicPageProps = {
 export function CmsPublicPage({ config }: CmsPublicPageProps) {
   const pageQuery = useQuery({
     queryKey: ["public", "cms", config.type],
-    queryFn: () => fetchPublicCmsPage(config.type),
+    queryFn: () => fetchPublicCmsPage(config),
     staleTime: 5 * 60 * 1000,
   });
 

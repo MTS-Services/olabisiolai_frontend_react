@@ -8,6 +8,7 @@ import { suspensePage } from "@/routes/routeUtils";
 const UserType = lazy(() => import("@/pages/frontend/auth/UserType"));
 const LoginGoogle = lazy(() => import("@/pages/frontend/auth/LoginGoogle"));
 const LoginEmail = lazy(() => import("@/pages/frontend/auth/LoginEmail"));
+const LoginTwoFactor = lazy(() => import("@/pages/frontend/auth/LoginTwoFactor"));
 const ForgetPassword = lazy(() => import("@/pages/frontend/auth/ForgetPassword"));
 const OTPVerification = lazy(() => import("@/pages/frontend/auth/OTPVerification"));
 const ResetPassword = lazy(() => import("@/pages/frontend/auth/ResetPassword"));
@@ -33,6 +34,10 @@ export const authRoutes: RouteObject = {
     {
       path: "/login/email",
       element: <GuestGate>{suspensePage(LoginEmail)}</GuestGate>,
+    },
+    {
+      path: "/login/two-factor",
+      element: <GuestGate>{suspensePage(LoginTwoFactor)}</GuestGate>,
     },
     {
       path: "/forget-password",

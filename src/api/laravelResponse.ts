@@ -60,6 +60,24 @@ function isAdminResourceShape(o: Record<string, unknown>): boolean {
  * Typical Laravel `sendResponse($success, $message, $payload)` JSON:
  * `{ success?: boolean, message?: string, data?: T }`
  */
+export function isTwoFactorLoginRequired(body: unknown): body is {
+  two_factor_required: true
+  two_factor_token: string
+} {
+  const data = unwrapLaravelData<Record<string, unknown>>(body)
+  return (
+    data?.two_factor_required === true &&
+    typeof data.two_factor_token === 'string' &&
+    data.two_factor_token.length > 0
+  )
+}
+
+export function extractTwoFactorLoginToken(body: unknown): string | null {
+  if (!isTwoFactorLoginRequired(body)) return null
+  const data = unwrapLaravelData<Record<string, unknown>>(body)
+  return typeof data?.two_factor_token === 'string' ? data.two_factor_token : null
+}
+
 export function unwrapLaravelData<T = unknown>(body: unknown): T | null {
   if (body === null || body === undefined) return null
   if (typeof body !== 'object') return null

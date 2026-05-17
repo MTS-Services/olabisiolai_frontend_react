@@ -49,7 +49,10 @@ export default function LoginEmail() {
     saveAuthRole(role);
 
     try {
-      const loggedInUser = await loginUserWithRole(
+      const returnTo = (location.state as { from?: { pathname?: string; state?: unknown } } | null)
+        ?.from;
+
+      const loginResult = await loginUserWithRole(
         {
           email: identifier,
           password,
@@ -58,8 +61,18 @@ export default function LoginEmail() {
         { authStrategy, setToken, setUser, refreshSession, resetAuthState },
       );
 
-      const returnTo = (location.state as { from?: { pathname?: string; state?: unknown } } | null)
-        ?.from;
+      if (loginResult.kind === 'two_factor') {
+        navigate('/login/two-factor', {
+          replace: true,
+          state: {
+            twoFactorToken: loginResult.twoFactorToken,
+            role,
+            from: returnTo,
+          },
+        });
+        return;
+      }
+
       if (returnTo?.pathname && !isUnsafePostLoginPath(returnTo.pathname)) {
         navigate(returnTo.pathname, {
           replace: true,
@@ -68,7 +81,7 @@ export default function LoginEmail() {
         return;
       }
 
-      navigate(resolveDashboardPath(loggedInUser, role), {
+      navigate(resolveDashboardPath(loginResult.user, role), {
         replace: true,
       });
     } catch (err) {

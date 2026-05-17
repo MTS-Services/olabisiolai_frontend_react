@@ -1,7 +1,9 @@
 import {
   extractBearerTokenFromLoginBody,
   extractRefreshTokenFromLoginBody,
+  extractTwoFactorLoginToken,
   extractUserFromAuthPayload,
+  isTwoFactorLoginRequired,
 } from '@/api/laravelResponse'
 import { request } from '@/api/request'
 import { type AuthContextValue } from '@/auth/context'
@@ -97,13 +99,50 @@ async function hydrateSessionFromLoginBody(
   return refreshedUser ?? loggedInUser
 }
 
-export async function loginUserWithRole(payload: LoginPayload, handlers: AuthHandlers) {
+export type LoginUserResult =
+  | { kind: 'authenticated'; user: AuthUser }
+  | { kind: 'two_factor'; twoFactorToken: string }
+
+export async function loginUserWithRole(
+  payload: LoginPayload,
+  handlers: AuthHandlers,
+): Promise<LoginUserResult> {
   try {
     const res = await request.post<unknown>('/auth/login', payload)
+
+    if (isTwoFactorLoginRequired(res.data)) {
+      const twoFactorToken = extractTwoFactorLoginToken(res.data)
+      if (!twoFactorToken) {
+        throw new Error('Two-factor authentication is required, but the login token is missing.')
+      }
+      handlers.resetAuthState()
+      return { kind: 'two_factor', twoFactorToken }
+    }
+
     const user = await hydrateSessionFromLoginBody(
       res.data,
       handlers,
       'Unable to restore your session after login.',
+      'Login response is missing access token.',
+    )
+    ensureRoleMatchesExpected(user, payload.role)
+    return { kind: 'authenticated', user }
+  } catch (error) {
+    handlers.resetAuthState()
+    throw error
+  }
+}
+
+export async function verifyLoginTwoFactor(
+  payload: { two_factor_token: string; code: string; role: AuthRole },
+  handlers: AuthHandlers,
+): Promise<AuthUser> {
+  try {
+    const res = await request.post<unknown>('/auth/two-factor/verify', payload)
+    const user = await hydrateSessionFromLoginBody(
+      res.data,
+      handlers,
+      'Unable to restore your session after two-factor verification.',
       'Login response is missing access token.',
     )
     ensureRoleMatchesExpected(user, payload.role)

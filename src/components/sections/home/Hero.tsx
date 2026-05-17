@@ -1,6 +1,5 @@
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { GlobalBusinessSearch } from "@/components/search/GlobalBusinessSearch";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
-import { Search } from "lucide-react";
 
 export function Hero() {
   return (
@@ -20,20 +19,7 @@ export function Hero() {
         </div>
         <ScrollReveal delayMs={160}>
           <div className="mb-14 mt-10">
-            <div className="flex justify-center">
-              <InputGroup className="max-w-2xl border-muted bg-transparent px-1 py-6">
-                <InputGroupInput
-                  placeholder="Search by business name, category, or location..."
-                  className="text-sm text-text-primary placeholder:text-xs placeholder:text-muted-foreground sm:text-base sm:placeholder:text-sm"
-                />
-                <InputGroupAddon
-                  align="inline-end"
-                  className="rounded-lg bg-primary p-3"
-                >
-                  <Search className="h-6 w-6 text-primary-foreground" />
-                </InputGroupAddon>
-              </InputGroup>
-            </div>
+            <GlobalBusinessSearch variant="hero" />
           </div>
         </ScrollReveal>
       </div>

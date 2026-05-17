@@ -261,10 +261,14 @@ export default function Filters() {
             Back to Home
           </Link>
           <h1 className="text-2xl sm:text-3xl font-inter font-bold text-text-primary mt-4">
-            All Business
+            {searchTerm ? "Search results" : "All Business"}
           </h1>
           <p className="text-text-secondary font-inter font-normal text-sm sm:text-base mt-2">
-            All categories are showing here
+            {searchTerm
+              ? `Showing businesses matching "${searchTerm}"`
+              : filterCategoryName
+                ? `Showing businesses in ${filterCategoryName}`
+                : "Browse and filter businesses by category, location, and more"}
           </p>
         </div>
       </div>

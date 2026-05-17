@@ -10,6 +10,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { GlobalBusinessSearch } from "@/components/search/GlobalBusinessSearch";
 import { useState } from "react";
 
 import { getRoleDashboard } from "@/auth/rolePolicy";
@@ -53,27 +54,6 @@ function resolveUserAvatar(user: unknown): string {
   }
 
   return DEFAULT_HEADER_AVATAR;
-}
-
-function HeaderSearch({ className }: { className?: string }) {
-  return (
-    <div className={cn("w-full", className)}>
-      <div className="relative">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
-        />
-        <input
-          type="search"
-          placeholder="Search by business name, category, or location..."
-          className={cn(
-            "h-11 w-full rounded-xl border border-border-light bg-card pl-10 pr-3 text-sm text-foreground",
-            "outline-none ring-0 transition focus:border-brand/50",
-          )}
-        />
-      </div>
-    </div>
-  );
 }
 
 function HeaderToolbar({
@@ -328,7 +308,7 @@ export function FrontendHeader() {
             dashboardPath={dashboardPath}
           />
         </div>
-        {showHeaderSearch ? <HeaderSearch /> : null}
+        {showHeaderSearch ? <GlobalBusinessSearch variant="header" /> : null}
       </div>
 
       <div
@@ -349,7 +329,9 @@ export function FrontendHeader() {
         </Link>
 
         <div className="flex min-w-0 flex-1 justify-center px-2">
-          {showHeaderSearch ? <HeaderSearch className="max-w-xl lg:max-w-2xl" /> : null}
+          {showHeaderSearch ? (
+            <GlobalBusinessSearch variant="header" className="max-w-xl lg:max-w-2xl" />
+          ) : null}
         </div>
 
         <HeaderToolbar

@@ -8,6 +8,9 @@ export type UserSettingsProfile = {
   email: string
   phone: string | null
   wants_marketing_emails: boolean
+  location?: string | null
+  image_path?: string | null
+  image_url?: string | null
 }
 
 export type UserSettingsPayload = {
@@ -41,8 +44,53 @@ export type PatchUserSettingsBody = {
   settings?: Record<string, unknown>
 }
 
+function appendPatchUserSettingsFormData(form: FormData, body: PatchUserSettingsBody): void {
+  if (body.first_name !== undefined) form.append('first_name', body.first_name)
+  if (body.last_name !== undefined) form.append('last_name', body.last_name)
+  if (body.phone !== undefined) form.append('phone', body.phone ?? '')
+  if (body.wants_marketing_emails !== undefined) {
+    form.append('wants_marketing_emails', body.wants_marketing_emails ? '1' : '0')
+  }
+
+  const notifications = body.settings?.notifications
+  if (notifications && typeof notifications === 'object') {
+    const n = notifications as Record<string, unknown>
+    if (typeof n.email === 'boolean') {
+      form.append('settings[notifications][email]', n.email ? '1' : '0')
+    }
+    if (typeof n.push === 'boolean') {
+      form.append('settings[notifications][push]', n.push ? '1' : '0')
+    }
+    if (typeof n.sms === 'boolean') {
+      form.append('settings[notifications][sms]', n.sms ? '1' : '0')
+    }
+  }
+}
+
+export type PatchUserSettingsOptions = {
+  image?: File | null
+}
+
 /** `PATCH /user/settings` — partial profile + partial `settings` merge. */
-export async function patchUserSettings(body: PatchUserSettingsBody): Promise<UserSettingsPayload> {
+export async function patchUserSettings(
+  body: PatchUserSettingsBody,
+  options?: PatchUserSettingsOptions,
+): Promise<UserSettingsPayload> {
+  const image = options?.image
+  if (image) {
+    const form = new FormData()
+    appendPatchUserSettingsFormData(form, body)
+    form.append('image', image)
+    const response = await request.patch<UserSettingsApiEnvelope>('/user/settings', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    const resBody = response.data
+    if (!resBody?.success || !resBody.data) {
+      throw new Error(resBody?.message || 'Could not save settings')
+    }
+    return resBody.data
+  }
+
   const response = await request.patch<UserSettingsApiEnvelope>('/user/settings', body)
   const resBody = response.data
   if (!resBody?.success || !resBody.data) {

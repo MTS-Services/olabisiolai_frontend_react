@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { container } from "@/lib/container";
+import { resolveMediaUrl } from "@/lib/mediaUrl";
 import { cn } from "@/lib/utils";
 
 const LOGO_HEADER = "/images/landing/gidira-logo-header.svg";
@@ -34,12 +35,20 @@ const DEFAULT_HEADER_AVATAR = "/images/avatar/default-header-avatar.png";
 
 function resolveUserAvatar(user: unknown): string {
   const userRecord = (user ?? {}) as Record<string, unknown>;
-  const possibleKeys = ["avatar", "avatar_url", "image", "photo", "photo_url"] as const;
+  const possibleKeys = [
+    "image_url",
+    "avatar_url",
+    "avatar",
+    "photo_url",
+    "photo",
+    "image",
+    "image_path",
+  ] as const;
 
   for (const key of possibleKeys) {
     const value = userRecord[key];
     if (typeof value === "string" && value.trim().length > 0) {
-      return value;
+      return resolveMediaUrl(value, DEFAULT_HEADER_AVATAR);
     }
   }
 

@@ -3,6 +3,7 @@ import * as React from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Bell,
+  Camera,
   Eye,
   EyeOff,
   Lock,
@@ -23,6 +24,7 @@ import { HeaderAvatar } from "@/components/ui/HeaderAvatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { getLaravelErrorMessage } from "@/lib/laravelApiError"
+import { resolveMediaUrl } from "@/lib/mediaUrl"
 import { cn } from "@/lib/utils"
 
 const LOGO_FOOTER = "/images/landing/gidira-logo-footer.svg"
@@ -175,6 +177,9 @@ export default function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = React.useState(false)
   const [showNewPassword, setShowNewPassword] = React.useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
+  const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null)
+  const [profileImagePreview, setProfileImagePreview] = React.useState<string | null>(null)
+  const profileImageInputRef = React.useRef<HTMLInputElement>(null)
 
   const settingsQuery = useQuery({
     queryKey: ["user-settings"],
@@ -196,6 +201,18 @@ export default function SettingsPage() {
     setSmsNotify(readBool(notif.sms, false))
   }, [settingsQuery.data])
 
+  React.useEffect(() => {
+    if (!profileImageFile) {
+      setProfileImagePreview(null)
+      return
+    }
+    const url = URL.createObjectURL(profileImageFile)
+    setProfileImagePreview(url)
+    return () => {
+      URL.revokeObjectURL(url)
+    }
+  }, [profileImageFile])
+
   const saveAllMutation = useMutation({
     mutationFn: async () => {
       const cp = currentPassword.trim()
@@ -208,19 +225,22 @@ export default function SettingsPage() {
         )
       }
 
-      const payload = await patchUserSettings({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        phone: phone.trim() || null,
-        wants_marketing_emails: emailNotify,
-        settings: {
-          notifications: {
-            email: emailNotify,
-            push: pushNotify,
-            sms: smsNotify,
+      const payload = await patchUserSettings(
+        {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          phone: phone.trim() || null,
+          wants_marketing_emails: emailNotify,
+          settings: {
+            notifications: {
+              email: emailNotify,
+              push: pushNotify,
+              sms: smsNotify,
+            },
           },
         },
-      })
+        profileImageFile ? { image: profileImageFile } : undefined,
+      )
 
       if (wantsPw) {
         try {
@@ -248,6 +268,10 @@ export default function SettingsPage() {
       setShowCurrentPassword(false)
       setShowNewPassword(false)
       setShowConfirmPassword(false)
+      setProfileImageFile(null)
+      if (profileImageInputRef.current) {
+        profileImageInputRef.current.value = ""
+      }
       setBanner({
         type: "ok",
         text: changedPassword
@@ -268,7 +292,34 @@ export default function SettingsPage() {
     "Your account"
   const displayEmail = settingsQuery.data?.profile.email ?? user?.email ?? ""
 
+  const savedAvatarSrc = resolveMediaUrl(
+    settingsQuery.data?.profile.image_url ??
+    user?.image_url ??
+    settingsQuery.data?.profile.image_path ??
+    user?.image_path ??
+    null,
+    "",
+  )
+  const avatarSrc = profileImagePreview || savedAvatarSrc || null
+
   const busy = settingsQuery.isLoading || saveAllMutation.isPending
+
+  function onProfileImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      setBanner({ type: "error", text: "Please choose an image file (JPEG, PNG, or WebP)." })
+      event.target.value = ""
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setBanner({ type: "error", text: "Profile photo must be 10 MB or smaller." })
+      event.target.value = ""
+      return
+    }
+    setBanner(null)
+    setProfileImageFile(file)
+  }
 
   return (
     <>
@@ -305,14 +356,40 @@ export default function SettingsPage() {
           <div className="rounded-xl bg-card p-4 shadow-sm sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="relative shrink-0 self-start sm:self-auto">
-                <HeaderAvatar src={null} alt="Profile avatar" className="size-14 rounded-full sm:size-16" />
-                <span className="absolute -bottom-1 -right-1 rounded-full bg-chat-accent p-1 text-white opacity-60">
-                  <UserSquare2 className="size-3.5" aria-hidden />
-                </span>
+                <HeaderAvatar
+                  src={avatarSrc}
+                  alt="Profile avatar"
+                  className="size-14 rounded-full sm:size-16"
+                />
+                <input
+                  ref={profileImageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  disabled={busy}
+                  onChange={onProfileImageChange}
+                />
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => profileImageInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 rounded-full bg-chat-accent p-1.5 text-white shadow transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label="Change profile photo"
+                >
+                  <Camera className="size-3.5" aria-hidden />
+                </button>
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold text-ink sm:text-3xl">{displayName}</h1>
                 <p className="truncate text-sm text-body-secondary sm:text-base">{displayEmail}</p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => profileImageInputRef.current?.click()}
+                  className="mt-1 text-sm font-medium text-chat-accent hover:underline disabled:opacity-60"
+                >
+                  {profileImageFile ? "Photo selected — save to apply" : "Change profile photo"}
+                </button>
               </div>
             </div>
           </div>

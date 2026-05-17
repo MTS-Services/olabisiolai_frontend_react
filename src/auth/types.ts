@@ -2,6 +2,8 @@ export type AuthUser = {
   id: string | number
   name?: string
   email?: string
+  image_path?: string | null
+  image_url?: string | null
   role?: string
   roles?: string[]
   /**

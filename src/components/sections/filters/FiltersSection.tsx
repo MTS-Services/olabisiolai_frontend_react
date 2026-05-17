@@ -70,18 +70,24 @@ export default function FiltersSection({
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <circle cx="12" cy="12" r="12" fill="#1A73E8" />
-            <path
-              d="M7 12.5l3 3 7-7"
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <circle cx="12" cy="12" r="12" fill={verifiedOnly ? "#1A73E8" : "#9CA3AF"} />
+            {verifiedOnly ? (
+              <path
+                d="M7 12.5l3 3 7-7"
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ) : null}
           </svg>
 
-          <span className="text-primary text-sm font-medium">Verified Only</span>
+          <span
+            className={`text-sm font-medium ${verifiedOnly ? "text-primary" : "text-text-secondary"}`}
+          >
+            Verified Only
+          </span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -89,7 +95,7 @@ export default function FiltersSection({
               checked={verifiedOnly}
               onChange={(event) => onVerifiedOnlyChange(event.target.checked)}
             />
-            <div className="w-11 h-6 bg-red-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-card after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-card after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
           </label>
         </div>
       </div>

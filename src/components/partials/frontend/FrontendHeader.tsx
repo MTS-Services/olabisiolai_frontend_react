@@ -10,8 +10,9 @@ import {
   User,
   X,
 } from "lucide-react";
+import { NigeriaLocationMapModal } from "@/components/maps/NigeriaLocationMapModal";
 import { GlobalBusinessSearch } from "@/components/search/GlobalBusinessSearch";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { getRoleDashboard } from "@/auth/rolePolicy";
 import { getUserRoles } from "@/auth/roles";
@@ -60,10 +61,14 @@ function HeaderToolbar({
   isLightHeader,
   showTradeNav,
   dashboardPath,
+  showLocationPicker,
+  onOpenLocationMap,
 }: {
   isLightHeader: boolean;
   showTradeNav: boolean;
   dashboardPath: string;
+  showLocationPicker: boolean;
+  onOpenLocationMap: () => void;
 }) {
   const { isAuthenticated, logout, user } = useAuth();
   const avatarSrc = resolveUserAvatar(user);
@@ -75,10 +80,18 @@ function HeaderToolbar({
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-      <Button type="button" variant="outline" className={regionTrigger}>
-        Nigeria
-        <LocateFixed className="size-4 text-blue-500" aria-hidden />
-      </Button>
+      {showLocationPicker ? (
+        <Button
+          type="button"
+          variant="outline"
+          className={regionTrigger}
+          onClick={onOpenLocationMap}
+          aria-label="Choose location on map"
+        >
+          Nigeria
+          <LocateFixed className="size-4 text-blue-500" aria-hidden />
+        </Button>
+      ) : null}
 
       {showTradeNav ? (
         <Button
@@ -266,6 +279,7 @@ function MobileMenu({
 
 export function FrontendHeader() {
   const { pathname } = useLocation();
+  const [locationMapOpen, setLocationMapOpen] = useState(false);
   const { isAuthenticated, logout, user } = useAuth();
   const primaryRole = getUserRoles(user)[0];
   const dashboardPath = primaryRole ? getRoleDashboard(primaryRole) ?? "/user/dashboard" : "/user/dashboard";
@@ -277,7 +291,15 @@ export function FrontendHeader() {
     pathname === "/reviews";
   const showTradeNav = pathname !== "/trade";
   const showHeaderSearch = pathname !== "/";
+  const isFiltersPage = pathname === "/filters";
+  const showLocationPicker = !isFiltersPage;
   const avatarSrc = resolveUserAvatar(user);
+
+  useEffect(() => {
+    if (isFiltersPage) {
+      setLocationMapOpen(false);
+    }
+  }, [isFiltersPage]);
 
   return (
     <header
@@ -338,8 +360,17 @@ export function FrontendHeader() {
           isLightHeader={isLightHeader}
           showTradeNav={showTradeNav}
           dashboardPath={dashboardPath}
+          showLocationPicker={showLocationPicker}
+          onOpenLocationMap={() => setLocationMapOpen(true)}
         />
       </div>
+
+      {showLocationPicker ? (
+        <NigeriaLocationMapModal
+          open={locationMapOpen}
+          onClose={() => setLocationMapOpen(false)}
+        />
+      ) : null}
     </header>
   );
 }

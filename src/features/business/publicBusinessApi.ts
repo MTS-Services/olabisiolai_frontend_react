@@ -9,6 +9,8 @@ export type PublicBusiness = {
   location: string;
   locationId?: number | null;
   locationName?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   rating: number;
   reviews: number;
   description: string;
@@ -90,6 +92,10 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     str(locObj?.full_name ?? r.full_address ?? r.location, 'N/A');
   const locationId = num(locObj?.id ?? r.location_id, 0) || null;
   const locationName = str(locObj?.name ?? locObj?.full_name ?? city, '') || null;
+  const latRaw = num(locObj?.latitude ?? r.latitude, NaN);
+  const lngRaw = num(locObj?.longitude ?? r.longitude, NaN);
+  const latitude = Number.isFinite(latRaw) ? latRaw : null;
+  const longitude = Number.isFinite(lngRaw) ? lngRaw : null;
 
   const summary = rec(r.reviews_summary);
   const rating = summary
@@ -129,6 +135,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     location,
     locationId,
     locationName,
+    latitude,
+    longitude,
     rating,
     reviews,
     description,
@@ -232,6 +240,9 @@ export async function fetchPublicBusinesses(params?: {
   category?: string;
   category_id?: number;
   location_id?: number;
+  lat?: number;
+  lng?: number;
+  radius_km?: number;
   search?: string;
   verification_status?: string;
   page?: number;
@@ -241,15 +252,28 @@ export async function fetchPublicBusinesses(params?: {
   return page.items;
 }
 
+function hasGeoFilter(params?: { lat?: number; lng?: number }): boolean {
+  if (!params) return false;
+  return (
+    params.lat != null &&
+    params.lng != null &&
+    Number.isFinite(params.lat) &&
+    Number.isFinite(params.lng)
+  );
+}
+
 function hasServerListFilters(params?: {
   category_id?: number;
   location_id?: number;
+  lat?: number;
+  lng?: number;
   search?: string;
   verification_status?: string;
 }): boolean {
   if (!params) return false;
   if (params.category_id != null && params.category_id > 0) return true;
   if (params.location_id != null && params.location_id > 0) return true;
+  if (hasGeoFilter(params)) return true;
   if (params.search != null && params.search.trim() !== '') return true;
   if (params.verification_status != null && params.verification_status.trim() !== '') return true;
   return false;
@@ -259,6 +283,9 @@ export async function fetchPublicBusinessesPage(params?: {
   category?: string;
   category_id?: number;
   location_id?: number;
+  lat?: number;
+  lng?: number;
+  radius_km?: number;
   search?: string;
   verification_status?: string;
   page?: number;

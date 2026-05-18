@@ -1,18 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { showError, showInfo, showSuccess } from "@/lib/sweetAlert";
 
 import { useAuth } from "@/auth/useAuth";
 import { getAccessToken } from "@/auth/token";
+import type { BillingFormValues } from "@/components/sections/vendor/boost/boostPay/BillingInformationCard";
 import { BillingInformationCard } from "@/components/sections/vendor/boost/boostPay/BillingInformationCard";
 import { BoostPayHeader } from "@/components/sections/vendor/boost/boostPay/BoostPayHeader";
 import { OrderSummaryCard } from "@/components/sections/vendor/boost/boostPay/OrderSummaryCard";
 import { PaymentMethodsCard } from "@/components/sections/vendor/boost/boostPay/PaymentMethodsCard";
+import { SavedCheckoutProfilesCard } from "@/components/sections/vendor/boost/boostPay/SavedCheckoutProfilesCard";
 import { plans, type PlanId } from "@/components/sections/vendor/verification/verificationData";
 import { env } from "@/config/env";
 import {
+  extractFlutterwaveCardMeta,
   extractFlutterwaveTransactionId,
   isFlutterwavePaymentSuccessful,
   type FlutterwaveCallbackResponse,
@@ -26,6 +29,9 @@ import {
   primeVerificationDocumentSession,
   type VerificationPayment,
 } from "@/features/verification/vendorVerificationApi";
+import { billingFromUser, billingFromVendorPaymentMethod } from "@/features/vendor/vendorBillingProfile";
+import { createVendorPaymentMethod, fetchVendorPaymentMethods } from "@/features/vendor/vendorPaymentsApi";
+import type { VendorPaymentMethod } from "@/features/vendor/vendorPaymentsApi";
 import { getLaravelErrorMessage } from "@/lib/laravelApiError";
 
 const PLAN_STORAGE_KEY = "verificationPlanId";
@@ -42,10 +48,15 @@ function redirectToDocumentUpload(
 
 export default function VendorBoostReviewPayPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedMethod, setSelectedMethod] = useState<"card" | "bank">("card");
   const [isPaying, setIsPaying] = useState(false);
   const [checkoutPayment, setCheckoutPayment] = useState<VerificationPayment | null>(null);
   const [shouldOpenFlutterwave, setShouldOpenFlutterwave] = useState(false);
+  const [billing, setBilling] = useState<BillingFormValues>(() => billingFromUser(null));
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
+  const [profileInitDone, setProfileInitDone] = useState(false);
+  const [saveProfileAfterPay, setSaveProfileAfterPay] = useState(true);
   const { user } = useAuth();
 
   const isVerification = sessionStorage.getItem("paymentSource") === "verification";
@@ -66,6 +77,30 @@ export default function VendorBoostReviewPayPage() {
     staleTime: 0,
   });
 
+  const { data: methodsData } = useQuery({
+    queryKey: ["vendor", "payment-methods"],
+    queryFn: fetchVendorPaymentMethods,
+    enabled: Boolean(getAccessToken()),
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (profileInitDone) return;
+    if (!methodsData?.items) return;
+    setProfileInitDone(true);
+    const def = methodsData.items.find((x) => x.is_default) ?? methodsData.items[0];
+    if (def) {
+      setSelectedProfileId(def.id);
+      setBilling(billingFromVendorPaymentMethod(def));
+    }
+  }, [methodsData, profileInitDone]);
+
+  useEffect(() => {
+    if (!profileInitDone) return;
+    if (selectedProfileId !== null) return;
+    setBilling(billingFromUser(user));
+  }, [user, profileInitDone, selectedProfileId]);
+
   const apiPackage = packagesData?.packages.find((p) => p.id === packageId);
   const amountNgn =
     checkoutPayment?.amount ??
@@ -81,15 +116,9 @@ export default function VendorBoostReviewPayPage() {
     redirectToDocumentUpload(navigate, verificationStatus);
   }, [isVerification, navigate, verificationStatus]);
 
-  const customerEmail = user?.email ?? "guest@gidira.app";
-  const customerPhone =
-    (user as { phone?: string; phone_number?: string })?.phone ??
-    (user as { phone?: string; phone_number?: string })?.phone_number ??
-    "08000000000";
-  const customerName =
-    (user as { name?: string; full_name?: string })?.name ??
-    (user as { name?: string; full_name?: string })?.full_name ??
-    "Gidira Vendor";
+  const customerEmail = billing.email.trim() || user?.email || "guest@gidira.app";
+  const customerPhone = billing.phone.trim() || "08000000000";
+  const customerName = billing.cardholder_name.trim() || "Gidira Vendor";
 
   const flutterwaveTxRef = checkoutPayment?.tx_ref ?? `verification_pending_${packageId}`;
 
@@ -130,6 +159,44 @@ export default function VendorBoostReviewPayPage() {
     [navigate],
   );
 
+  const trySaveProfileFromResponse = useCallback(
+    async (response: FlutterwaveCallbackResponse) => {
+      if (!saveProfileAfterPay) return;
+      const card = extractFlutterwaveCardMeta(response);
+      try {
+        await createVendorPaymentMethod({
+          label:
+            card.card_brand && card.last_four
+              ? `${card.card_brand} •••• ${card.last_four}`
+              : "Verification checkout",
+          cardholder_name: billing.cardholder_name.trim() || customerName,
+          email: billing.email.trim() || customerEmail,
+          phone: billing.phone.trim() || customerPhone,
+          last_four: card.last_four,
+          card_brand: card.card_brand,
+          exp_month: card.exp_month,
+          exp_year: card.exp_year,
+          billing_line1: billing.billing_line1.trim() || null,
+          billing_city: billing.billing_city.trim() || null,
+          billing_state: billing.billing_state.trim() || null,
+          billing_country: billing.billing_country.trim() || null,
+          is_default: true,
+        });
+        void queryClient.invalidateQueries({ queryKey: ["vendor", "payment-methods"] });
+      } catch {
+        // non-blocking
+      }
+    },
+    [
+      saveProfileAfterPay,
+      billing,
+      customerEmail,
+      customerName,
+      customerPhone,
+      queryClient,
+    ],
+  );
+
   const recoverAfterConfirmFailure = useCallback(async (): Promise<boolean> => {
     try {
       const status = await fetchVerificationStatus();
@@ -166,6 +233,8 @@ export default function VendorBoostReviewPayPage() {
           }
 
           await completeVerificationCheckout(resolvedPaymentId, txId);
+          await trySaveProfileFromResponse(response);
+          void queryClient.invalidateQueries({ queryKey: ["vendor", "payments"] });
           closePaymentModal();
           showSuccess("Payment confirmed. Upload your documents next.");
         } catch (error) {
@@ -193,6 +262,8 @@ export default function VendorBoostReviewPayPage() {
     handleFlutterPayment,
     recoverAfterConfirmFailure,
     completeVerificationCheckout,
+    trySaveProfileFromResponse,
+    queryClient,
   ]);
 
   const onConfirmPay = async () => {
@@ -222,6 +293,11 @@ export default function VendorBoostReviewPayPage() {
       return;
     }
 
+    if (!billing.email.trim() || !billing.phone.trim() || !billing.cardholder_name.trim()) {
+      showError("Please fill in billing name, email, and phone before paying.");
+      return;
+    }
+
     try {
       setIsPaying(true);
       clearVerificationPaymentSession();
@@ -236,6 +312,22 @@ export default function VendorBoostReviewPayPage() {
     }
   };
 
+  const onSelectProfile = (_id: number | null, method: VendorPaymentMethod | null) => {
+    setSelectedProfileId(_id);
+    if (method) {
+      setBilling(billingFromVendorPaymentMethod(method));
+    } else {
+      setBilling(billingFromUser(user));
+    }
+  };
+
+  const billingHint =
+    selectedProfileId !== null
+      ? "Using a saved profile — edit if needed. Card data is entered only inside Flutterwave."
+      : null;
+
+  const methods = methodsData?.items ?? [];
+
   return (
     <div className="p-4 md:p-6">
       <div className="space-y-4">
@@ -244,7 +336,12 @@ export default function VendorBoostReviewPayPage() {
         <div className="mt-10 grid gap-4 xl:grid-cols-[1fr_390px]">
           <div className="space-y-4">
             <PaymentMethodsCard selectedMethod={selectedMethod} onMethodChange={setSelectedMethod} />
-            <BillingInformationCard />
+            <SavedCheckoutProfilesCard
+              items={methods}
+              selectedId={selectedProfileId}
+              onSelect={onSelectProfile}
+            />
+            <BillingInformationCard value={billing} onChange={setBilling} editable hint={billingHint} />
           </div>
 
           <OrderSummaryCard
@@ -253,6 +350,19 @@ export default function VendorBoostReviewPayPage() {
             planTitle={isVerification ? (apiPackage?.title ?? selectedPlan.title) : "Visibility Pro Plus"}
             totalAmount={amountNgn}
             isVerification={isVerification}
+            beforePayButton={
+              <label className="flex cursor-pointer items-start gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 rounded border"
+                  checked={saveProfileAfterPay}
+                  onChange={(e) => setSaveProfileAfterPay(e.target.checked)}
+                />
+                <span>
+                  After a successful card payment, save masked card details and billing as a default checkout profile.
+                </span>
+              </label>
+            }
           />
         </div>
       </div>

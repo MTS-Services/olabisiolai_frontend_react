@@ -16,6 +16,7 @@ const VendorBoostReviewPay = lazy(() => import("@/pages/vendor/VendorBoostReview
 const VendorAnalytics = lazy(() => import("@/pages/vendor/VendorAnalytics"));
 const VendorReviews = lazy(() => import("@/pages/vendor/VendorReviews"));
 const VendorPayments = lazy(() => import("@/pages/vendor/VendorPayments"));
+const VendorPaymentDetail = lazy(() => import("@/pages/vendor/VendorPaymentDetail"));
 const VendorSettings = lazy(() => import("@/pages/vendor/VendorSettings"));
 const AfterVerification = lazy(() => import("@/pages/vendor/AfterVerification"));
 const DocumentUpload = lazy(() => import("@/pages/vendor/DocumentUpload"));
@@ -43,6 +44,7 @@ export const vendorRoutes: RouteObject = {
     },
     { path: "/vendor/analytics", element: suspensePage(VendorAnalytics) },
     { path: "/vendor/reviews", element: suspensePage(VendorReviews) },
+    { path: "/vendor/payments/:paymentId", element: suspensePage(VendorPaymentDetail) },
     { path: "/vendor/payments", element: suspensePage(VendorPayments) },
     { path: "/vendor/settings", element: suspensePage(VendorSettings) },
     { path: "/vendor/after-verification", element: suspensePage(AfterVerification) },

@@ -1,4 +1,5 @@
 import { Lock, PlugZap } from "lucide-react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -10,12 +11,15 @@ export function OrderSummaryCard({
   planTitle = "Visibility Pro Plus",
   totalAmount = 5000,
   isVerification = false,
+  beforePayButton,
 }: {
   onConfirmPay?: () => void;
   isPaying?: boolean;
   planTitle?: string;
   totalAmount?: number;
   isVerification?: boolean;
+  /** Optional slot for checkboxes / notices above Pay Now */
+  beforePayButton?: ReactNode;
 }) {
   const navigate = useNavigate();
 
@@ -61,6 +65,8 @@ export function OrderSummaryCard({
           <span className="text-lg font-semibold">Total Price</span>
           <span className="text-4xl font-bold text-brand-red">{formattedTotal}</span>
         </div>
+
+        {beforePayButton ? <div className="space-y-2">{beforePayButton}</div> : null}
 
         <Button
           className="w-full bg-brand-red text-white hover:bg-brand-red/90"

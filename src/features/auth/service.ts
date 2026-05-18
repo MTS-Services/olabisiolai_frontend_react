@@ -267,7 +267,7 @@ export async function verifyRegistrationOtp(
 export function resolveDashboardPath(user: unknown, selectedRole: AuthRole) {
   const roles = getUserRoles(extractUserFromAuthPayload(user))
   if (roles.includes('admin')) return '/admin'
-  if (roles.includes('vendor')) return '/vendor/choose-your-plan'
+  if (roles.includes('vendor')) return '/vendor'
   if (roles.includes('user')) return '/user/dashboard'
 
   const dashboardFromPolicy = roles
@@ -275,5 +275,5 @@ export function resolveDashboardPath(user: unknown, selectedRole: AuthRole) {
     .find((value): value is string => Boolean(value))
 
   if (dashboardFromPolicy) return dashboardFromPolicy
-  return selectedRole === 'vendor' ? '/vendor/choose-your-plan' : '/user/dashboard'
+  return selectedRole === 'vendor' ? '/vendor' : '/user/dashboard'
 }

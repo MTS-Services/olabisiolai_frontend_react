@@ -12,7 +12,8 @@ type Props = {
 
 export function CurrentPlanCard({ subscription }: Props) {
   const navigate = useNavigate()
-  const isPremium = subscription.plan === 'premium'
+  const isPremium = subscription.is_premium_active === true
+  const canPayPremium = subscription.can_pay_premium === true
 
   return (
     <Card className="relative rounded-xl border-border-light shadow-sm">
@@ -27,15 +28,33 @@ export function CurrentPlanCard({ subscription }: Props) {
           <div>
             <p className="text-sm text-muted-foreground font-inter">Current Plan</p>
             <p className="text-xl font-bold text-foreground font-manrope">{subscription.plan_label}</p>
+            {isPremium && subscription.expires_at ? (
+              <p className="mt-1 text-xs text-muted-foreground font-inter">
+                Valid until {subscription.expires_at}
+                {typeof subscription.days_remaining === 'number' && subscription.days_remaining > 0
+                  ? ` (${subscription.days_remaining} days left)`
+                  : ''}
+              </p>
+            ) : null}
           </div>
         </div>
-        <Button
-          type="button"
-          onClick={() => navigate('/vendor/boost')}
-          className="mt-6 w-full cursor-pointer bg-sky-100 font-inter font-semibold text-foreground shadow-none hover:bg-sky-100/80"
-        >
-          Manage subscription
-        </Button>
+        {canPayPremium ? (
+          <Button
+            type="button"
+            onClick={() => navigate('/vendor/premium-payment')}
+            className="mt-6 w-full cursor-pointer bg-brand-red font-inter font-semibold text-white shadow-none hover:bg-brand-red/90"
+          >
+            Upgrade to Premium
+          </Button>
+        ) : isPremium ? (
+          <Button
+            type="button"
+            onClick={() => navigate('/vendor/boost')}
+            className="mt-6 w-full cursor-pointer bg-sky-100 font-inter font-semibold text-foreground shadow-none hover:bg-sky-100/80"
+          >
+            Manage subscription
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   )

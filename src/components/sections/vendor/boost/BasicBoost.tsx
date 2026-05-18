@@ -10,9 +10,9 @@ const mockPlans = [
 
 export function BasicBoost() {
   const navigate = useNavigate();
-  
+
   const handleUpgradeClick = () => {
-    navigate("/vendor/choose-your-plan");
+    navigate("/vendor/premium-payment");
   };
 
   return (
@@ -26,14 +26,14 @@ export function BasicBoost() {
         <p className="text-sm text-popover-foreground text-center max-w-[260px]">
           Unlock premium boost plans, enhanced visibility, and advanced promotional features.
         </p>
-        <button 
+        <button
           onClick={handleUpgradeClick}
           className="bg-red-600 hover:bg-brand-red text-text-white rounded-full px-6 py-3 text-sm font-medium"
         >
           Get Premium Access
         </button>
       </div>
-      
+
       <Card className="opacity-40 h-screen">
         <CardContent className="p-6">
           <h2 className="text-xl font-bold font-inter mb-5">Boost Plans</h2>

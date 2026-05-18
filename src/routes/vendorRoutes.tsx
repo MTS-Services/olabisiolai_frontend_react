@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import type { RouteObject } from "react-router-dom";
+import { Navigate, type RouteObject } from "react-router-dom";
 
 import { VendorLayout } from "@/layouts/vendor/VendorLayout";
 import { RoleGate } from "@/routes/RoleGate";
@@ -37,6 +37,10 @@ export const vendorRoutes: RouteObject = {
     { path: "/vendor/boost", element: suspensePage(VendorBoost) },
     { path: "/vendor/boost/configure", element: suspensePage(VendorBoostConfigure) },
     { path: "/vendor/review-pay", element: suspensePage(VendorBoostReviewPay) },
+    {
+      path: "/vendor/subscription/pay",
+      element: <Navigate to="/vendor/premium-payment" replace />,
+    },
     { path: "/vendor/analytics", element: suspensePage(VendorAnalytics) },
     { path: "/vendor/reviews", element: suspensePage(VendorReviews) },
     { path: "/vendor/payments", element: suspensePage(VendorPayments) },

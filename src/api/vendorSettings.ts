@@ -20,13 +20,24 @@ export type VendorSettingsVerification = {
   verification_status: 'none' | 'pending' | 'approved'
   verification_status_label: string
   is_approved: boolean
+  shows_verified_badge?: boolean
   is_flagged: boolean
 }
 
 export type VendorSettingsSubscription = {
   plan: 'free' | 'premium'
   plan_label: string
-  boost_status: 'active' | 'none'
+  status: 'active' | 'pending_payment' | 'expired'
+  status_label: string
+  expires_at?: string | null
+  expires_at_iso?: string | null
+  is_expired?: boolean
+  days_remaining?: number
+  requires_payment: boolean
+  can_pay_premium?: boolean
+  is_premium_active?: boolean
+  can_access_features: boolean
+  shows_verified_badge: boolean
 }
 
 export type VendorSettingsPayload = {

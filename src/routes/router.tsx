@@ -19,7 +19,6 @@ export const router = createBrowserRouter([
       authRoutes,
       { path: "/unauthorized", element: suspensePage(Unauthorized) },
       { path: "/dashboard", element: <Navigate to="/user/dashboard" replace /> },
-      { path: "/vendor", element: <Navigate to="/vendor/dashboard" replace /> },
       userRoutes,
       vendorRoutes,
       adminRoutes,

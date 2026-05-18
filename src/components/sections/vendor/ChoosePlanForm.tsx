@@ -10,7 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { createVendorBusiness } from "@/features/business/vendorBusinessApi";
+import {
+  businessCreateRequiresPayment,
+  createVendorBusiness,
+  isPremiumPlanSelected,
+} from "@/features/business/vendorBusinessApi";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
 
 function Label({ children }: { children: ReactNode }) {
@@ -253,10 +257,20 @@ export default function ChoosePlanForm() {
 
   const createBusinessMutation = useMutation({
     mutationFn: createVendorBusiness,
-    onSuccess: () => {
+    onSuccess: (response) => {
+      const requiresPayment = businessCreateRequiresPayment(response);
+
       localStorage.setItem("vendorBusinessCreated", "true");
       void queryClient.invalidateQueries({ queryKey: ["vendor", "business", "profile"] });
-      navigate("/vendor/dashboard");
+      void queryClient.invalidateQueries({ queryKey: ["vendor", "subscription", "status"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor", "onboarding", "status"] });
+
+      if (requiresPayment) {
+        navigate("/vendor/premium-payment", { replace: true });
+        return;
+      }
+
+      navigate("/vendor/dashboard", { replace: true });
     },
     onError: (error: unknown) => {
       const parsed = parseVendorBusinessApiFailure(error);
@@ -300,6 +314,7 @@ export default function ChoosePlanForm() {
     }
 
     createBusinessMutation.mutate({
+      subscription_plan: isPremiumPlanSelected() ? "premium" : "free",
       category_id: categoryId,
       location_id: locationId,
       business_name: String(formData.get("businessName") ?? ""),

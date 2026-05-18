@@ -118,9 +118,11 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const servicesOffered = parseStringList(r.services_offered);
 
   const verified =
-    r.verification_status === 'approved' ||
+    r.shows_verified_badge === true ||
     r.is_verified === true ||
-    r.verified === true;
+    (r.verification_status === 'approved' &&
+      r.subscription_plan === 'premium' &&
+      r.subscription_status === 'active');
 
   const isFavorite =
     r.is_favorite === true ||

@@ -9,7 +9,7 @@ type Props = {
 }
 
 export function VerifiedStatusCard({ verification }: Props) {
-  const isApproved = verification.is_approved
+  const isApproved = verification.shows_verified_badge === true || verification.is_approved
   const isPending = verification.verification_status === 'pending' && !verification.is_flagged
 
   const title = isApproved ? 'Verified' : isPending ? 'Pending review' : 'Not verified'

@@ -1,5 +1,7 @@
+import { ECHO_CHANNELS } from '@/constants/channels'
 import { ECHO_EVENTS } from '@/constants/events'
 import type { ReverbEcho } from '@/lib/echo'
+import type { RealtimeNotificationPayload } from '@/types/realtimeNotification'
 import type { Message, TypingUser } from '@/types/message'
 import type { PresenceUser } from '@/types/presence'
 import { normalizeMessage } from '@/utils/messageUtils'
@@ -18,8 +20,17 @@ export interface PresenceEventHandlers {
 }
 
 export interface UserEventHandlers {
-  onNewMessageNotification: (payload: Record<string, unknown>) => void
+  onNewMessageNotification: (payload: RealtimeNotificationPayload) => void
+  onAppNotification: (payload: RealtimeNotificationPayload) => void
   onUserPresence: (payload: { status: string; last_seen_at: string | null }) => void
+}
+
+export interface AdminEventHandlers {
+  onAppNotification: (payload: RealtimeNotificationPayload) => void
+}
+
+export interface PublicEventHandlers {
+  onAnnouncement: (payload: RealtimeNotificationPayload) => void
 }
 
 interface MessageSentPayload {
@@ -49,8 +60,8 @@ export class EchoService {
     conv: ConversationEventHandlers,
     presence: PresenceEventHandlers,
   ): () => void {
-    const privateChannel = this.echo.private(`conversation.${conversationId}`)
-    const presenceChannel = this.echo.join(`conversation.${conversationId}`)
+    const privateChannel = this.echo.private(ECHO_CHANNELS.conversation(conversationId))
+    const presenceChannel = this.echo.join(ECHO_CHANNELS.conversation(conversationId))
 
     privateChannel.listen(ECHO_EVENTS.messageSent, (payload: MessageSentPayload) => {
       const msg = normalizeMessage({
@@ -112,7 +123,7 @@ export class EchoService {
       privateChannel.stopListening(ECHO_EVENTS.messageDeleted)
       privateChannel.stopListening(ECHO_EVENTS.messageRead)
       presenceChannel.stopListening(ECHO_EVENTS.userTyping)
-      this.echo.leave(`conversation.${conversationId}`)
+      this.echo.leave(ECHO_CHANNELS.conversation(conversationId))
     }
   }
 
@@ -127,10 +138,14 @@ export class EchoService {
   }
 
   subscribeToUserChannel(userId: number, handlers: UserEventHandlers): () => void {
-    const channel = this.echo.private(`user.${userId}`)
+    const channel = this.echo.private(ECHO_CHANNELS.user(userId))
 
-    channel.listen(ECHO_EVENTS.newMessage, (payload: Record<string, unknown>) => {
+    channel.listen(ECHO_EVENTS.newMessage, (payload: RealtimeNotificationPayload) => {
       handlers.onNewMessageNotification(payload)
+    })
+
+    channel.listen(ECHO_EVENTS.appNotification, (payload: RealtimeNotificationPayload) => {
+      handlers.onAppNotification(payload)
     })
 
     channel.listen(
@@ -142,8 +157,35 @@ export class EchoService {
 
     return () => {
       channel.stopListening(ECHO_EVENTS.newMessage)
+      channel.stopListening(ECHO_EVENTS.appNotification)
       channel.stopListening(ECHO_EVENTS.userPresence)
-      this.echo.leave(`user.${userId}`)
+      this.echo.leave(ECHO_CHANNELS.user(userId))
+    }
+  }
+
+  subscribeToAdminChannel(adminId: number, handlers: AdminEventHandlers): () => void {
+    const channel = this.echo.private(ECHO_CHANNELS.admin(adminId))
+
+    channel.listen(ECHO_EVENTS.appNotification, (payload: RealtimeNotificationPayload) => {
+      handlers.onAppNotification(payload)
+    })
+
+    return () => {
+      channel.stopListening(ECHO_EVENTS.appNotification)
+      this.echo.leave(ECHO_CHANNELS.admin(adminId))
+    }
+  }
+
+  subscribePublicAnnouncements(handlers: PublicEventHandlers): () => void {
+    const channel = this.echo.channel(ECHO_CHANNELS.publicAnnouncements)
+
+    channel.listen(ECHO_EVENTS.appNotification, (payload: RealtimeNotificationPayload) => {
+      handlers.onAnnouncement(payload)
+    })
+
+    return () => {
+      channel.stopListening(ECHO_EVENTS.appNotification)
+      this.echo.leave(ECHO_CHANNELS.publicAnnouncements)
     }
   }
 }

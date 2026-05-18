@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
+import { LgaBoostTierConfigCards } from '@/components/admin/locations/LgaBoostTierConfigCards'
 import { AdminLgaMapPicker } from '@/components/maps/AdminLgaMapPicker'
 import {
+  aggregateDurationsFromTiers,
   defaultLgaBoostFormState,
   type LgaBoostFormState,
   type LgaBoostTierForm,
@@ -87,17 +89,11 @@ export function AddLocationWizardModal({
 
   const goBack = () => setStep((s) => Math.max(1, s - 1))
 
-  const updateTier = (index: number, patch: Partial<LgaBoostTierForm>) => {
+  const updateTiers = (tiers: LgaBoostTierForm[]) => {
     setBoostConfig((prev) => ({
       ...prev,
-      tiers: prev.tiers.map((t, i) => (i === index ? { ...t, ...patch } : t)),
-    }))
-  }
-
-  const updateDuration = (days: 7 | 14 | 30, patch: Partial<{ enabled: boolean; priceAmount: number }>) => {
-    setBoostConfig((prev) => ({
-      ...prev,
-      durations: prev.durations.map((d) => (d.days === days ? { ...d, ...patch } : d)),
+      tiers,
+      durations: aggregateDurationsFromTiers(tiers),
     }))
   }
 
@@ -274,91 +270,17 @@ export function AddLocationWizardModal({
               </p>
 
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Boost durations</p>
-                <div className="space-y-2">
-                  {boostConfig.durations.map((d) => (
-                    <div
-                      key={d.days}
-                      className="flex flex-wrap items-center gap-3 rounded-md border border-gray-100 bg-white px-3 py-2"
-                    >
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          className="size-4 rounded border-gray-300"
-                          checked={d.enabled}
-                          onChange={(e) => updateDuration(d.days, { enabled: e.target.checked })}
-                        />
-                        <span className="text-sm text-gray-800">{d.days}-day boost</span>
-                      </label>
-                      <div className="flex flex-1 items-center gap-2 min-w-[140px]">
-                        <span className="text-xs text-gray-500">Price (₦)</span>
-                        <input
-                          type="number"
-                          min={0}
-                          className="w-full rounded border border-gray-200 px-2 py-1 text-sm"
-                          value={d.priceAmount || ''}
-                          onChange={(e) =>
-                            updateDuration(d.days, { priceAmount: Number(e.target.value) || 0 })
-                          }
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Slots & pricing by tier</p>
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <table className="w-full min-w-[480px] text-left text-sm">
-                    <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-600">
-                      <tr>
-                        <th className="px-3 py-2">Tier</th>
-                        <th className="px-3 py-2">Label</th>
-                        <th className="px-3 py-2">Total slots</th>
-                        <th className="px-3 py-2">Price (₦)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {boostConfig.tiers.map((tier, idx) => (
-                        <tr key={tier.key} className="border-t border-gray-100">
-                          <td className="px-3 py-2 font-mono text-xs text-gray-500">{tier.key}</td>
-                          <td className="px-3 py-2">
-                            <input
-                              className="w-full min-w-[100px] rounded border border-gray-200 px-2 py-1 text-sm"
-                              value={tier.label}
-                              onChange={(e) => updateTier(idx, { label: e.target.value })}
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <input
-                              type="number"
-                              min={0}
-                              className="w-20 rounded border border-gray-200 px-2 py-1 text-sm"
-                              value={tier.totalSlots || ''}
-                              onChange={(e) =>
-                                updateTier(idx, { totalSlots: Math.max(0, Number(e.target.value) || 0) })
-                              }
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <input
-                              type="number"
-                              min={0}
-                              className="w-full min-w-[88px] rounded border border-gray-200 px-2 py-1 text-sm"
-                              value={tier.priceAmount || ''}
-                              onChange={(e) =>
-                                updateTier(idx, { priceAmount: Math.max(0, Number(e.target.value) || 0) })
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="mt-1 text-[11px] text-gray-500">
-                  Slot availability (sold / remaining / active / expired) will be tracked automatically once boosts go live.
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Boost plans for this LGA
+                </p>
+                <LgaBoostTierConfigCards
+                  tiers={boostConfig.tiers}
+                  onChange={updateTiers}
+                  disabled={!boostConfig.enabled}
+                />
+                <p className="mt-2 text-[11px] text-gray-500">
+                  Top 5 (5 slots), Top 3 (3 slots), and Top 1 (1 slot). Set 7 / 14 / 30 day prices per plan.
+                  Slot availability is tracked automatically once boosts go live.
                 </p>
               </div>
             </div>

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { NewConversationModal } from "@/features/messaging/NewConversationModal";
+import { QUERY_KEYS } from "@/constants/queryKeys";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { showError } from "@/lib/sweetAlert";
 
 import { getConversations } from "@/api/conversations";
@@ -17,9 +19,11 @@ import { LeadsHeader } from "@/components/sections/vendor/leads/LeadsHeader";
 import { WhatsAppLeadsList } from "@/components/sections/vendor/leads/WhatsAppLeadsList";
 import { WhatsAppChatInterface } from "@/components/sections/vendor/leads/WhatsAppChatView";
 import { type Lead, type LeadChannel } from "@/components/sections/vendor/leads/leadsData";
+import { flattenMessagesChronological } from "@/utils/flattenMessages";
 import { conversationToLead, messageToChatMessage } from "@/utils/vendorLeads";
 
 export default function VendorLeads() {
+  const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const selfId = Number(user?.id ?? 0);
   const me = useMemo((): MessagingUser | null => {
@@ -38,6 +42,7 @@ export default function VendorLeads() {
   const [openLeadDetails, setOpenLeadDetails] = useState<Lead | null>(null);
   const [chatSearch, setChatSearch] = useState("");
   const [messageDraft, setMessageDraft] = useState("");
+  const [newConversationOpen, setNewConversationOpen] = useState(false);
 
   const conversationsQuery = useQuery({
     queryKey: ["vendor-conversations"],
@@ -118,10 +123,10 @@ export default function VendorLeads() {
 
   const selectedConversation = useMemo(() => {
     const pages = messagesInf.data?.pages ?? [];
-    const flat = pages.flatMap((p) => p.messages ?? []);
-    if (!flat.length) return [];
-    const chronological = [...flat].reverse();
-    return chronological.map((m) => messageToChatMessage(m, selfId));
+    if (!pages.length) return [];
+    return flattenMessagesChronological(pages).map((m) =>
+      messageToChatMessage(m, selfId),
+    );
   }, [messagesInf.data, selfId]);
 
   const lastVendorMessageIndex = useMemo(() => {
@@ -137,11 +142,16 @@ export default function VendorLeads() {
 
   const isDirectChannel = channelFilter === "direct";
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const t = messageDraft.trim();
     if (!t || !selectedLeadId || isSending) return;
-    void sendMessageAction(t);
     setMessageDraft("");
+    try {
+      await sendMessageAction(t);
+      void queryClient.invalidateQueries({ queryKey: ["vendor-conversations"] });
+    } catch {
+      setMessageDraft(t);
+    }
   };
 
   return (
@@ -166,7 +176,7 @@ export default function VendorLeads() {
         {isDirectChannel ? (
           <DirectLeadsTable leads={filteredLeads} onOpenLeadDetails={setOpenLeadDetails} />
         ) : (
-          <div className="grid min-h-[min(640px,calc(100dvh-220px))] lg:grid-cols-[minmax(260px,300px)_1fr]">
+          <div className="grid min-h-[min(640px,calc(100dvh-220px))] min-w-0 lg:grid-cols-[minmax(260px,300px)_minmax(0,1fr)]">
             <WhatsAppLeadsList
               leads={filteredLeads}
               selectedLeadId={selectedLeadId}
@@ -176,6 +186,7 @@ export default function VendorLeads() {
               }}
               searchQuery={chatSearch}
               onSearchChange={setChatSearch}
+              onNewConversation={() => setNewConversationOpen(true)}
             />
             <WhatsAppChatInterface
               selectedLead={selectedLead}
@@ -196,6 +207,18 @@ export default function VendorLeads() {
         <LeadDetailsModal
           openLead={openLeadDetails}
           onClose={() => setOpenLeadDetails(null)}
+        />
+
+        <NewConversationModal
+          open={newConversationOpen}
+          onClose={() => setNewConversationOpen(false)}
+          onCreated={(uuid) => {
+            setChannelFilter("whatsapp");
+            setSelectedLeadId(uuid);
+            setMessageDraft("");
+            void queryClient.invalidateQueries({ queryKey: ["vendor-conversations"] });
+            void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.messages(uuid) });
+          }}
         />
       </div>
     </div>

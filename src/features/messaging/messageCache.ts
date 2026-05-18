@@ -5,6 +5,23 @@ import type { Message } from '@/types/message'
 
 import type { MessagesPage } from '@/features/messaging/types'
 
+function emptyMessagesPage(): MessagesPage {
+  return { messages: [], nextCursor: null }
+}
+
+/** Ensure react-query infinite data exists before optimistic/realtime writes. */
+export function ensureMessagesInfiniteData(
+  old: InfiniteData<MessagesPage> | undefined,
+): InfiniteData<MessagesPage> {
+  if (old?.pages?.length) {
+    return old
+  }
+  return {
+    pageParams: [null],
+    pages: [emptyMessagesPage()],
+  }
+}
+
 function removeMessageEverywhere(
   pages: MessagesPage[],
   predicate: (m: Message) => boolean,
@@ -15,6 +32,24 @@ function removeMessageEverywhere(
   }))
 }
 
+function cleanDeliveredMessage(message: Message): Message {
+  return {
+    ...message,
+    _isOptimistic: undefined,
+    _tempId: undefined,
+    _failed: undefined,
+  }
+}
+
+function matchesPendingOwnMessage(m: Message, message: Message): boolean {
+  return Boolean(
+    m._isOptimistic &&
+      m.sender.id === message.sender.id &&
+      m.body != null &&
+      m.body === message.body,
+  )
+}
+
 export function appendOrMergeMessageInCache(
   queryClient: QueryClient,
   conversationUuid: string,
@@ -23,17 +58,32 @@ export function appendOrMergeMessageInCache(
   queryClient.setQueryData<InfiniteData<MessagesPage>>(
     QUERY_KEYS.messages(conversationUuid),
     (old) => {
-      if (!old?.pages.length) return old
-      const pages = removeMessageEverywhere(old.pages, (m) => m.uuid === message.uuid)
-      const first = pages[0]
-      if (!first) return old
+      const base = ensureMessagesInfiniteData(old)
+      const pages = removeMessageEverywhere(base.pages, (m) => m.uuid === message.uuid)
+      const first = pages[0] ?? emptyMessagesPage()
       pages[0] = {
         ...first,
-        messages: [message, ...first.messages],
+        messages: [
+          cleanDeliveredMessage(message),
+          ...first.messages.filter((m) => {
+            if (m.uuid === message.uuid) return false
+            if (matchesPendingOwnMessage(m, message)) return false
+            return true
+          }),
+        ],
       }
-      return { ...old, pages }
+      return { ...base, pages }
     },
   )
+}
+
+/** Realtime/API path for the current user's message (avoids echo + replace races). */
+export function upsertOwnMessageInCache(
+  queryClient: QueryClient,
+  conversationUuid: string,
+  message: Message,
+) {
+  appendOrMergeMessageInCache(queryClient, conversationUuid, message)
 }
 
 export function removeMessageFromCache(
@@ -60,29 +110,44 @@ export function replaceTempMessageInCache(
   tempId: string,
   real: Message,
 ) {
-  /** Tie the server row to the optimistic slot so dedupe does not delete the only copy. */
-  const merged: Message = { ...real, _tempId: tempId }
   queryClient.setQueryData<InfiniteData<MessagesPage>>(
     QUERY_KEYS.messages(conversationUuid),
     (old) => {
-      if (!old) return old
-      const pages = removeMessageEverywhere(
-        old.pages.map((p) => ({
-          ...p,
-          messages: p.messages.map((m) =>
-            m.uuid === tempId || m._tempId === tempId ? merged : m,
-          ),
-        })),
-        (m) => m.uuid === real.uuid && m._tempId !== tempId,
-      ).map((p) => ({
-        ...p,
-        messages: p.messages.map((m) =>
-          m.uuid === real.uuid && m._tempId === tempId
-            ? { ...m, _tempId: undefined, _isOptimistic: undefined }
-            : m,
-        ),
-      }))
-      return { ...old, pages }
+      const base = ensureMessagesInfiniteData(old)
+      const delivered = cleanDeliveredMessage(real)
+
+      const pages = base.pages.map((page, pageIndex) => {
+        if (pageIndex !== 0) {
+          return {
+            ...page,
+            messages: page.messages.filter((m) => m.uuid !== real.uuid),
+          }
+        }
+
+        let replacedTemp = false
+        const next: Message[] = []
+
+        for (const m of page.messages) {
+          if (m.uuid === tempId || m._tempId === tempId) {
+            if (!replacedTemp) {
+              next.push(delivered)
+              replacedTemp = true
+            }
+            continue
+          }
+          if (m.uuid === real.uuid) continue
+          if (matchesPendingOwnMessage(m, real)) continue
+          next.push(m)
+        }
+
+        if (!replacedTemp && !next.some((m) => m.uuid === real.uuid)) {
+          next.unshift(delivered)
+        }
+
+        return { ...page, messages: next }
+      })
+
+      return { ...base, pages }
     },
   )
 }

@@ -11,6 +11,7 @@ import {
 import { QUERY_KEYS } from '@/constants/queryKeys'
 import {
   appendOrMergeMessageInCache,
+  ensureMessagesInfiniteData,
   removeMessageFromCache,
   replaceTempMessageInCache,
 } from '@/features/messaging/messageCache'
@@ -33,6 +34,7 @@ export function useMessageActions(
       body: string
       attachmentIds?: number[]
       parentUuid?: string | null
+      parentMessage?: Message | null
     }) => {
       if (!conversationUuid) throw new Error('No conversation')
       return sendMessageApi(
@@ -45,14 +47,20 @@ export function useMessageActions(
   })
 
   const sendMessage = React.useCallback(
-    async (body: string, attachmentIds?: number[], parentUuid?: string | null) => {
+    async (
+      body: string,
+      attachmentIds?: number[],
+      parentUuid?: string | null,
+      parentMessage?: Message | null,
+    ) => {
       if (!conversationUuid || !currentUser) return
       const tempId = crypto.randomUUID()
       const optimistic: Message = {
         uuid: tempId,
         conversation_id: 0,
         sender: currentUser,
-        parent: null,
+        parent: parentMessage ?? null,
+        parent_uuid: parentUuid ?? null,
         body,
         type: attachmentIds?.length ? 'attachment' : 'text',
         status: 'sending',
@@ -63,12 +71,29 @@ export function useMessageActions(
         _isOptimistic: true,
         _tempId: tempId,
       }
-      appendOrMergeMessageInCache(queryClient, conversationUuid, optimistic)
+      queryClient.setQueryData<InfiniteData<MessagesPage>>(
+        QUERY_KEYS.messages(conversationUuid),
+        (old) => {
+          const base = ensureMessagesInfiniteData(old)
+          const first = base.pages[0] ?? { messages: [], nextCursor: null }
+          return {
+            ...base,
+            pages: [
+              {
+                ...first,
+                messages: [optimistic, ...first.messages],
+              },
+              ...base.pages.slice(1),
+            ],
+          }
+        },
+      )
       try {
         const real = await sendMutation.mutateAsync({
           body,
           attachmentIds,
           parentUuid,
+          parentMessage,
         })
         replaceTempMessageInCache(queryClient, conversationUuid, tempId, real)
         applyNewMessagePreview(queryClient, conversationUuid, real, {

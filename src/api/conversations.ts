@@ -26,10 +26,10 @@ export async function getConversation(uuid: string): Promise<Conversation> {
   return normalizeConversation(data)
 }
 
-export async function createConversation(participantIds: number[]): Promise<Conversation> {
+export async function createConversation(participantUuids: string[]): Promise<Conversation> {
   const res = await api.post<ApiResponse<Record<string, unknown>>>(`/conversations`, {
     type: 'direct',
-    participants: participantIds,
+    participants: participantUuids.map((u) => u.trim().toUpperCase()),
   })
   const { data } = unwrapApi(res.data)
   return normalizeConversation(data)

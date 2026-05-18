@@ -113,7 +113,12 @@ export function ConversationView({
       return
     }
 
-    await sendMessage(text, undefined, replyingTo?.uuid ?? null)
+    await sendMessage(
+      text,
+      undefined,
+      replyingTo?.uuid ?? null,
+      replyingTo,
+    )
     setDraft('')
     setReplyingTo(null)
   }, [

@@ -1,9 +1,12 @@
-import { Fragment, useLayoutEffect, useRef } from "react";
+import { Fragment, useLayoutEffect, useRef, useState } from "react";
+import { EmojiPicker } from "@/components/chat/EmojiPicker";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { TYPING_DEBOUNCE_MS } from "@/constants/config";
+import { cn } from "@/lib/utils";
 import type { TypingUser } from "@/types/message";
-import { CheckCheck, Paperclip, SendHorizontal, Smile } from "lucide-react";
+import { CheckCheck, Paperclip, Send, Smile } from "lucide-react";
 import { type Lead, type ChatMessage } from "./leadsData";
 
 export function WhatsAppChatInterface({
@@ -33,6 +36,33 @@ export function WhatsAppChatInterface({
   typingPeers?: TypingUser[];
 }) {
   const messagesScrollRef = useRef<HTMLDivElement>(null);
+  const emojiAnchorRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+
+  const composerDisabled = !selectedLead || isSending;
+
+  const handleDraftChange = (value: string) => {
+    onMessageDraftChange(value);
+    onComposerTyping?.();
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(() => {
+      onComposerTyping?.();
+    }, TYPING_DEBOUNCE_MS);
+  };
+
+  const insertEmoji = (emoji: string) => {
+    onMessageDraftChange(messageDraft + emoji);
+    onComposerTyping?.();
+  };
+
+  const onComposerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  };
 
   useLayoutEffect(() => {
     const el = messagesScrollRef.current;
@@ -41,7 +71,7 @@ export function WhatsAppChatInterface({
   }, [selectedConversation, selectedLead?.id, messagesLoading]);
 
   return (
-    <div className="flex min-h-[480px] max-h-[calc(100dvh-11rem)] flex-col overflow-hidden bg-[#FAF8FF]">
+    <div className="flex min-h-[480px] min-w-0 max-h-[calc(100dvh-11rem)] flex-col overflow-hidden bg-[#FAF8FF]">
       <div className="shrink-0 border-b border-neutral-200 bg-[#FAF8FF] px-5 py-4">
         {selectedLead ? (
           <div className="flex items-center gap-3">
@@ -96,12 +126,12 @@ export function WhatsAppChatInterface({
               </div>
             ) : null}
             {message.from === "lead" ? (
-              <div className="mb-4 flex max-w-[min(100%,520px)] items-end gap-2">
+              <div className="mb-4 flex w-full min-w-0 items-end gap-2">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-200/90 text-[10px] font-semibold text-neutral-700">
                   {selectedLead?.initials}
                 </div>
-                <div>
-                  <div className="rounded-2xl rounded-bl-md bg-[#e8e6f4] px-3.5 py-2.5 text-sm leading-relaxed text-foreground shadow-sm">
+                <div className="min-w-0 max-w-[min(100%,18rem)] sm:max-w-md">
+                  <div className="rounded-2xl rounded-bl-md bg-[#e8e6f4] px-3.5 py-2.5 text-sm leading-relaxed wrap-anywhere text-foreground shadow-sm">
                     {message.text}
                   </div>
                   <p className="mt-1 pl-1 text-[11px] text-muted-foreground">
@@ -110,9 +140,9 @@ export function WhatsAppChatInterface({
                 </div>
               </div>
             ) : (
-              <div className="mb-4 flex justify-end">
-                <div className="max-w-[min(100%,520px)] text-right">
-                  <div className="ml-auto rounded-2xl rounded-br-md bg-sky-600 px-3.5 py-2.5 text-left text-sm leading-relaxed text-white shadow-sm">
+              <div className="mb-4 flex w-full min-w-0 justify-end">
+                <div className="min-w-0 max-w-[min(100%,18rem)] text-right sm:max-w-md">
+                  <div className="rounded-2xl rounded-br-md bg-sky-600 px-3.5 py-2.5 text-left text-sm leading-relaxed wrap-anywhere text-white shadow-sm">
                     {message.text}
                   </div>
                   <div className="mt-1 flex items-center justify-end gap-1 pr-0.5">
@@ -133,70 +163,72 @@ export function WhatsAppChatInterface({
         ))}
       </div>
 
-      <div className="shrink-0 border-t border-neutral-200 bg-white px-4 pt-2">
+      <div className="shrink-0 border-t border-chat-border-footer bg-card px-3 pt-2 sm:px-4">
         <TypingIndicator users={typingPeers} />
       </div>
-      <div className="shrink-0 border-neutral-200 bg-white px-4 pb-4 pt-0">
-        <div className="flex items-center gap-2">
-          {/* <button
-            type="button"
-            className="flex size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-neutral-100 hover:text-foreground"
-            aria-label="Attach file"
-          >
-            <Paperclip className="size-5" />
-          </button> */}
-          <label className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-neutral-100 hover:text-foreground">
-            <Paperclip className="size-5" />
-
-            <input
-              type="file"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  console.log(file);
-                }
-                e.target.value = "";
-              }}
-            />
-          </label>
-          <div className="relative min-w-0 flex-1">
-            <Input
-              className="h-11 rounded-xl border border-neutral-200 bg-neutral-100/80 pr-11 text-sm shadow-inner placeholder:text-muted-foreground focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-sky-500/25"
-              placeholder="Type your message here..."
-              value={messageDraft}
-              onChange={(e) => {
-                onMessageDraftChange(e.target.value)
-                onComposerTyping?.()
-              }}
-              disabled={!selectedLead || isSending}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  onSend();
-                }
-              }}
-            />
-            <button
+      <footer className="flex shrink-0 items-end gap-2 border-t border-chat-border-footer bg-card px-3 py-3 backdrop-blur-sm sm:gap-3 sm:px-6 sm:py-4">
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            e.target.value = "";
+          }}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11 shrink-0 rounded-xl text-ink hover:bg-muted"
+          aria-label="Attach file"
+          disabled={composerDisabled}
+          onClick={() => fileRef.current?.click()}
+        >
+          <Paperclip className="size-5" />
+        </Button>
+        <div className="relative min-w-0 flex-1">
+          <Textarea
+            value={messageDraft}
+            onChange={(e) => handleDraftChange(e.target.value)}
+            onKeyDown={onComposerKeyDown}
+            placeholder="Type your message here..."
+            disabled={composerDisabled}
+            className="max-h-32 min-h-12 overflow-y-auto rounded-2xl border-0 bg-chat-input-bg py-3 pl-5 pr-12 text-sm text-ink scrollbar-hide placeholder:text-placeholder-text focus-visible:ring-2 focus-visible:ring-chat-accent-ring"
+          />
+          <div ref={emojiAnchorRef} className="absolute bottom-1.5 right-2">
+            <Button
               type="button"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+              variant="ghost"
+              size="icon"
+              className="size-9 text-stat-muted hover:bg-transparent hover:text-ink"
               aria-label="Emoji"
+              disabled={composerDisabled}
+              onClick={() => setEmojiOpen((open) => !open)}
             >
               <Smile className="size-5" />
-            </button>
+            </Button>
+            <EmojiPicker
+              open={emojiOpen}
+              onClose={() => setEmojiOpen(false)}
+              onPick={insertEmoji}
+              anchorRef={emojiAnchorRef}
+            />
           </div>
-          <Button
-            type="button"
-            size="icon"
-            className="size-11 shrink-0 rounded-xl bg-sky-600 text-white shadow-sm hover:bg-sky-600/90"
-            aria-label="Send message"
-            disabled={!selectedLead || isSending || !messageDraft.trim()}
-            onClick={onSend}
-          >
-            <SendHorizontal className="size-5" />
-          </Button>
         </div>
-      </div>
+        <Button
+          type="button"
+          size="icon"
+          disabled={composerDisabled || !messageDraft.trim()}
+          className={cn(
+            "size-11 shrink-0 rounded-xl bg-chat-accent text-text-white shadow-md hover:opacity-90 sm:size-12",
+          )}
+          aria-label="Send message"
+          onClick={onSend}
+        >
+          <Send className="size-5" />
+        </Button>
+      </footer>
     </div>
   );
 }

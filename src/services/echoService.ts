@@ -42,6 +42,8 @@ interface MessageSentPayload {
     conversation_id: number
     sender_id: number
     parent_id: number | null
+    parent_uuid?: string | null
+    parent?: Record<string, unknown> | null
     created_at: string
   }
   sender: { id: number; name: string }
@@ -71,6 +73,8 @@ export class EchoService {
         status: payload.message.status,
         conversation_id: payload.message.conversation_id,
         sender: payload.sender,
+        parent_uuid: payload.message.parent_uuid ?? null,
+        parent: payload.message.parent ?? null,
         created_at: payload.message.created_at,
         attachments: [],
         read_by: [],

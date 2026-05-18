@@ -25,6 +25,51 @@ export function mapApiSender(sender: ApiSender | null | undefined): MessagingUse
   }
 }
 
+export function getMessagePreviewText(message: {
+  body: string | null
+  type?: MessageType
+  attachments?: Attachment[]
+}): string {
+  if (message.body?.trim()) return message.body.trim()
+  const attachments = message.attachments ?? []
+  if (attachments.length > 0) {
+    const first = attachments[0]
+    if (first.type === 'image') return 'Photo'
+    if (first.type === 'video') return 'Video'
+    if (first.type === 'audio') return 'Audio'
+    return first.file_name || 'Attachment'
+  }
+  if (message.type === 'attachment') return 'Attachment'
+  return 'Message'
+}
+
+/** Parent snippet from API (no nested parent). */
+export function normalizeMessageParent(
+  raw: Record<string, unknown>,
+): Message | null {
+  if (!raw?.uuid) return null
+  const sender = mapApiSender(raw.sender as ApiSender | undefined)
+  const attachmentsRaw = raw.attachments
+  const attachments: Attachment[] = Array.isArray(attachmentsRaw)
+    ? attachmentsRaw.map((a) => normalizeAttachment(a as Record<string, unknown>))
+    : []
+
+  return {
+    uuid: String(raw.uuid),
+    conversation_id: Number(raw.conversation_id ?? 0),
+    sender,
+    parent: null,
+    parent_uuid: null,
+    body: (raw.body as string | null | undefined) ?? null,
+    type: (raw.type as MessageType) ?? 'text',
+    status: 'sent',
+    attachments,
+    reads: [],
+    edited_at: null,
+    created_at: String(raw.created_at ?? new Date().toISOString()),
+  }
+}
+
 export function normalizeAttachment(raw: Record<string, unknown>): Attachment {
   const type = (raw.type as Attachment['type']) ?? 'document'
   const thumb =
@@ -64,8 +109,14 @@ export function normalizeMessage(raw: Record<string, unknown>): Message {
     uuid: String(raw.uuid ?? ''),
     conversation_id: Number(raw.conversation_id ?? 0),
     sender,
-    parent: null,
-    parent_uuid: (raw.parent_uuid as string | null | undefined) ?? null,
+    parent: raw.parent
+      ? normalizeMessageParent(raw.parent as Record<string, unknown>)
+      : null,
+    parent_uuid:
+      (raw.parent_uuid as string | null | undefined) ??
+      (raw.parent && typeof raw.parent === 'object' && 'uuid' in raw.parent
+        ? String((raw.parent as Record<string, unknown>).uuid)
+        : null),
     body: (raw.body as string | null | undefined) ?? null,
     type: (raw.type as MessageType) ?? 'text',
     status: (raw.status as Message['status']) ?? 'sent',

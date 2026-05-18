@@ -33,20 +33,20 @@ function RedToggle({
   );
 }
 
-export function NotificationChannelsCard({ 
-  notifyEmail, 
-  setNotifyEmail, 
-  notifySms, 
-  setNotifySms, 
-  notifyWhatsapp, 
-  setNotifyWhatsapp 
-}: { 
-  notifyEmail: boolean; 
-  setNotifyEmail: (v: boolean) => void; 
-  notifySms: boolean; 
-  setNotifySms: (v: boolean) => void; 
-  notifyWhatsapp: boolean; 
-  setNotifyWhatsapp: (v: boolean) => void; 
+export function NotificationChannelsCard({
+  notifyEmail,
+  setNotifyEmail,
+  notifyPush,
+  setNotifyPush,
+  notifyWhatsapp,
+  setNotifyWhatsapp,
+}: {
+  notifyEmail: boolean;
+  setNotifyEmail: (v: boolean) => void;
+  notifyPush: boolean;
+  setNotifyPush: (v: boolean) => void;
+  notifyWhatsapp: boolean;
+  setNotifyWhatsapp: (v: boolean) => void;
 }) {
   return (
     <Card className="overflow-hidden rounded-xl border-sky-100/80 bg-[#D3E4FE] shadow-sm">
@@ -66,9 +66,13 @@ export function NotificationChannelsCard({
         <div className="flex items-center justify-between gap-3 pb-3">
           <div className="flex items-center gap-3">
             <MessageSquare className="size-4" aria-hidden />
-            <span className="text-sm font-medium text-foreground font-inter">SMS notifications</span>
+            <span className="text-sm font-medium text-foreground font-inter">Notifications</span>
           </div>
-          <RedToggle checked={notifySms} onCheckedChange={setNotifySms} />
+          <RedToggle
+            id="vendor-notify-push"
+            checked={notifyPush}
+            onCheckedChange={setNotifyPush}
+          />
         </div>
         <div className="flex items-center justify-between gap-3 pb-3">
           <div className="flex items-center gap-3">

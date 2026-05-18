@@ -46,7 +46,7 @@ const staticItems: SidebarItem[] = [
   { label: "Categories", to: "/admin/categories", icon: Tags, permission: "view products" },
   { label: "Career", to: "/admin/career", icon: UserRound },
   { label: "Locations", to: "/admin/locations", icon: MapPin },
-  { label: "Notifications", to: "/admin/notifications", icon: Bell },
+  // { label: "Notifications", to: "/admin/notifications", icon: Bell },
   { label: "Settings", to: "/admin/settings", icon: ShieldCheck },
 ];
 

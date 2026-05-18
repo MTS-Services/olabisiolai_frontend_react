@@ -25,7 +25,7 @@ type UserSettingsApiEnvelope = {
   data: UserSettingsPayload
 }
 
-/** `GET /user/settings` — authenticated customer (`role: user`). */
+/** `GET /user/settings` — authenticated customer or vendor. */
 export async function fetchUserSettings(): Promise<UserSettingsPayload> {
   const response = await request.get<UserSettingsApiEnvelope>('/user/settings')
   const body = response.data
@@ -63,6 +63,9 @@ function appendPatchUserSettingsFormData(form: FormData, body: PatchUserSettings
     }
     if (typeof n.sms === 'boolean') {
       form.append('settings[notifications][sms]', n.sms ? '1' : '0')
+    }
+    if (typeof n.whatsapp === 'boolean') {
+      form.append('settings[notifications][whatsapp]', n.whatsapp ? '1' : '0')
     }
   }
 }

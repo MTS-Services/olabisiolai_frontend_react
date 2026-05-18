@@ -17,7 +17,7 @@ import {
 import { Link } from "react-router-dom"
 
 import { changeUserPassword } from "@/api/userPassword"
-import { fetchUserSettings, patchUserSettings } from "@/api/userSettings"
+import { fetchUserSettings, patchUserSettings, type UserSettingsPayload } from "@/api/userSettings"
 import { useAuth } from "@/auth/useAuth"
 import { UserShell } from "@/components/partials/user/UserShell"
 import { HeaderAvatar } from "@/components/ui/HeaderAvatar"
@@ -285,6 +285,39 @@ export default function SettingsPage() {
     },
   })
 
+  const pushPreferenceMutation = useMutation({
+    mutationFn: (push: boolean) =>
+      patchUserSettings({
+        settings: { notifications: { push } },
+      }),
+    onMutate: async (nextPush) => {
+      await queryClient.cancelQueries({ queryKey: ["user-settings"] })
+      const previous = queryClient.getQueryData<UserSettingsPayload>(["user-settings"])
+      setPushNotify(nextPush)
+      return { previous }
+    },
+    onError: (err, _nextPush, context) => {
+      const prev = context?.previous
+      if (prev) {
+        const notif =
+          prev.settings.notifications && typeof prev.settings.notifications === "object"
+            ? (prev.settings.notifications as Record<string, unknown>)
+            : {}
+        setPushNotify(readBool(notif.push, true))
+      }
+      setBanner({ type: "error", text: getLaravelErrorMessage(err) })
+    },
+    onSuccess: (payload) => {
+      queryClient.setQueryData(["user-settings"], payload)
+      const notif =
+        payload.settings.notifications && typeof payload.settings.notifications === "object"
+          ? (payload.settings.notifications as Record<string, unknown>)
+          : {}
+      setPushNotify(readBool(notif.push, true))
+      setBanner(null)
+    },
+  })
+
   const displayName =
     settingsQuery.data?.profile.name?.trim() ||
     user?.name?.trim() ||
@@ -545,13 +578,18 @@ export default function SettingsPage() {
               />
               <ToggleRow
                 title="Push notifications"
-                description="Real-time alerts for messages and activity."
+                description="Real-time alerts for messages and activity. Saves immediately when toggled."
                 enabled={pushNotify}
                 onToggle={(v) => {
                   setBanner(null)
-                  setPushNotify(v)
+                  pushPreferenceMutation.mutate(v)
                 }}
-                disabled={busy}
+                disabled={
+                  settingsQuery.isLoading ||
+                  settingsQuery.isError ||
+                  saveAllMutation.isPending ||
+                  pushPreferenceMutation.isPending
+                }
                 icon={<Bell className="size-4" />}
               />
               <ToggleRow

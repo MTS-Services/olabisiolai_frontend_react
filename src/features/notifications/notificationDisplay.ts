@@ -13,11 +13,59 @@ export type NotificationDisplay = {
   raw: StoredNotification
 }
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** One headline for sender; subtitle is preview only (no repeated name). */
+function newMessageActivityCopy(d: Record<string, unknown>): { title: string; message: string } {
+  const sender = String(d.sender_name ?? '').trim()
+  const explicitTitle = String(d.title ?? '').trim()
+  const rawPreview = String(d.preview ?? d.message ?? '').trim()
+
+  const resolvedSender =
+    sender ||
+    (explicitTitle && !/^new message\b/i.test(explicitTitle) ? explicitTitle : '') ||
+    'Someone'
+
+  const titleOut =
+    explicitTitle && /^new message\b/i.test(explicitTitle)
+      ? explicitTitle
+      : `New message from ${resolvedSender}`
+
+  let preview = rawPreview
+  if (resolvedSender && preview) {
+    preview = preview
+      .replace(new RegExp(`^${escapeRegExp(resolvedSender)}\\s*[:\\-–]\\s*`, 'i'), '')
+      .trim()
+  }
+
+  if (!preview && rawPreview) {
+    preview = rawPreview
+  }
+
+  if (preview.toLowerCase() === resolvedSender.toLowerCase()) {
+    preview = ''
+  }
+
+  const messageOut = preview.length > 0 ? preview : 'Tap to open the conversation.'
+
+  return { title: titleOut, message: messageOut }
+}
+
 const VENDOR_ROUTES: Record<string, string> = {
   new_message: '/messages',
   verification_approved: '/vendor/verification',
   verification_flagged: '/vendor/verification',
   payment_completed: '/vendor/payments',
+}
+
+const USER_ROUTES: Record<string, string> = {
+  new_message: '/user/messages',
+  verification_approved: '/user/settings',
+  verification_flagged: '/user/settings',
+  payment_completed: '/user/dashboard',
+  system_announcement: '/user/activity',
 }
 
 export function resolveNotificationHref(
@@ -30,6 +78,21 @@ export function resolveNotificationHref(
   return VENDOR_ROUTES[type] ?? '/vendor/notifications'
 }
 
+/** Routes for end-user (customer) notification taps. */
+export function resolveUserNotificationHref(
+  type: string,
+  actionUrl?: string | null,
+  conversationUuid?: string | null,
+): string {
+  if (actionUrl && actionUrl.startsWith('/')) {
+    return actionUrl
+  }
+  if (type === 'new_message' && conversationUuid) {
+    return `/user/messages?c=${encodeURIComponent(conversationUuid)}`
+  }
+  return USER_ROUTES[type] ?? '/user/activity'
+}
+
 export function toNotificationDisplay(item: StoredNotification): NotificationDisplay {
   const d = item.data ?? {}
   const type = String(d.type ?? 'info')
@@ -39,6 +102,42 @@ export function toNotificationDisplay(item: StoredNotification): NotificationDis
   let href = resolveNotificationHref(type, d.action_url)
   if (type === 'new_message' && conversationUuid) {
     href = `/messages?c=${encodeURIComponent(conversationUuid)}`
+  }
+
+  return {
+    id: item.id,
+    type,
+    title: String(d.title ?? d.sender_name ?? 'Notification'),
+    message: String(d.message ?? d.preview ?? ''),
+    tone: (d.tone as RealtimeNotificationTone) ?? 'info',
+    href,
+    isRead: item.read_at != null,
+    createdAt: item.created_at,
+    raw: item,
+  }
+}
+
+export function toUserNotificationDisplay(item: StoredNotification): NotificationDisplay {
+  const d = item.data ?? {}
+  const type = String(d.type ?? 'info')
+  const conversationUuid =
+    typeof d.conversation_uuid === 'string' ? d.conversation_uuid : null
+
+  const href = resolveUserNotificationHref(type, d.action_url, conversationUuid)
+
+  if (type === 'new_message') {
+    const { title, message } = newMessageActivityCopy(d as Record<string, unknown>)
+    return {
+      id: item.id,
+      type,
+      title,
+      message,
+      tone: (d.tone as RealtimeNotificationTone) ?? 'info',
+      href,
+      isRead: item.read_at != null,
+      createdAt: item.created_at,
+      raw: item,
+    }
   }
 
   return {

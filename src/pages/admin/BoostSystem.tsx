@@ -1,5 +1,12 @@
-import { ChevronDown, Download, Plus, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AdminBoostPlanCard } from "@/components/sections/admin/boost/AdminBoostPlanCard";
+import { BoostPlanEditModal } from "@/components/sections/admin/boost/BoostPlanEditModal";
+import {
+  fetchAdminBoostPlans,
+  normalizeBoostPlan,
+  type AdminBoostPlan,
+} from "@/features/boost/adminBoostPlansApi";
+import { ChevronDown, Download, Loader2, Plus, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type SlotOption = { label: string; value: string; max: number };
 
@@ -87,77 +94,36 @@ const INITIAL_WAITING: WaitingEntry[] = [
   { id: 3, name: "QuickFix Plumbing", categoryLine: "Home Services", lga: "Ikeja", rank: 3 },
 ];
 
-const BOOST_PLANS = [
-  {
-    medal: "🥉",
-    title: "Top 5 Boost",
-    subtitle: "Affordable visibility for growing businesses",
-    prices: [
-      { days: "7 Days", amount: "₦3,000" },
-      { days: "14 Days", amount: "₦5,000" },
-      { days: "30 Days", amount: "₦10,000" },
-    ],
-    slotNote: "5 slots available in this LGA",
-    features: [
-      "Appear in Top 5 in your LGA",
-      "Boost badge on listing",
-      "Increased visibility & inquiries",
-    ],
-    cta: "Boost with Bronze",
-    cardClass: "border-[#f0d6bd] bg-[#fff6eb]",
-    ctaClass: "bg-[#8d4a1a] text-white hover:bg-[#7a3f16]",
-    slotClass: "text-[#c77b38]",
-  },
-  {
-    medal: "🥈",
-    title: "Top 3 Boost",
-    subtitle: "Higher visibility for competitive LGAs",
-    prices: [
-      { days: "7 Days", amount: "₦5,000" },
-      { days: "14 Days", amount: "₦10,000" },
-      { days: "30 Days", amount: "₦15,000" },
-    ],
-    slotNote: "3 slots available in this LGA",
-    features: [
-      "Guaranteed Top 3 placement",
-      "Higher ranking than Bronze",
-      "Boost badge & strong visibility",
-    ],
-    cta: "Boost with Silver",
-    cardClass: "border-[#d9dee8] bg-[#f5f7fb]",
-    ctaClass: "bg-[#364152] text-white hover:bg-[#2c3544]",
-    slotClass: "text-[#5f6b7a]",
-  },
-  {
-    medal: "🥇",
-    title: "Top 1 Exclusive",
-    subtitle: "The #1 spot reserved for one business per LGA",
-    prices: [
-      { days: "7 Days", amount: "₦10,000" },
-      { days: "14 Days", amount: "₦15,000" },
-      { days: "30 Days", amount: "₦20,000" },
-    ],
-    slotNote: "Slot currently occupied",
-    features: [
-      "Guaranteed #1 position",
-      "Exclusive - one per LGA",
-      "Spotlight badge & 10x more reach",
-      "Premium vendors get first access",
-    ],
-    cta: "Join Waiting List",
-    cardClass: "border-[#f2dd8b] bg-[#fffbe6]",
-    ctaClass: "bg-[#c89c2a] text-white hover:bg-[#b48822]",
-    slotClass: "text-[#c89c2a]",
-    tag: "Most Popular",
-  },
-] as const;
-
 export default function BoostSystem() {
+  const [allPlans, setAllPlans] = useState<AdminBoostPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [plansError, setPlansError] = useState<string | null>(null);
+  const [editingPlan, setEditingPlan] = useState<AdminBoostPlan | null>(null);
+
   const [slotOpen, setSlotOpen] = useState(false);
   const [slotValue, setSlotValue] = useState("5");
   const [selectedLga, setSelectedLga] = useState("Ikeja");
   const [activeList, setActiveList] = useState<ActiveBoost[]>(INITIAL_ACTIVE);
   const [waitingList, setWaitingList] = useState<WaitingEntry[]>(INITIAL_WAITING);
+
+  const loadPlans = useCallback(async () => {
+    setPlansLoading(true);
+    setPlansError(null);
+    try {
+      const plans = await fetchAdminBoostPlans();
+      setAllPlans(plans.map(normalizeBoostPlan));
+    } catch {
+      setPlansError("Could not load boost plans.");
+    } finally {
+      setPlansLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPlans();
+  }, [loadPlans]);
+
+  const boostPlans = useMemo(() => allPlans.filter((p) => p.is_active), [allPlans]);
 
   const slotOption = useMemo(() => SLOT_OPTIONS.find((o) => o.value === slotValue) ?? SLOT_OPTIONS[2], [slotValue]);
   const lgaOptions = useMemo(() => Array.from(new Set(activeList.map((item) => item.lga))).sort(), [activeList]);
@@ -258,54 +224,61 @@ export default function BoostSystem() {
 
       <section className="mb-4 rounded-2xl border border-chat-border-subtle bg-card p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-base font-semibold text-ink">Boost Plans</h3>
-          <button
-            type="button"
-            onClick={exportTrackingCsv}
-            className="inline-flex items-center gap-2 rounded-lg border border-border-gray bg-background px-3 py-2 text-xs font-semibold text-ink hover:bg-muted"
-          >
-            <Download className="size-4" />
-            Export for tracking
-          </button>
+          <div>
+            <h3 className="text-base font-semibold text-ink">Boost Plans</h3>
+            <p className="text-xs text-chat-meta">Edit each plan from its card. Features are fixed from seeder.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={exportTrackingCsv}
+              className="inline-flex items-center gap-2 rounded-lg border border-border-gray bg-background px-3 py-2 text-xs font-semibold text-ink hover:bg-muted"
+            >
+              <Download className="size-4" />
+              Export for tracking
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          {BOOST_PLANS.map((plan) => (
-            <article key={plan.title} className={`rounded-xl border p-4 ${plan.cardClass}`}>
-              <div className="mb-2">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm" aria-hidden>
-                    {plan.medal}
-                  </span>
-                  {"tag" in plan ? (
-                    <span className="rounded-full bg-[#ffe8a3] px-2 py-0.5 text-[10px] font-semibold uppercase text-[#b47d00]">
-                      {plan.tag}
-                    </span>
-                  ) : null}
-                </div>
-                <h4 className="text-sm font-semibold text-ink">{plan.title}</h4>
-                <p className="text-[11px] text-body-secondary">{plan.subtitle}</p>
-              </div>
-              <div className="space-y-1.5">
-                {plan.prices.map((price) => (
-                  <div key={price.days} className="flex items-center justify-between rounded-md border border-border-gray bg-white px-2.5 py-1.5 text-xs">
-                    <span className="text-body-secondary">{price.days}</span>
-                    <span className="font-semibold text-ink">{price.amount}</span>
-                  </div>
-                ))}
-              </div>
-              <p className={`mt-2 text-[11px] font-semibold ${plan.slotClass}`}>* {plan.slotNote}</p>
-              <ul className="mt-2 space-y-1.5 text-[11px] text-body-secondary">
-                {plan.features.map((feature) => (
-                  <li key={feature}>- {feature}</li>
-                ))}
-              </ul>
-              <button type="button" className={`mt-3 w-full rounded-md px-3 py-1.5 text-xs font-semibold ${plan.ctaClass}`}>
-                {plan.cta}
-              </button>
-            </article>
-          ))}
-        </div>
+
+        {plansLoading ? (
+          <div className="flex items-center justify-center py-16 text-chat-meta">
+            <Loader2 className="size-6 animate-spin" />
+          </div>
+        ) : plansError ? (
+          <div className="rounded-xl border border-brand-red/20 bg-brand-red/5 p-4 text-center">
+            <p className="text-sm text-brand-red">{plansError}</p>
+            <button
+              type="button"
+              onClick={() => void loadPlans()}
+              className="mt-2 text-xs font-semibold text-chat-accent hover:underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-3">
+            {boostPlans.map((plan) => (
+              <AdminBoostPlanCard
+                key={plan.plan_key}
+                plan={plan}
+                onEdit={() => setEditingPlan(normalizeBoostPlan(plan))}
+              />
+            ))}
+          </div>
+        )}
       </section>
+
+      <BoostPlanEditModal
+        open={editingPlan !== null}
+        plan={editingPlan}
+        onClose={() => setEditingPlan(null)}
+        onSaved={(updated) => {
+          setAllPlans((prev) =>
+            prev.map((p) => (p.plan_key === updated.plan_key ? normalizeBoostPlan(updated) : p)),
+          );
+          setEditingPlan(null);
+        }}
+      />
 
       <section className="mb-4 rounded-2xl border border-chat-border-subtle bg-card p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">

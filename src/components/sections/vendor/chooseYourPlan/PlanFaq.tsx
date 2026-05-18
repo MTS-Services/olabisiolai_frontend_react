@@ -13,7 +13,7 @@ const faqItems: { q: string; a: string }[] = [
   },
   {
     q: "How long does verification take?",
-    a: "Standard verification is processed quickly; Premium members get access to a fast-track lane, typically within 24 hours when documents are complete.",
+    a: "Verification is a separate one-time fee (Individual, Business Name, or LTD). After payment, upload documents and our team reviews them. The verified badge appears only after approval—not from Premium subscription.",
   },
 ];
 

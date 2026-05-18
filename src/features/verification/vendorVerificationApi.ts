@@ -37,6 +37,8 @@ export type VerificationStatusPayload = {
   is_flagged: boolean;
   is_approved: boolean;
   verified_at: string | null;
+  awaiting_document_submission?: boolean;
+  consumable_payment_id?: number | null;
   purchased_package?: PurchasedVerificationPackage | null;
   documents: Array<{
     id: number;
@@ -69,26 +71,52 @@ export async function fetchVerificationPackages(): Promise<{
   return res.data.data;
 }
 
+function assertApiSuccess<T>(payload: ApiEnvelope<T>): T {
+  if (!payload.success || payload.data === undefined || payload.data === null) {
+    throw new Error(payload.message || 'Request failed.');
+  }
+  return payload.data;
+}
+
+export function clearVerificationPaymentSession(): void {
+  sessionStorage.removeItem(PAYMENT_ID_KEY);
+}
+
 export async function initVerificationPayment(packageId: string): Promise<VerificationPayment> {
   const res = await request.post<ApiEnvelope<{ payment: VerificationPayment }>>(
     '/vendor/verification/payment/init',
     { package_id: packageId },
   );
-  return res.data.data.payment;
+  const data = assertApiSuccess(res.data);
+  return data.payment;
 }
+
+export type ConfirmVerificationPaymentResult = {
+  payment: VerificationPayment;
+  awaiting_document_submission: boolean;
+  consumable_payment_id: number | null;
+};
 
 export async function confirmVerificationPayment(
   paymentId: number,
   gatewayTransactionId: string,
-): Promise<VerificationPayment> {
-  const res = await request.post<ApiEnvelope<{ payment: VerificationPayment }>>(
-    '/vendor/verification/payment/confirm',
-    {
-      payment_id: paymentId,
-      gateway_transaction_id: gatewayTransactionId,
-    },
-  );
-  return res.data.data.payment;
+): Promise<ConfirmVerificationPaymentResult> {
+  const res = await request.post<
+    ApiEnvelope<{
+      payment: VerificationPayment;
+      awaiting_document_submission?: boolean;
+      consumable_payment_id?: number | null;
+    }>
+  >('/vendor/verification/payment/confirm', {
+    payment_id: paymentId,
+    gateway_transaction_id: gatewayTransactionId,
+  });
+  const data = assertApiSuccess(res.data);
+  return {
+    payment: data.payment,
+    awaiting_document_submission: Boolean(data.awaiting_document_submission),
+    consumable_payment_id: data.consumable_payment_id ?? null,
+  };
 }
 
 export type ApplyDocumentInput = {
@@ -124,6 +152,19 @@ export async function applyForVerification(
 export async function fetchVerificationStatus(): Promise<VerificationStatusPayload> {
   const res = await request.get<ApiEnvelope<VerificationStatusPayload>>('/vendor/verification/status');
   return res.data.data;
+}
+
+const PAYMENT_ID_KEY = 'verificationPaymentId';
+const PLAN_STORAGE_KEY = 'verificationPlanId';
+
+export function primeVerificationDocumentSession(status: VerificationStatusPayload): void {
+  if (status.consumable_payment_id) {
+    sessionStorage.setItem(PAYMENT_ID_KEY, String(status.consumable_payment_id));
+  }
+  if (status.purchased_package?.id) {
+    sessionStorage.setItem(PLAN_STORAGE_KEY, status.purchased_package.id);
+  }
+  sessionStorage.setItem('paymentSource', 'verification');
 }
 
 export async function reuploadVerificationDocument(input: {

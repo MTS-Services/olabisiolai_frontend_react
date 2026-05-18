@@ -16,7 +16,7 @@ const premiumFeatures = [
   "Everything in Basic",
   "Up to 20 photos",
   "Full analytics dashboard",
-  "Verification included free",
+  "Boost & analytics (verification sold separately)",
   "Priority boost access",
   "Featured in search results",
 ] as const;

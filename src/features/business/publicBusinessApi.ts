@@ -120,9 +120,7 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const verified =
     r.shows_verified_badge === true ||
     r.is_verified === true ||
-    (r.verification_status === 'approved' &&
-      r.subscription_plan === 'premium' &&
-      r.subscription_status === 'active');
+    r.verification_status === 'approved';
 
   const isFavorite =
     r.is_favorite === true ||

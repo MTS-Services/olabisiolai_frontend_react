@@ -14,10 +14,10 @@ export function VerifiedStatusCard({ verification }: Props) {
 
   const title = isApproved ? 'Verified' : isPending ? 'Pending review' : 'Not verified'
   const subtitle = isApproved
-    ? 'Your business is verified. Buyers can trust your listing and premium placement is unlocked.'
+    ? 'Your business is verified. Buyers see your trusted badge on listings and search.'
     : isPending
       ? 'Your documents are under review. We will notify you when verification is complete.'
-      : 'Completing verification helps buyers trust your business and unlocks premium placement.'
+      : 'Pay for verification, submit documents, and get approved to earn your trusted badge. Premium subscription is separate.'
 
   const ctaLabel = isApproved ? 'View verification' : isPending ? 'View status' : 'Try verify'
 

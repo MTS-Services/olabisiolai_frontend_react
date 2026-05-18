@@ -33,7 +33,6 @@ export type VendorSubscriptionState = {
   can_pay_premium: boolean;
   is_premium_active: boolean;
   can_access_features: boolean;
-  shows_verified_badge: boolean;
 };
 
 type ApiEnvelope<T> = {

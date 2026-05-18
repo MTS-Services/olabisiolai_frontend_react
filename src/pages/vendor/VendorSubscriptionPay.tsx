@@ -73,7 +73,7 @@ export default function VendorSubscriptionPayPage() {
     },
     customizations: {
       title: "Gidira Premium Subscription",
-      description: "Annual premium plan with verified badge",
+      description: "Annual premium subscription",
       logo: "/favicon.ico",
     },
   });

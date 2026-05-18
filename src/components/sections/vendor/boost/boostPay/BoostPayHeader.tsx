@@ -24,7 +24,7 @@ export function BoostPayHeader({ variant = "boost" }: BoostPayHeaderProps) {
         <h2 className="text-4xl font-extrabold font-inter text-foreground">Review & Pay</h2>
         <p className="text-base font-inter text-muted-foreground">
           {isSubscription
-            ? "Complete payment to activate your premium plan and verified badge."
+            ? "Complete payment to activate your annual premium plan. Verification is purchased separately."
             : "Complete your transaction to activate your business visibility boost."}
         </p>
       </div>

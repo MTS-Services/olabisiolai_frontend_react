@@ -29,31 +29,106 @@ import {
 import {
   confirmSubscriptionPayment,
   fetchSubscriptionPackages,
+  fetchSubscriptionStatus,
   initSubscriptionPayment,
+  resumeSubscriptionPayment,
+  type SubscriptionCheckoutInit,
   type SubscriptionPayment,
 } from "@/features/subscription/vendorSubscriptionApi";
+import { getLaravelErrorMessage } from "@/lib/laravelApiError";
 import { billingFromUser, billingFromVendorPaymentMethod } from "@/features/vendor/vendorBillingProfile";
 import { createVendorPaymentMethod, fetchVendorPaymentMethods } from "@/features/vendor/vendorPaymentsApi";
 import type { VendorPaymentMethod } from "@/features/vendor/vendorPaymentsApi";
 
 const CHECKOUT_SESSION_KEY = "subscriptionCheckoutJson";
 
-function readCheckoutFromSession(): SubscriptionPayment | null {
+function parsePaymentRecord(raw: unknown): SubscriptionPayment | null {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  const id = typeof row.id === "number" ? row.id : Number(row.id);
+  const amount = typeof row.amount === "number" ? row.amount : Number(row.amount);
+  if (!Number.isFinite(id) || id <= 0 || !Number.isFinite(amount)) {
+    return null;
+  }
+  return {
+    ...(row as SubscriptionPayment),
+    id,
+    amount,
+  };
+}
+
+function normalizeCheckout(raw: unknown): SubscriptionCheckoutInit | null {
+  if (!raw || typeof raw !== "object") return null;
+  const data = raw as Record<string, unknown>;
+  const paymentsBlock =
+    data.payments && typeof data.payments === "object"
+      ? (data.payments as Record<string, unknown>)
+      : null;
+
+  const subscription =
+    parsePaymentRecord(paymentsBlock?.subscription) ??
+    parsePaymentRecord(data.payment) ??
+    parsePaymentRecord(raw);
+
+  if (!subscription) {
+    return null;
+  }
+
+  const boost = parsePaymentRecord(paymentsBlock?.boost);
+  const totalRaw = data.total_amount ?? subscription.amount + (boost?.amount ?? 0);
+  const total_amount = typeof totalRaw === "number" ? totalRaw : Number(totalRaw);
+
+  return {
+    payment: parsePaymentRecord(data.payment) ?? subscription,
+    payments: { subscription, boost },
+    total_amount: Number.isFinite(total_amount) ? total_amount : subscription.amount,
+    currency: String(data.currency ?? subscription.currency ?? "NGN"),
+  };
+}
+
+function resolveSubscriptionPaymentId(checkout: SubscriptionCheckoutInit): number {
+  const id = checkout.payments.subscription.id;
+  if (!Number.isFinite(id) || id <= 0) {
+    throw new Error("Checkout is missing a valid payment id. Please try Pay again.");
+  }
+  return id;
+}
+
+async function loadFreshSubscriptionCheckout(
+  boost?: { tierKey: string; durationDays: number },
+): Promise<SubscriptionCheckoutInit> {
+  try {
+    const resumed = normalizeCheckout(await resumeSubscriptionPayment());
+    if (resumed) {
+      return resumed;
+    }
+  } catch {
+    // fall through to new checkout
+  }
+
+  const created = normalizeCheckout(await initSubscriptionPayment(boost));
+  if (!created) {
+    throw new Error("Unable to prepare premium checkout.");
+  }
+  return created;
+}
+
+function readCheckoutFromSession(): SubscriptionCheckoutInit | null {
   try {
     const raw = sessionStorage.getItem(CHECKOUT_SESSION_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as SubscriptionPayment;
+    return normalizeCheckout(JSON.parse(raw));
   } catch {
     return null;
   }
 }
 
-function writeCheckoutToSession(p: SubscriptionPayment | null) {
-  if (!p) {
+function writeCheckoutToSession(checkout: SubscriptionCheckoutInit | null) {
+  if (!checkout) {
     sessionStorage.removeItem(CHECKOUT_SESSION_KEY);
     return;
   }
-  sessionStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify(p));
+  sessionStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify(checkout));
 }
 
 export default function VendorSubscriptionPayPage() {
@@ -61,7 +136,7 @@ export default function VendorSubscriptionPayPage() {
   const queryClient = useQueryClient();
   const [selectedMethod, setSelectedMethod] = useState<"card" | "bank">("card");
   const [isPaying, setIsPaying] = useState(false);
-  const [checkout, setCheckout] = useState<SubscriptionPayment | null>(() => readCheckoutFromSession());
+  const [checkout, setCheckout] = useState<SubscriptionCheckoutInit | null>(() => readCheckoutFromSession());
   const [shouldOpenFlutterwave, setShouldOpenFlutterwave] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
   const [billing, setBilling] = useState<BillingFormValues>(() => billingFromUser(null));
@@ -86,11 +161,22 @@ export default function VendorSubscriptionPayPage() {
     staleTime: 30_000,
   });
 
+  const { data: subscriptionStatus } = useQuery({
+    queryKey: ["vendor", "subscription", "status"],
+    queryFn: fetchSubscriptionStatus,
+    enabled: canFetchPackages,
+    retry: 1,
+  });
+
   const boostSelection = readBoostCheckoutSelection();
   const premiumPackage = packagesData?.packages[0];
   const premiumBase = premiumPackage?.amount ?? 25000;
   const boostAddon = boostSelection?.amount ?? 0;
-  const amountNgn = checkout?.amount ?? premiumBase + boostAddon;
+  const subscriptionLine = checkout?.payments.subscription ?? checkout?.payment ?? null;
+  const boostLinePayment = checkout?.payments.boost ?? null;
+  const amountNgn =
+    checkout?.total_amount ??
+    (subscriptionLine?.amount ?? premiumBase) + (boostLinePayment?.amount ?? boostAddon);
 
   useEffect(() => {
     if (profileInitDone) return;
@@ -113,9 +199,10 @@ export default function VendorSubscriptionPayPage() {
   const customerPhone = billing.phone.trim() || "08000000000";
   const customerName = billing.cardholder_name.trim() || "Gidira Vendor";
 
-  const flutterAmount = checkout?.amount ?? amountNgn;
-  const flutterCurrency = checkout?.currency ?? "NGN";
-  const flutterTxRef = checkout?.tx_ref ?? `subscription_pending_${String(user?.id ?? "guest")}`;
+  const flutterAmount = checkout?.total_amount ?? amountNgn;
+  const flutterCurrency = checkout?.currency ?? subscriptionLine?.currency ?? "NGN";
+  const flutterTxRef =
+    subscriptionLine?.tx_ref ?? `subscription_pending_${String(user?.id ?? "guest")}`;
 
   const handleFlutterPayment = useFlutterwave({
     public_key: env.flutterwavePublicKey ?? "",
@@ -135,10 +222,53 @@ export default function VendorSubscriptionPayPage() {
     },
   });
 
-  const persistCheckout = useCallback((p: SubscriptionPayment | null) => {
-    setCheckout(p);
-    writeCheckoutToSession(p);
+  const persistCheckout = useCallback((init: SubscriptionCheckoutInit | null) => {
+    const normalized = init ? normalizeCheckout(init) : null;
+    setCheckout(normalized);
+    writeCheckoutToSession(normalized);
   }, []);
+
+  useEffect(() => {
+    const sub = subscriptionStatus?.subscription;
+    if (!sub) {
+      return;
+    }
+
+    // Free plan + saved checkout from an old session causes "payment id is invalid".
+    if (sub.plan === "free" && sub.is_premium_active !== true && checkout) {
+      persistCheckout(null);
+    }
+  }, [checkout, persistCheckout, subscriptionStatus]);
+
+  useEffect(() => {
+    if (!canFetchPackages || checkout) {
+      return;
+    }
+
+    const requiresPayment = subscriptionStatus?.subscription?.requires_payment === true;
+    const isPremiumActive = subscriptionStatus?.subscription?.is_premium_active === true;
+
+    if (isPremiumActive || !requiresPayment) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const resumed = normalizeCheckout(await resumeSubscriptionPayment());
+        if (!cancelled && resumed) {
+          persistCheckout(resumed);
+        }
+      } catch {
+        // No pending payment yet — checkout will be created on Pay.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canFetchPackages, checkout, persistCheckout, subscriptionStatus]);
 
   const trySaveProfileFromResponse = useCallback(
     async (response: FlutterwaveCallbackResponse) => {
@@ -187,7 +317,15 @@ export default function VendorSubscriptionPayPage() {
     }
 
     setShouldOpenFlutterwave(false);
-    const resolvedPaymentId = checkout.id;
+    let resolvedPaymentId: number;
+    try {
+      resolvedPaymentId = resolveSubscriptionPaymentId(checkout);
+    } catch (error) {
+      setIsPaying(false);
+      persistCheckout(null);
+      showError(getLaravelErrorMessage(error, "Checkout expired. Please tap Pay again."));
+      return;
+    }
 
     handleFlutterPayment({
       callback: async (response: FlutterwaveCallbackResponse) => {
@@ -203,20 +341,44 @@ export default function VendorSubscriptionPayPage() {
             return;
           }
 
-          await confirmSubscriptionPayment(resolvedPaymentId, String(txId));
+          let paymentId = resolvedPaymentId;
+          try {
+            paymentId = resolveSubscriptionPaymentId(checkout);
+          } catch {
+            const fresh = await loadFreshSubscriptionCheckout(
+              boostSelection
+                ? { tierKey: boostSelection.tierKey, durationDays: boostSelection.durationDays }
+                : undefined,
+            );
+            persistCheckout(fresh);
+            paymentId = resolveSubscriptionPaymentId(fresh);
+          }
+
+          const result = await confirmSubscriptionPayment(paymentId, String(txId));
           await trySaveProfileFromResponse(response);
           closePaymentModal();
           persistCheckout(null);
           clearBoostCheckoutSelection();
-          localStorage.setItem("vendorPlan", "premium");
+          if (result.subscription.is_premium_active) {
+            localStorage.setItem("vendorPlan", "premium");
+          } else {
+            localStorage.removeItem("vendorPlan");
+          }
           localStorage.setItem("vendorBusinessCreated", "true");
           void queryClient.invalidateQueries({ queryKey: ["vendor"] });
           void queryClient.invalidateQueries({ queryKey: ["vendor", "onboarding", "status"] });
+          void queryClient.invalidateQueries({ queryKey: ["vendor", "subscription", "status"] });
           void queryClient.invalidateQueries({ queryKey: ["vendor", "payments"] });
-          showSuccess("Premium activated. Your business is now verified.");
+          showSuccess(result.message || "Premium subscription activated successfully.");
           navigate("/vendor/dashboard", { replace: true });
-        } catch {
-          showError("Payment succeeded but confirmation failed. Contact support.");
+        } catch (error) {
+          persistCheckout(null);
+          showError(
+            getLaravelErrorMessage(
+              error,
+              "Payment succeeded but premium activation failed. Tap Pay again on this page to retry activation.",
+            ),
+          );
         } finally {
           setIsPaying(false);
         }
@@ -226,6 +388,7 @@ export default function VendorSubscriptionPayPage() {
   }, [
     shouldOpenFlutterwave,
     checkout,
+    boostSelection,
     handleFlutterPayment,
     navigate,
     persistCheckout,
@@ -252,21 +415,16 @@ export default function VendorSubscriptionPayPage() {
     try {
       setIsPaying(true);
 
-      let pay = checkout;
-      if (!pay) {
-        pay = await initSubscriptionPayment(
-          boostSelection
-            ? { tierKey: boostSelection.tierKey, durationDays: boostSelection.durationDays }
-            : undefined,
-        );
-        persistCheckout(pay);
-      }
-
-      setCheckout(pay);
+      const fresh = await loadFreshSubscriptionCheckout(
+        boostSelection
+          ? { tierKey: boostSelection.tierKey, durationDays: boostSelection.durationDays }
+          : undefined,
+      );
+      persistCheckout(fresh);
       setShouldOpenFlutterwave(true);
-    } catch {
+    } catch (error) {
       setIsPaying(false);
-      showError("Unable to start payment.");
+      showError(getLaravelErrorMessage(error, "Unable to start payment."));
     }
   };
 
@@ -330,12 +488,20 @@ export default function VendorSubscriptionPayPage() {
             planTitle={premiumPackage?.title ?? "Premium"}
             totalAmount={amountNgn}
             boostLine={
-              boostSelection
+              boostLinePayment && boostLinePayment.amount > 0
                 ? {
-                  label: `${boostSelection.tierLabel} · ${boostSelection.durationDays} days`,
-                  amount: boostSelection.amount,
+                  label:
+                    boostSelection
+                      ? `${boostSelection.tierLabel} · ${boostSelection.durationDays} days`
+                      : "Boost campaign",
+                  amount: boostLinePayment.amount,
                 }
-                : null
+                : boostSelection
+                  ? {
+                    label: `${boostSelection.tierLabel} · ${boostSelection.durationDays} days`,
+                    amount: boostSelection.amount,
+                  }
+                  : null
             }
             isVerification={false}
             beforePayButton={

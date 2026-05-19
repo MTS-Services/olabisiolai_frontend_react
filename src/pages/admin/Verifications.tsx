@@ -99,7 +99,7 @@ export default function VerificationGrid() {
     setActingId(row.id);
     try {
       const updated = await adminApproveVerification(row.id);
-      showSuccess(`${row.business_name} approved.`);
+      showSuccess(`${row.business_name} and all documents approved.`);
       setRows((prev) =>
         prev.map((item) =>
           item.id === row.id

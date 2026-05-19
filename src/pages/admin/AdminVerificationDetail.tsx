@@ -206,7 +206,7 @@ export default function AdminVerificationDetail() {
     setActing(true);
     try {
       await adminApproveVerification(detail.id);
-      showSuccess("Business verification approved.");
+      showSuccess("All documents and business verification approved.");
       await load();
     } catch {
       showError("Could not approve.");
@@ -300,7 +300,11 @@ export default function AdminVerificationDetail() {
     );
   }
 
-  const canReviewBusiness = detail.verification_status === "pending" && !detail.is_flagged;
+  const hasPendingDocuments = (detail.documents ?? []).some((d) => d.status === "pending");
+  const canReviewBusiness =
+    !detail.is_flagged &&
+    (detail.verification_status === "pending" ||
+      (detail.verification_status === "approved" && hasPendingDocuments));
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -375,7 +379,9 @@ export default function AdminVerificationDetail() {
                   "rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success/90",
                 )}
               >
-                Approve all
+                {detail.verification_status === "approved" && hasPendingDocuments
+                  ? "Approve all documents"
+                  : "Approve all"}
               </button>
               <button
                 type="button"

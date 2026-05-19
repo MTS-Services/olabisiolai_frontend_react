@@ -17,7 +17,8 @@ export type FlutterwaveCallbackResponse = {
 };
 
 export function isFlutterwavePaymentSuccessful(response: FlutterwaveCallbackResponse): boolean {
-  return (response.status ?? "").toLowerCase() === "successful";
+  const status = (response.status ?? "").toLowerCase();
+  return status === "successful" || status === "completed";
 }
 
 export function extractFlutterwaveTransactionId(

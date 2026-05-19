@@ -11,6 +11,7 @@ export type SubscriptionPackage = {
 export type SubscriptionPayment = {
   id: number;
   purpose: string;
+  purpose_label?: string;
   package_id: string;
   amount: number;
   currency: string;
@@ -18,6 +19,16 @@ export type SubscriptionPayment = {
   status: 'pending' | 'completed' | 'failed';
   is_consumed: boolean;
   paid_at: string | null;
+};
+
+export type SubscriptionCheckoutInit = {
+  payment: SubscriptionPayment;
+  payments: {
+    subscription: SubscriptionPayment;
+    boost: SubscriptionPayment | null;
+  };
+  total_amount: number;
+  currency: string;
 };
 
 export type VendorSubscriptionState = {
@@ -63,8 +74,8 @@ export async function fetchSubscriptionStatus(): Promise<{
 export async function initSubscriptionPayment(boost?: {
   tierKey: string;
   durationDays: number;
-}): Promise<SubscriptionPayment> {
-  const res = await request.post<ApiEnvelope<{ payment: SubscriptionPayment }>>(
+}): Promise<SubscriptionCheckoutInit> {
+  const res = await request.post<ApiEnvelope<SubscriptionCheckoutInit>>(
     '/vendor/subscription/payment/init',
     boost
       ? {
@@ -73,7 +84,20 @@ export async function initSubscriptionPayment(boost?: {
       }
       : undefined,
   );
-  return res.data.data.payment;
+  if (res.data?.success !== true || !res.data.data) {
+    throw new Error(res.data?.message ?? 'Unable to start premium payment.');
+  }
+  return res.data.data;
+}
+
+export async function resumeSubscriptionPayment(): Promise<SubscriptionCheckoutInit> {
+  const res = await request.post<ApiEnvelope<SubscriptionCheckoutInit>>(
+    '/vendor/subscription/payment/resume',
+  );
+  if (res.data?.success !== true || !res.data.data) {
+    throw new Error(res.data?.message ?? 'No pending premium payment found.');
+  }
+  return res.data.data;
 }
 
 export async function confirmSubscriptionPayment(
@@ -81,6 +105,7 @@ export async function confirmSubscriptionPayment(
   gatewayTransactionId: string,
 ): Promise<{
   subscription: VendorSubscriptionState;
+  message: string;
 }> {
   const res = await request.post<
     ApiEnvelope<{ subscription: VendorSubscriptionState; payment: SubscriptionPayment }>
@@ -88,5 +113,11 @@ export async function confirmSubscriptionPayment(
     payment_id: paymentId,
     gateway_transaction_id: gatewayTransactionId,
   });
-  return { subscription: res.data.data.subscription };
+  if (res.data?.success !== true || !res.data.data?.subscription) {
+    throw new Error(res.data?.message ?? 'Premium activation failed.');
+  }
+  return {
+    subscription: res.data.data.subscription,
+    message: res.data.message ?? 'Premium subscription activated.',
+  };
 }

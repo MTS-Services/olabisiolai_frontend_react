@@ -110,17 +110,6 @@ export default function VendorBoost() {
     );
   }, [activeLocation?.boost]);
 
-  const scrollToPlans = (tierKey: string) => {
-    setHighlightPlanId(tierKey);
-    plansSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.setTimeout(() => {
-      document.getElementById(`boost-plan-${tierKey}`)?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }, 200);
-  };
-
   const continueBoostPayment = (row: BoostCampaignRow) => {
     if (!activeLocation) {
       showError("Select a location first.");

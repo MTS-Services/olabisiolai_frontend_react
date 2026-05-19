@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { showError, showSuccess } from "@/lib/sweetAlert";
+import { alert, showError, showSuccess } from "@/lib/sweetAlert";
 
 import { FlagVerificationModal } from "@/components/Modal/FlagVerificationModal";
 import {
   adminAddVerificationNote,
   adminApproveVerification,
+  adminDeleteVerification,
   adminFlagVerification,
   adminReviewDocument,
   adminViewVerification,
@@ -215,6 +216,26 @@ export default function AdminVerificationDetail() {
     }
   };
 
+  const handleDeleteVerification = async () => {
+    if (!detail) return;
+    const confirmed = await alert.confirmDelete(
+      `verification for "${detail.business_name}"`,
+      "The vendor will no longer be verified and can submit verification again.",
+    );
+    if (!confirmed) return;
+
+    setActing(true);
+    try {
+      await adminDeleteVerification(detail.id);
+      showSuccess("Verification removed. Vendor is no longer verified.");
+      await load();
+    } catch {
+      showError("Could not remove verification.");
+    } finally {
+      setActing(false);
+    }
+  };
+
   const handleFlagBusiness = async (reason: string) => {
     if (!detail) return;
     setActing(true);
@@ -306,6 +327,11 @@ export default function AdminVerificationDetail() {
     (detail.verification_status === "pending" ||
       (detail.verification_status === "approved" && hasPendingDocuments));
 
+  const canDeleteVerification =
+    detail.verification_status === "approved" ||
+    detail.verification_status === "pending" ||
+    detail.is_flagged;
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -368,32 +394,50 @@ export default function AdminVerificationDetail() {
             </div>
           ) : null}
 
-          {canReviewBusiness ? (
+          {(canReviewBusiness || canDeleteVerification) ? (
             <div className="flex flex-wrap gap-2 border-t border-border-light pt-4">
-              <button
-                type="button"
-                disabled={acting}
-                onClick={() => void handleApproveBusiness()}
-                className={cn(
-                  interactiveBtn,
-                  "rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success/90",
-                )}
-              >
-                {detail.verification_status === "approved" && hasPendingDocuments
-                  ? "Approve all documents"
-                  : "Approve all"}
-              </button>
-              <button
-                type="button"
-                disabled={acting}
-                onClick={() => setFlagOpen(true)}
-                className={cn(
-                  interactiveBtn,
-                  "rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600",
-                )}
-              >
-                Flag business
-              </button>
+              {canReviewBusiness ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={acting}
+                    onClick={() => void handleApproveBusiness()}
+                    className={cn(
+                      interactiveBtn,
+                      "rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success/90",
+                    )}
+                  >
+                    {detail.verification_status === "approved" && hasPendingDocuments
+                      ? "Approve all documents"
+                      : "Approve all"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={acting}
+                    onClick={() => setFlagOpen(true)}
+                    className={cn(
+                      interactiveBtn,
+                      "rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600",
+                    )}
+                  >
+                    Flag business
+                  </button>
+                </>
+              ) : null}
+              {canDeleteVerification ? (
+                <button
+                  type="button"
+                  disabled={acting}
+                  onClick={() => void handleDeleteVerification()}
+                  className={cn(
+                    interactiveBtn,
+                    "inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100",
+                  )}
+                >
+                  <Trash2 className="size-3.5" />
+                  Delete verification
+                </button>
+              ) : null}
             </div>
           ) : null}
         </section>

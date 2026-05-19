@@ -128,6 +128,17 @@ export async function adminFlagVerification(
   return res.data.data.verification;
 }
 
+export async function adminDeleteVerification(
+  businessInfoId: number,
+  reason?: string,
+): Promise<AdminVerificationDetail> {
+  const res = await request.post<ApiEnvelope<{ verification: AdminVerificationDetail }>>(
+    '/admin/verifications/delete',
+    { business_info_id: businessInfoId, reason },
+  );
+  return res.data.data.verification;
+}
+
 export async function adminReviewDocument(
   documentId: number,
   action: 'approve' | 'reject',

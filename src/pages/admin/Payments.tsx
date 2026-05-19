@@ -1,103 +1,59 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Eye } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Eye, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-
+import { PaymentDetailsModal } from "@/components/Modal/PaymentDetailsModal";
 import type { PaymentRow, PaymentStatus, PaymentStatusFilter } from "@/components/Modal/PaymentDetailsModal.types";
+import {
+  exportAdminPaymentsCsv,
+  fetchAdminPayments,
+  fetchAdminPaymentsAnalytics,
+  type AdminPaymentListItem,
+  type AdminPaymentTransactionType,
+} from "@/features/payments/adminPaymentsApi";
 import { formatNaira } from "@/lib/currency";
+import { showError } from "@/lib/sweetAlert";
 
-const TOTAL_PAYMENTS = 482;
-type TransactionTab = "all" | "subscription" | "boost" | "verification";
-type PaymentWithType = PaymentRow & { transactionType: Exclude<TransactionTab, "all"> };
+type TransactionTab = "all" | AdminPaymentTransactionType;
 
-const payments: PaymentWithType[] = [
-  {
-    id: 1,
-    business: "Mama Put Restaurant",
-    payerName: "Chukwudi Okafor",
-    payerEmail: "chukwudi.okafor@email.com",
-    reference: "PAY-9F2A1C8D",
-    amountNgn: 12500,
-    method: "card",
-    status: "completed",
-    transactionType: "verification",
-    dateShort: "Apr 1, 02:30 PM",
-    dateTimeLong: "April 1, 2024 at 02:30 PM",
-  },
-  {
-    id: 2,
-    business: "TechHub Solutions",
-    payerName: "Aisha Mohammed",
-    payerEmail: "aisha.m@email.com",
-    reference: "PAY-3B7E9021",
-    amountNgn: 48000,
-    method: "bank_transfer",
-    status: "completed",
-    transactionType: "subscription",
-    dateShort: "Apr 1, 03:45 PM",
-    dateTimeLong: "April 1, 2024 at 03:45 PM",
-  },
-  {
-    id: 3,
-    business: "Divine Salon & Spa",
-    payerName: "Ngozi Eze",
-    payerEmail: "ngozi.eze@email.com",
-    reference: "PAY-55CC10AB",
-    amountNgn: 8200,
-    method: "wallet",
-    status: "pending",
-    transactionType: "boost",
-    dateShort: "Apr 2, 10:15 AM",
-    dateTimeLong: "April 2, 2024 at 10:15 AM",
-  },
-  {
-    id: 4,
-    business: "Fresh Groceries Ltd",
-    payerName: "Ibrahim Musa",
-    payerEmail: "ibrahim.musa@email.com",
-    reference: "PAY-1100DE4F",
-    amountNgn: 15600,
-    method: "card",
-    status: "failed",
-    transactionType: "verification",
-    dateShort: "Apr 2, 11:20 AM",
-    dateTimeLong: "April 2, 2024 at 11:20 AM",
-  },
-  {
-    id: 5,
-    business: "AutoFix Mechanics",
-    payerName: "Emeka Nwankwo",
-    payerEmail: "emeka.n@email.com",
-    reference: "PAY-77AA0099",
-    amountNgn: 22000,
-    method: "bank_transfer",
-    status: "completed",
-    transactionType: "subscription",
-    dateShort: "Apr 3, 09:05 AM",
-    dateTimeLong: "April 3, 2024 at 09:05 AM",
-  },
-  {
-    id: 6,
-    business: "QuickFix Plumbing",
-    payerName: "John Okoro",
-    payerEmail: "john.okoro@email.com",
-    reference: "PAY-441122EE",
-    amountNgn: 9900,
-    method: "card",
-    status: "pending",
-    transactionType: "boost",
-    dateShort: "Apr 3, 01:40 PM",
-    dateTimeLong: "April 3, 2024 at 01:40 PM",
-  },
-];
+const PER_PAGE = 10;
 
 function formatNgn(amount: number) {
   return formatNaira(amount, { freeLabel: false });
+}
+
+function formatCompactNgn(amount: number) {
+  if (!Number.isFinite(amount) || amount <= 0) return "₦0";
+  if (amount >= 1_000_000) {
+    const millions = amount / 1_000_000;
+    const text = millions >= 10 ? millions.toFixed(0) : millions.toFixed(1);
+    return `₦${text.replace(/\.0$/, "")}M`;
+  }
+  if (amount >= 1_000) {
+    const thousands = amount / 1_000;
+    const text = thousands >= 10 ? thousands.toFixed(0) : thousands.toFixed(1);
+    return `₦${text.replace(/\.0$/, "")}K`;
+  }
+  return formatNgn(amount);
 }
 
 function methodLabel(method: PaymentRow["method"]) {
   if (method === "card") return "Card";
   if (method === "bank_transfer") return "Bank transfer";
   return "Wallet";
+}
+
+function GrowthLabel({ value }: { value: number | null }) {
+  if (value === null) {
+    return <p className="text-xs font-medium text-chat-meta">—</p>;
+  }
+  const positive = value >= 0;
+  return (
+    <p className={`text-xs font-medium ${positive ? "text-success" : "text-red-600"}`}>
+      {positive ? "+" : ""}
+      {value}%
+    </p>
+  );
 }
 
 function StatusCell({ status }: { status: PaymentStatus }) {
@@ -127,16 +83,41 @@ export default function Payments() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TransactionTab>("all");
   const [trendRange, setTrendRange] = useState<"monthly" | "yearly">("monthly");
+  const [page, setPage] = useState(1);
+  const [selectedPayment, setSelectedPayment] = useState<AdminPaymentListItem | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-
-
-  const filtered = useMemo(() => {
-    return payments.filter((p) => {
-      const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-      const matchesTab = activeTab === "all" || p.transactionType === activeTab;
-      return matchesStatus && matchesTab;
-    });
+  useEffect(() => {
+    setPage(1);
   }, [statusFilter, activeTab]);
+
+  const listQuery = useQuery({
+    queryKey: ["admin", "payments", page, statusFilter, activeTab],
+    queryFn: () =>
+      fetchAdminPayments({
+        page,
+        per_page: PER_PAGE,
+        status: statusFilter,
+        purpose: activeTab,
+      }),
+  });
+
+  const analyticsQuery = useQuery({
+    queryKey: ["admin", "payments", "analytics", trendRange],
+    queryFn: () => fetchAdminPaymentsAnalytics(trendRange),
+  });
+
+  const payments = listQuery.data?.items ?? [];
+  const pagination = listQuery.data?.pagination ?? {
+    current_page: 1,
+    last_page: 1,
+    per_page: PER_PAGE,
+    total: 0,
+  };
+
+  const overview = analyticsQuery.data?.overview;
+  const trendSeries = analyticsQuery.data?.trend ?? [];
+  const breakdown = analyticsQuery.data?.breakdown ?? [];
 
   const filterLabel =
     statusFilter === "all"
@@ -147,29 +128,12 @@ export default function Payments() {
           ? "Pending"
           : "Failed";
 
-  const trendSeries = trendRange === "monthly"
-    ? [
-      { label: "Jan", value: 62 },
-      { label: "Feb", value: 69 },
-      { label: "Mar", value: 76 },
-      { label: "Apr", value: 82 },
-      { label: "May", value: 88 },
-      { label: "Jun", value: 93 },
-    ]
-    : [
-      { label: "2021", value: 34 },
-      { label: "2022", value: 46 },
-      { label: "2023", value: 61 },
-      { label: "2024", value: 74 },
-      { label: "2025", value: 86 },
-      { label: "2026", value: 95 },
-    ];
-
   const chartHeight = 128;
   const chartWidth = 560;
   const spacing = chartWidth / Math.max(trendSeries.length - 1, 1);
-  const maxValue = Math.max(...trendSeries.map((point) => point.value));
-  const minValue = Math.min(...trendSeries.map((point) => point.value));
+  const trendValues = trendSeries.map((point) => point.value);
+  const maxValue = trendValues.length > 0 ? Math.max(...trendValues) : 1;
+  const minValue = trendValues.length > 0 ? Math.min(...trendValues) : 0;
   const range = Math.max(maxValue - minValue, 1);
 
   const points = trendSeries
@@ -180,37 +144,49 @@ export default function Payments() {
     })
     .join(" ");
 
-  const exportForFinance = () => {
-    const headers = ["Business", "Payer", "Email", "Reference", "Amount (NGN)", "Type", "Method", "Status", "Date"];
-    const csv = [
-      headers.join(","),
-      ...filtered.map((row) =>
-        [
-          row.business,
-          row.payerName,
-          row.payerEmail,
-          row.reference,
-          row.amountNgn,
-          row.transactionType,
-          methodLabel(row.method),
-          row.status,
-          row.dateShort,
-        ]
-          .map((value) => `"${String(value).replace(/"/g, '""')}"`)
-          .join(","),
-      ),
-    ].join("\r\n");
-    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
-    const now = new Date();
-    const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `finance-payments-${stamp}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+  const lastPage = Math.max(1, pagination.last_page);
+  const rangeFrom = pagination.total === 0 ? 0 : (pagination.current_page - 1) * pagination.per_page + 1;
+  const rangeTo = Math.min(pagination.current_page * pagination.per_page, pagination.total);
+
+  const pageNumbers = useMemo(() => {
+    const cur = pagination.current_page;
+    const last = lastPage;
+    const max = 7;
+    if (last <= max) return Array.from({ length: last }, (_, i) => i + 1);
+    let start = Math.max(1, cur - Math.floor(max / 2));
+    let end = start + max - 1;
+    if (end > last) {
+      end = last;
+      start = Math.max(1, end - max + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [pagination.current_page, lastPage]);
+
+  const exportForFinance = async () => {
+    setExporting(true);
+    try {
+      const blob = await exportAdminPaymentsCsv({
+        status: statusFilter,
+        purpose: activeTab,
+      });
+      const now = new Date();
+      const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `finance-payments-${stamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Export failed.");
+    } finally {
+      setExporting(false);
+    }
   };
+
+  const analyticsLoading = analyticsQuery.isLoading && !analyticsQuery.data;
+  const listLoading = listQuery.isLoading && !listQuery.data;
 
   return (
     <div>
@@ -227,10 +203,11 @@ export default function Payments() {
           </div>
           <button
             type="button"
-            onClick={exportForFinance}
-            className="inline-flex items-center gap-2 rounded-lg border border-border-gray bg-background px-3 py-2 text-xs font-semibold text-ink hover:bg-muted"
+            onClick={() => void exportForFinance()}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 rounded-lg border border-border-gray bg-background px-3 py-2 text-xs font-semibold text-ink hover:bg-muted disabled:opacity-60"
           >
-            <Download className="size-4" />
+            {exporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
             Export for Finance
           </button>
         </div>
@@ -238,23 +215,31 @@ export default function Payments() {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Total Revenue</p>
-            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦48.2M</p>
-            <p className="text-xs font-medium text-success">+14%</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">
+              {analyticsLoading ? "…" : formatCompactNgn(overview?.total_revenue ?? 0)}
+            </p>
+            <GrowthLabel value={overview?.total_growth_percent ?? null} />
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Verification Revenue</p>
-            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦3.8M</p>
-            <p className="text-xs font-medium text-success">+12%</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">
+              {analyticsLoading ? "…" : formatCompactNgn(overview?.verification_revenue ?? 0)}
+            </p>
+            <GrowthLabel value={overview?.verification_growth_percent ?? null} />
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Subscription Revenue</p>
-            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦28.4M</p>
-            <p className="text-xs font-medium text-success">+18%</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">
+              {analyticsLoading ? "…" : formatCompactNgn(overview?.subscription_revenue ?? 0)}
+            </p>
+            <GrowthLabel value={overview?.subscription_growth_percent ?? null} />
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-chat-meta">Boost Revenue</p>
-            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">₦19.8M</p>
-            <p className="text-xs font-medium text-success">+22%</p>
+            <p className="mt-1 text-4xl font-semibold leading-10 text-ink">
+              {analyticsLoading ? "…" : formatCompactNgn(overview?.boost_revenue ?? 0)}
+            </p>
+            <GrowthLabel value={overview?.boost_growth_percent ?? null} />
           </article>
         </div>
 
@@ -282,48 +267,76 @@ export default function Payments() {
               </div>
             </div>
             <div className="mt-3 rounded-md border border-border-gray bg-linear-to-b from-blue-50 to-transparent p-3">
-              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-28 w-full" preserveAspectRatio="none">
-                {[0, 1, 2, 3].map((line) => {
-                  const y = (chartHeight / 4) * line;
-                  return <line key={line} x1={0} y1={y} x2={chartWidth} y2={y} stroke="currentColor" className="text-border-gray" strokeWidth="1" />;
-                })}
-                <polyline
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  className="text-chat-accent"
-                  points={points}
-                />
-                {trendSeries.map((point, index) => {
-                  const x = index * spacing;
-                  const y = chartHeight - ((point.value - minValue) / range) * (chartHeight - 20) - 10;
-                  return <circle key={point.label} cx={x} cy={y} r="3" className="fill-chat-accent" />;
-                })}
-              </svg>
-              <div className="mt-2 grid grid-cols-6 text-[10px] text-body-secondary">
-                {trendSeries.map((point) => (
-                  <span key={point.label} className="text-center">
-                    {point.label}
-                  </span>
-                ))}
-              </div>
+              {analyticsLoading ? (
+                <div className="flex h-28 items-center justify-center">
+                  <Loader2 className="size-6 animate-spin text-chat-accent" />
+                </div>
+              ) : (
+                <>
+                  <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-28 w-full" preserveAspectRatio="none">
+                    {[0, 1, 2, 3].map((line) => {
+                      const y = (chartHeight / 4) * line;
+                      return (
+                        <line
+                          key={line}
+                          x1={0}
+                          y1={y}
+                          x2={chartWidth}
+                          y2={y}
+                          stroke="currentColor"
+                          className="text-border-gray"
+                          strokeWidth="1"
+                        />
+                      );
+                    })}
+                    {trendSeries.length > 0 ? (
+                      <>
+                        <polyline
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          className="text-chat-accent"
+                          points={points}
+                        />
+                        {trendSeries.map((point, index) => {
+                          const x = index * spacing;
+                          const y = chartHeight - ((point.value - minValue) / range) * (chartHeight - 20) - 10;
+                          return <circle key={point.label} cx={x} cy={y} r="3" className="fill-chat-accent" />;
+                        })}
+                      </>
+                    ) : null}
+                  </svg>
+                  <div
+                    className="mt-2 grid text-[10px] text-body-secondary"
+                    style={{ gridTemplateColumns: `repeat(${Math.max(trendSeries.length, 1)}, minmax(0, 1fr))` }}
+                  >
+                    {trendSeries.map((point) => (
+                      <span key={point.label} className="text-center">
+                        {point.label}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </article>
           <article className="rounded-xl border border-chat-border-subtle bg-background p-3">
             <p className="text-sm font-semibold text-ink">Revenue Breakdown</p>
             <div className="mt-2 space-y-2 text-xs">
-              {[
-                { label: "Subscriptions", width: "56%" },
-                { label: "Boosts", width: "39%" },
-                { label: "Verifications", width: "5%" },
-              ].map((item) => (
+              {breakdown.length === 0 && !analyticsLoading ? (
+                <p className="text-body-secondary">No completed payments yet.</p>
+              ) : null}
+              {breakdown.map((item) => (
                 <div key={item.label}>
                   <div className="mb-1 flex items-center justify-between text-body-secondary">
                     <span>{item.label}</span>
-                    <span>{item.width}</span>
+                    <span>{item.width_percent}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-muted">
-                    <div className="h-2 rounded-full bg-chat-accent" style={{ width: item.width }} />
+                    <div
+                      className="h-2 rounded-full bg-chat-accent"
+                      style={{ width: `${item.width_percent}%` }}
+                    />
                   </div>
                 </div>
               ))}
@@ -331,7 +344,6 @@ export default function Payments() {
           </article>
         </div>
       </section>
-
 
       <section className="rounded-2xl border border-border-gray bg-card p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]">
         <div className="mb-6">
@@ -402,87 +414,88 @@ export default function Payments() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {listLoading ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-chat-meta">
+                    <Loader2 className="mx-auto size-6 animate-spin text-chat-accent" />
+                  </td>
+                </tr>
+              ) : null}
+              {!listLoading && payments.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-4 py-8 text-center text-sm text-chat-meta">
                     No payments for this filter.
                   </td>
                 </tr>
               ) : null}
-              {filtered.map((row) => (
-                <tr key={row.id} className="border-b border-border-light">
-                  <td className="px-4 py-5 text-base font-medium text-ink">{row.business}</td>
-                  <td className="px-4 py-4">
-                    <p className="text-sm text-ink">{row.payerName}</p>
-                    <p className="text-xs text-gray-500">{row.payerEmail}</p>
-                  </td>
-                  <td className="px-4 py-4 font-mono text-sm text-ink">{row.reference}</td>
-                  <td className="px-4 py-4 text-sm font-semibold text-ink">{formatNgn(row.amountNgn)}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600">{methodLabel(row.method)}</td>
-                  <td className="px-4 py-4 text-sm capitalize text-gray-600">{row.transactionType}</td>
-                  <td className="px-4 py-4">
-                    <StatusCell status={row.status} />
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-600">{row.dateShort}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => { }}
-                        className="inline-flex h-8 items-center gap-2 rounded-xl px-3 text-sm font-medium text-body-secondary hover:bg-muted"
-                      >
-                        <Eye className="size-4 shrink-0" strokeWidth={2} />
-                        View details
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {!listLoading
+                ? payments.map((row) => (
+                  <tr key={row.id} className="border-b border-border-light">
+                    <td className="px-4 py-5 text-base font-medium text-ink">{row.business}</td>
+                    <td className="px-4 py-4">
+                      <p className="text-sm text-ink">{row.payerName}</p>
+                      <p className="text-xs text-gray-500">{row.payerEmail}</p>
+                    </td>
+                    <td className="px-4 py-4 font-mono text-sm text-ink">{row.reference}</td>
+                    <td className="px-4 py-4 text-sm font-semibold text-ink">{formatNgn(row.amountNgn)}</td>
+                    <td className="px-4 py-4 text-sm text-gray-600">{methodLabel(row.method)}</td>
+                    <td className="px-4 py-4 text-sm capitalize text-gray-600">{row.transactionType}</td>
+                    <td className="px-4 py-4">
+                      <StatusCell status={row.status} />
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-600">{row.dateShort}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPayment(row)}
+                          className="inline-flex h-8 items-center gap-2 rounded-xl px-3 text-sm font-medium text-body-secondary hover:bg-muted"
+                        >
+                          <Eye className="size-4 shrink-0" strokeWidth={2} />
+                          View details
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+                : null}
             </tbody>
           </table>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-tint-red/20 px-1 pb-0 pt-4">
           <p className="text-xs font-medium text-stone-700">
-            Showing 1-10 of {TOTAL_PAYMENTS} payments
+            Showing {rangeFrom}-{rangeTo} of {pagination.total} payments
           </p>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="flex size-8 items-center justify-center rounded-lg opacity-30"
-              disabled
+              className="flex size-8 items-center justify-center rounded-lg text-stone-700 hover:bg-muted disabled:opacity-30"
+              disabled={pagination.current_page <= 1 || listQuery.isFetching}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               aria-label="Previous page"
             >
-              <ChevronLeft className="size-3.5 text-stone-700" />
+              <ChevronLeft className="size-3.5" />
             </button>
+            {pageNumbers.map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => setPage(pageNumber)}
+                disabled={listQuery.isFetching}
+                className={`flex size-8 items-center justify-center rounded-lg text-xs font-semibold ${pagination.current_page === pageNumber
+                  ? "bg-brand-red text-white"
+                  : "text-stone-700 hover:bg-muted"
+                  }`}
+              >
+                {pageNumber}
+              </button>
+            ))}
             <button
               type="button"
-              className="flex size-8 items-center justify-center rounded-lg bg-brand-red text-xs font-semibold text-white"
-            >
-              1
-            </button>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg text-xs font-semibold text-stone-700 hover:bg-muted"
-            >
-              2
-            </button>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg text-xs font-semibold text-stone-700 hover:bg-muted"
-            >
-              3
-            </button>
-            <span className="px-1 text-base text-stone-700">...</span>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg text-xs font-semibold text-stone-700 hover:bg-muted"
-            >
-              49
-            </button>
-            <button
-              type="button"
-              className="flex size-8 items-center justify-center rounded-lg text-stone-700 hover:bg-muted"
+              className="flex size-8 items-center justify-center rounded-lg text-stone-700 hover:bg-muted disabled:opacity-30"
+              disabled={pagination.current_page >= lastPage || listQuery.isFetching}
+              onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
               aria-label="Next page"
             >
               <ChevronRight className="size-3.5" />
@@ -490,6 +503,12 @@ export default function Payments() {
           </div>
         </div>
       </section>
+
+      <PaymentDetailsModal
+        open={selectedPayment !== null}
+        onClose={() => setSelectedPayment(null)}
+        payment={selectedPayment}
+      />
     </div>
   );
 }

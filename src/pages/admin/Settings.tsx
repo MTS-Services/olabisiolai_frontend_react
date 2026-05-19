@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building, Building2, Plus, Shield, User } from "lucide-react";
+import { Building, Building2, Shield, User } from "lucide-react";
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
@@ -218,38 +218,6 @@ export default function PlatformSettings() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-chat-border-subtle bg-card p-5">
-          <h2 className="text-2xl font-semibold text-ink">Team Hierarchy</h2>
-          <div className="mt-4 space-y-3">
-            <div>
-              <p className="text-3xl font-semibold leading-10 text-ink">Super Admin</p>
-              <p className="text-sm text-chat-meta">3 members</p>
-              <p className="text-xs text-success">Access: All pages</p>
-            </div>
-            <div>
-              <p className="text-3xl font-semibold leading-10 text-ink">Editor Unit</p>
-              <p className="text-sm text-chat-meta">5 members</p>
-              <p className="text-xs text-body-secondary">Access: Users, Reviews, Notifications</p>
-            </div>
-            <div>
-              <p className="text-3xl font-semibold leading-10 text-ink">Support Staff</p>
-              <p className="text-sm text-chat-meta">12 members</p>
-              <p className="text-xs text-body-secondary">Access: Leads, Businesses, Payments follow-up</p>
-            </div>
-            <div>
-              <p className="text-3xl font-semibold leading-10 text-ink">Verification Officer</p>
-              <p className="text-sm text-chat-meta">4 members</p>
-              <p className="text-xs text-brand-red">Access: Verification page only</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-chat-accent/30 bg-surface-soft px-3 py-2 text-sm font-semibold text-chat-accent hover:bg-surface-soft/70"
-          >
-            <Plus className="size-4" />
-            Add Admin Unit
-          </button>
-        </section>
       </div>
     </div>
   );

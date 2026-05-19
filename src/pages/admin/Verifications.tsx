@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { showError, showSuccess } from "@/lib/sweetAlert";
+import { alert, showError, showSuccess } from "@/lib/sweetAlert";
 
 import { FlagVerificationModal } from "@/components/Modal/FlagVerificationModal";
 import {
   adminApproveVerification,
+  adminDeleteVerification,
   adminFlagVerification,
   adminListVerifications,
   type AdminVerificationRow,
@@ -115,6 +116,25 @@ export default function VerificationGrid() {
       );
     } catch {
       showError("Could not approve verification.");
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const handleDelete = async (row: AdminVerificationRow) => {
+    const confirmed = await alert.confirmDelete(
+      `verification for "${row.business_name}"`,
+      "The vendor will no longer be verified.",
+    );
+    if (!confirmed) return;
+
+    setActingId(row.id);
+    try {
+      await adminDeleteVerification(row.id);
+      showSuccess(`${row.business_name} is no longer verified.`);
+      await load();
+    } catch {
+      showError("Could not remove verification.");
     } finally {
       setActingId(null);
     }
@@ -241,6 +261,20 @@ export default function VerificationGrid() {
                             Flag
                           </button>
                         </>
+                      ) : null}
+                      {row.verification_status === "approved" ||
+                        row.verification_status === "pending" ||
+                        row.is_flagged ? (
+                        <button
+                          type="button"
+                          disabled={actingId === row.id}
+                          onClick={() => void handleDelete(row)}
+                          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Remove verification"
+                        >
+                          <Trash2 className="size-3.5" />
+                          Delete
+                        </button>
                       ) : null}
                     </div>
                   </td>

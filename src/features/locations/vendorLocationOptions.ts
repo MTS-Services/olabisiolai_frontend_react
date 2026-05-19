@@ -135,34 +135,34 @@ export function parseBoostData(raw: unknown): ParsedLocationOption["boost"] {
 
   return {
     enabled: Boolean(record.enabled),
-    tiers: tiersRaw
-      .map((tier, index) => {
-        if (!tier || typeof tier !== "object") return null;
-        const tierRecord = tier as Record<string, unknown>;
-        const nestedDurations = Array.isArray(tierRecord.durations) ? tierRecord.durations : [];
-        const tierDurations = nestedDurations
-          .map((duration) => {
-            if (!duration || typeof duration !== "object") return null;
-            const durationRecord = duration as Record<string, unknown>;
-            return {
-              days: toNumber(durationRecord.days ?? durationRecord.duration_days),
-              enabled: Boolean(durationRecord.enabled ?? durationRecord.is_active ?? true),
-              priceAmount: toNumber(
-                durationRecord.price_amount ?? durationRecord.priceAmount ?? durationRecord.price,
-              ),
-            } satisfies BoostDurationView;
-          })
-          .filter((duration): duration is BoostDurationView => duration !== null && duration.days > 0);
+    tiers: tiersRaw.flatMap((tier, index): BoostTierView[] => {
+      if (!tier || typeof tier !== "object") return [];
+      const tierRecord = tier as Record<string, unknown>;
+      const nestedDurations = Array.isArray(tierRecord.durations) ? tierRecord.durations : [];
+      const tierDurations = nestedDurations
+        .map((duration) => {
+          if (!duration || typeof duration !== "object") return null;
+          const durationRecord = duration as Record<string, unknown>;
+          return {
+            days: toNumber(durationRecord.days ?? durationRecord.duration_days),
+            enabled: Boolean(durationRecord.enabled ?? durationRecord.is_active ?? true),
+            priceAmount: toNumber(
+              durationRecord.price_amount ?? durationRecord.priceAmount ?? durationRecord.price,
+            ),
+          } satisfies BoostDurationView;
+        })
+        .filter((duration): duration is BoostDurationView => duration !== null && duration.days > 0);
 
-        const totalSlots = toNumber(tierRecord.total_slots ?? tierRecord.totalSlots);
-        const slotsOccupied = toNumber(tierRecord.slots_occupied ?? tierRecord.slotsOccupied);
-        const slotsRemainingRaw = tierRecord.slots_remaining ?? tierRecord.slotsRemaining;
-        const slotsRemaining =
-          slotsRemainingRaw !== undefined && slotsRemainingRaw !== null
-            ? toNumber(slotsRemainingRaw)
-            : Math.max(0, totalSlots - slotsOccupied);
+      const totalSlots = toNumber(tierRecord.total_slots ?? tierRecord.totalSlots);
+      const slotsOccupied = toNumber(tierRecord.slots_occupied ?? tierRecord.slotsOccupied);
+      const slotsRemainingRaw = tierRecord.slots_remaining ?? tierRecord.slotsRemaining;
+      const slotsRemaining =
+        slotsRemainingRaw !== undefined && slotsRemainingRaw !== null
+          ? toNumber(slotsRemainingRaw)
+          : Math.max(0, totalSlots - slotsOccupied);
 
-        return {
+      return [
+        {
           key: readString(tierRecord.key) ?? `tier-${index + 1}`,
           label: readString(tierRecord.label) ?? readString(tierRecord.name) ?? `Tier ${index + 1}`,
           totalSlots,
@@ -174,9 +174,9 @@ export function parseBoostData(raw: unknown): ParsedLocationOption["boost"] {
               : totalSlots > 0 && slotsRemaining > 0,
           priceAmount: toNumber(tierRecord.price_amount ?? tierRecord.priceAmount ?? tierRecord.price),
           durations: tierDurations.length > 0 ? tierDurations : undefined,
-        } satisfies BoostTierView;
-      })
-      .filter((tier): tier is BoostTierView => tier !== null),
+        },
+      ];
+    }),
     durations: durationsRaw
       .map((duration) => {
         if (!duration || typeof duration !== "object") return null;

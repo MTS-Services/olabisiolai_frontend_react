@@ -57,6 +57,7 @@ const VENDOR_ROUTES: Record<string, string> = {
   new_message: '/vendor/leads',
   verification_approved: '/vendor/verification',
   verification_flagged: '/vendor/verification',
+  verification_revoked: '/vendor/verification',
   verification_submitted: '/vendor/verification',
   payment_completed: '/vendor/payments',
   system_announcement: '/vendor/notifications',

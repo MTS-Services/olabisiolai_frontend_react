@@ -54,10 +54,12 @@ function newMessageActivityCopy(d: Record<string, unknown>): { title: string; me
 }
 
 const VENDOR_ROUTES: Record<string, string> = {
-  new_message: '/messages',
+  new_message: '/vendor/leads',
   verification_approved: '/vendor/verification',
   verification_flagged: '/vendor/verification',
+  verification_submitted: '/vendor/verification',
   payment_completed: '/vendor/payments',
+  system_announcement: '/vendor/notifications',
 }
 
 const USER_ROUTES: Record<string, string> = {
@@ -101,7 +103,7 @@ export function toNotificationDisplay(item: StoredNotification): NotificationDis
 
   let href = resolveNotificationHref(type, d.action_url)
   if (type === 'new_message' && conversationUuid) {
-    href = `/messages?c=${encodeURIComponent(conversationUuid)}`
+    href = `/vendor/leads?c=${encodeURIComponent(conversationUuid)}`
   }
 
   return {

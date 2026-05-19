@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { NewConversationModal } from "@/features/messaging/NewConversationModal";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ import { flattenMessagesChronological } from "@/utils/flattenMessages";
 import { conversationToLead, messageToChatMessage } from "@/utils/vendorLeads";
 
 export default function VendorLeads() {
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const selfId = Number(user?.id ?? 0);
@@ -81,6 +83,15 @@ export default function VendorLeads() {
       showError("Could not load conversations");
     }
   }, [conversationsQuery.isError]);
+
+  useEffect(() => {
+    const conversationUuid = searchParams.get("c")?.trim();
+    if (!conversationUuid || !conversationsQuery.data?.length) return;
+    const match = conversationsQuery.data.find((c) => c.uuid === conversationUuid);
+    if (!match) return;
+    setChannelFilter("whatsapp");
+    setSelectedLeadId(match.uuid);
+  }, [searchParams, conversationsQuery.data]);
 
   useEffect(() => {
     if (channelFilter !== "whatsapp") return;

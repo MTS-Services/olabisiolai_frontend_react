@@ -1,13 +1,17 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, MapPin } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
 import { parseVendorLocationOptions } from "@/features/locations/vendorLocationOptions";
-import { VendorLocationBoostDetails } from "@/components/sections/vendor/shared/VendorLocationBoostDetails";
+import { fetchVendorBoostCatalog } from "@/features/boost/vendorBoostApi";
+import { VendorProfileActiveBoostCard } from "@/components/sections/vendor/profile/VendorProfileActiveBoostCard";
 import { useVendorProfileContext } from "@/components/sections/vendor/profile/VendorProfileContext";
+
+const PROFILE_BOOST_STATUSES = new Set(["active", "pending_admin", "pending_payment"]);
 
 function Label({ children }: { children: ReactNode }) {
   return (
@@ -67,6 +71,31 @@ export function VendorProfileLocationSection() {
     [parsedLocations, locationId],
   );
 
+  const { data: boostCatalog } = useQuery({
+    queryKey: ["vendor", "boost", "catalog"],
+    queryFn: fetchVendorBoostCatalog,
+    staleTime: 30_000,
+  });
+
+  const locationNumericId = Number(locationId);
+
+  const locationBoostCampaigns = useMemo(() => {
+    if (!Number.isFinite(locationNumericId) || locationNumericId <= 0) return [];
+    return (boostCatalog?.campaigns ?? []).filter(
+      (row) =>
+        row.location?.id === locationNumericId &&
+        row.display_status !== "extension_merged" &&
+        !row.is_extension_record &&
+        PROFILE_BOOST_STATUSES.has(row.display_status),
+    );
+  }, [boostCatalog?.campaigns, locationNumericId]);
+
+  const showBoostOnProfile =
+    locationBoostCampaigns.length > 0 ||
+    (boostCatalog?.pendingRequest != null &&
+      (boostCatalog.location?.id === locationId ||
+        boostCatalog.location?.id === String(locationNumericId)));
+
   if (!profile) return null;
 
   const state = selectedLocation?.state || profile.state || "";
@@ -110,19 +139,17 @@ export function VendorProfileLocationSection() {
         <Input value={lga} readOnly className="h-11 border-border-light bg-background text-sm shadow-sm" />
       </div>
 
-      {selectedLocation ? (
-        <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
-          <p className="text-sm font-semibold text-foreground">Boost options</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {selectedLocation.state} / {selectedLocation.city} / {selectedLocation.lga}
-          </p>
-          <VendorLocationBoostDetails location={selectedLocation} readOnly />
-          {profile.boostStatus === "active" ? (
-            <p className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
-              Your business currently has an active boost on this listing.
-            </p>
-          ) : null}
-        </div>
+      {selectedLocation && showBoostOnProfile ? (
+        <VendorProfileActiveBoostCard
+          campaigns={locationBoostCampaigns}
+          pendingRequest={
+            boostCatalog?.location?.id === locationId ||
+              boostCatalog?.location?.id === String(locationNumericId)
+              ? boostCatalog.pendingRequest
+              : null
+          }
+          locationLabel={`${selectedLocation.state} / ${selectedLocation.city} / ${selectedLocation.lga}`}
+        />
       ) : locationId ? (
         <div className="rounded-xl border border-amber-100 bg-amber-50/80 p-4 text-sm text-amber-900">
           Location details could not be matched to the catalog. Showing saved address:{" "}

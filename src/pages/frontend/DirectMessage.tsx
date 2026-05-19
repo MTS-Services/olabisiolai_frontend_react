@@ -17,17 +17,17 @@ export default function DirectMessage() {
 
   const paramC = searchParams.get("c");
   const state = location.state as
-    | { participantUserId?: number; from?: string }
+    | { participantUserUuid?: string; from?: string }
     | null;
   const from = state?.from;
 
   React.useEffect(() => {
-    const peerId = state?.participantUserId;
-    if (peerId == null || paramC || !isAuthenticated) return;
+    const peerUuid = state?.participantUserUuid?.trim().toUpperCase();
+    if (!peerUuid || paramC || !isAuthenticated) return;
     let cancelled = false;
     void (async () => {
       try {
-        const conv = await createConversation([peerId]);
+        const conv = await createConversation([peerUuid]);
         if (cancelled) return;
         navigate(
           `/messages?c=${encodeURIComponent(conv.uuid)}`,
@@ -40,7 +40,7 @@ export default function DirectMessage() {
     return () => {
       cancelled = true;
     };
-  }, [state?.participantUserId, state?.from, paramC, isAuthenticated, navigate]);
+  }, [state?.participantUserUuid, state?.from, paramC, isAuthenticated, navigate]);
 
   const goBack = () => {
     if (

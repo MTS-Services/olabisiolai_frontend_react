@@ -1,8 +1,17 @@
-import { Heart, MessageSquareText, Settings } from 'lucide-react'
+import { Heart, Loader2, MessageSquareText, Settings } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 
+import { fetchNotifications } from '@/api/notifications'
 import { useAuth } from '@/auth/useAuth'
 import { FrontendHeader } from '@/components/partials/frontend/FrontendHeader'
+import { QUERY_KEYS } from '@/constants/queryKeys'
+import {
+  formatNotificationTime,
+  toneDotClass,
+  toUserNotificationDisplay,
+} from '@/features/notifications/notificationDisplay'
+import { cn } from '@/lib/utils'
 
 const LOGO_FOOTER = '/images/landing/gidira-logo-footer.svg'
 
@@ -60,30 +69,24 @@ const statCards: StatCard[] = [
   },
 ]
 
-const activities = [
-  {
-    title: 'You got new message from David',
-    detail: 'Deep Tissue Massage with David',
-    time: '2 HOURS AGO',
-    dot: 'bg-chat-accent',
-  },
-  {
-    title: 'You have favorites Items',
-    detail: 'Check your favorites',
-    time: 'YESTERDAY',
-    dot: 'bg-chat-online-text',
-  },
-  {
-    title: 'New Services are available',
-    detail: 'Explore new services',
-    time: 'OCT 24',
-    dot: 'bg-activity-warning',
-  },
-] as const
+const RECENT_ACTIVITY_LIMIT = 5
 
 export default function UserDashboard() {
   const { user } = useAuth()
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Julian'
+
+  const activityQuery = useQuery({
+    queryKey: QUERY_KEYS.notifications({
+      page: 1,
+      perPage: RECENT_ACTIVITY_LIMIT,
+      unreadOnly: false,
+    }),
+    queryFn: () =>
+      fetchNotifications({ page: 1, perPage: RECENT_ACTIVITY_LIMIT, unreadOnly: false }),
+    staleTime: 15_000,
+  })
+
+  const activityItems = (activityQuery.data?.items ?? []).map(toUserNotificationDisplay)
 
   return (
     <div className="min-h-screen bg-auth-bg text-ink">
@@ -112,45 +115,83 @@ export default function UserDashboard() {
                   </p>
                 </>
               )
-              return (
-                card.to ? (
-                  <Link
-                    key={card.title}
-                    to={card.to}
-                    className="block rounded-xl bg-card p-5 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)] transition hover:opacity-95 sm:p-6"
-                  >
-                    {content}
-                  </Link>
-                ) : (
-                  <article
-                    key={card.title}
-                    className="rounded-xl bg-card p-5 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)] sm:p-6"
-                  >
-                    {content}
-                  </article>
-                )
+              return card.to ? (
+                <Link
+                  key={card.title}
+                  to={card.to}
+                  className="block rounded-xl bg-card p-5 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)] transition hover:opacity-95 sm:p-6"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <article
+                  key={card.title}
+                  className="rounded-xl bg-card p-5 shadow-[0_3px_6.1px_rgba(0,0,0,0.24)] sm:p-6"
+                >
+                  {content}
+                </article>
               )
             })}
           </div>
 
           <section className="mt-6">
-            <h3 className="font-heading text-3xl font-bold leading-8">
-              Recent Activity
-            </h3>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h3 className="font-heading text-3xl font-bold leading-8">Recent Activity</h3>
+              <Link
+                to="/user/activity"
+                className="text-sm font-semibold text-chat-accent hover:underline"
+              >
+                View all activity
+              </Link>
+            </div>
 
             <div className="mt-4 rounded-2xl bg-chat-input-bg px-4 py-5 sm:px-8 md:px-10 md:py-6">
-              <div className="space-y-6">
-                {activities.map((item) => (
-                  <div key={item.title} className="relative pl-5">
-                    <span className={`absolute left-0 top-1.5 size-2 rounded-full ${item.dot}`} />
-                    <p className="text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-chat-meta">{item.detail}</p>
-                    <p className="mt-0.5 text-[10px] font-semibold tracking-[1px] text-chat-meta/60">
-                      {item.time}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              {activityQuery.isError ? (
+                <p className="text-sm text-chat-meta">
+                  Could not load activity.{' '}
+                  <button
+                    type="button"
+                    className="font-semibold text-chat-accent underline"
+                    onClick={() => void activityQuery.refetch()}
+                  >
+                    Retry
+                  </button>
+                </p>
+              ) : activityQuery.isLoading ? (
+                <div className="flex items-center gap-2 py-6 text-chat-meta">
+                  <Loader2 className="size-5 animate-spin" aria-hidden />
+                  <span className="text-sm">Loading activity…</span>
+                </div>
+              ) : activityItems.length === 0 ? (
+                <p className="text-sm text-chat-meta">
+                  No recent activity yet. Messages and account updates will appear here.
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {activityItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={item.href}
+                      className="relative block pl-5 transition-opacity hover:opacity-90"
+                    >
+                      <span
+                        className={cn(
+                          'absolute left-0 top-1.5 size-2 rounded-full',
+                          toneDotClass(item.tone),
+                        )}
+                        aria-hidden
+                      />
+                      <p className="text-sm font-semibold">{item.title}</p>
+                      {item.message ? (
+                        <p className="text-xs text-chat-meta line-clamp-2">{item.message}</p>
+                      ) : null}
+                      <p className="mt-0.5 text-[10px] font-semibold tracking-[1px] text-chat-meta/60">
+                        {formatNotificationTime(item.createdAt).toUpperCase()}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </section>

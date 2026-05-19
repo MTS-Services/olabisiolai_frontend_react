@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { TYPING_DEBOUNCE_MS } from '@/constants/config'
 import type { Message } from '@/types/message'
 import { cn } from '@/lib/utils'
+import { getMessagePreviewText } from '@/utils/messageUtils'
 
 interface MessageInputProps {
   value: string
@@ -63,7 +64,7 @@ export function MessageInput({
       {replyingTo ? (
         <div className="mb-2 flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-xs">
           <span className="truncate text-chat-meta">
-            Replying to: {replyingTo.body?.slice(0, 80) ?? '…'}
+            Replying to: {getMessagePreviewText(replyingTo).slice(0, 80)}
           </span>
           <button type="button" aria-label="Cancel reply" onClick={onCancelReply}>
             <X className="size-4" />
@@ -78,7 +79,7 @@ export function MessageInput({
           </button>
         </div>
       ) : null}
-      <footer className="flex items-end gap-3 border-t border-chat-border-footer bg-card px-4 py-4 backdrop-blur-sm sm:px-6">
+      <footer className="flex items-end gap-2 border-t border-chat-border-footer bg-card px-3 py-3 backdrop-blur-sm sm:gap-3 sm:px-6 sm:py-4">
         <input
           ref={fileRef}
           type="file"
@@ -105,9 +106,8 @@ export function MessageInput({
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Type your message here..."
-            rows={1}
             disabled={disabled}
-            className="max-h-32 min-h-12 resize-none rounded-2xl border-0 bg-chat-input-bg py-3 pl-5 pr-12 text-sm text-ink placeholder:text-placeholder-text focus-visible:ring-2 focus-visible:ring-chat-accent-ring"
+            className="max-h-32 min-h-12 overflow-y-auto rounded-2xl border-0 bg-chat-input-bg py-3 pl-5 pr-12 text-sm text-ink scrollbar-hide placeholder:text-placeholder-text focus-visible:ring-2 focus-visible:ring-chat-accent-ring"
           />
           <div ref={emojiAnchorRef} className="absolute bottom-1.5 right-2">
             <Button
@@ -133,7 +133,7 @@ export function MessageInput({
           size="icon"
           disabled={disabled}
           className={cn(
-            'size-12 shrink-0 rounded-xl bg-chat-accent text-text-white shadow-md hover:opacity-90',
+            'size-11 shrink-0 rounded-xl bg-chat-accent text-text-white shadow-md hover:opacity-90 sm:size-12',
           )}
           aria-label="Send message"
           onClick={onSend}

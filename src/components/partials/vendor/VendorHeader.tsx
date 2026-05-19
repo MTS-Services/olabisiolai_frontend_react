@@ -1,6 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Bell,
   CircleUserRound,
   Home,
   LayoutGrid,
@@ -26,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { VendorNotificationBell } from "@/components/partials/vendor/VendorNotificationBell";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/vendor/logo.jpeg";
 
@@ -56,8 +56,16 @@ function HeaderToolbar() {
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-      <Bell className="size-6" />
-      <Settings className="size-6" />
+      <VendorNotificationBell />
+      <Button
+        type="button"
+        variant="ghost"
+        className="h-10 w-10 rounded-xl p-0"
+        aria-label="Settings"
+        onClick={() => navigate("/vendor/settings")}
+      >
+        <Settings className="size-5" />
+      </Button>
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -224,11 +232,14 @@ export function VendorHeader({ onMenuClick }: { onMenuClick?: () => void }) {
             </div>
           </Link>
 
-          <MobileMenu
-            showTradeNav={showTradeNav}
-            isAuthenticated={isAuthenticated}
-            logout={logout}
-          />
+          <div className="flex items-center gap-1">
+            <VendorNotificationBell />
+            <MobileMenu
+              showTradeNav={showTradeNav}
+              isAuthenticated={isAuthenticated}
+              logout={logout}
+            />
+          </div>
         </div>
 
         {showHeaderSearch ? <HeaderSearch /> : null}

@@ -6,4 +6,6 @@ export const ECHO_EVENTS = {
   userTyping: '.user.typing',
   newMessage: '.new_message',
   userPresence: '.user.presence',
+  /** Generic app notification (verification, payment, admin alerts). */
+  appNotification: '.app.notification',
 } as const

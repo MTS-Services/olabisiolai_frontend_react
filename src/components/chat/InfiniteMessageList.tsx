@@ -1,11 +1,10 @@
 import * as React from 'react'
-import { useVirtualizer } from '@tanstack/react-virtual'
 import { Loader2 } from 'lucide-react'
 
 import { MessageBubble } from '@/components/chat/MessageBubble'
+import { CHAT_NEAR_BOTTOM_PX } from '@/constants/config'
 import type { MessagesPage } from '@/features/messaging/types'
 import type { Message } from '@/types/message'
-import { cn } from '@/lib/utils'
 import { formatDaySeparator, isSameDay } from '@/utils/formatters'
 import { flattenMessagesChronological } from '@/utils/flattenMessages'
 
@@ -37,6 +36,10 @@ function buildRows(messages: Message[]): Row[] {
   return rows
 }
 
+function isNearBottom(el: HTMLElement): boolean {
+  return el.scrollHeight - el.scrollTop - el.clientHeight < CHAT_NEAR_BOTTOM_PX
+}
+
 export function InfiniteMessageList({
   pages,
   hasNextPage,
@@ -57,84 +60,138 @@ export function InfiniteMessageList({
   onDelete: (m: Message) => void
 }) {
   const scrollRef = React.useRef<HTMLDivElement>(null)
+  const initialScrollDone = React.useRef(false)
+  const prependingRef = React.useRef(false)
+  const prependAnchor = React.useRef({ scrollHeight: 0, scrollTop: 0 })
+  const listSnapshot = React.useRef<{ first: string | null; last: string | null }>({
+    first: null,
+    last: null,
+  })
+
   const chronological = React.useMemo(
     () => flattenMessagesChronological(pages),
     [pages],
   )
   const rows = React.useMemo(() => buildRows(chronological), [chronological])
 
-  const virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: (index) => (rows[index]?.kind === 'day' ? 36 : 92),
-    overscan: 12,
-  })
+  const messageByUuid = React.useMemo(() => {
+    const map = new Map<string, Message>()
+    for (const m of chronological) {
+      map.set(m.uuid, m)
+    }
+    return map
+  }, [chronological])
+
+  const [highlightUuid, setHighlightUuid] = React.useState<string | null>(null)
+  const highlightTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  )
+
+  const resolveParentMessage = React.useCallback(
+    (message: Message): Message | null => {
+      if (message.parent) return message.parent
+      if (!message.parent_uuid) return null
+      return messageByUuid.get(message.parent_uuid) ?? null
+    },
+    [messageByUuid],
+  )
+
+  const scrollToMessage = React.useCallback((uuid: string) => {
+    const el = scrollRef.current
+    if (!el) return
+    const target = el.querySelector(`[data-message-uuid="${uuid}"]`)
+    if (!target) return
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setHighlightUuid(uuid)
+    if (highlightTimer.current) clearTimeout(highlightTimer.current)
+    highlightTimer.current = setTimeout(() => setHighlightUuid(null), 2000)
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      if (highlightTimer.current) clearTimeout(highlightTimer.current)
+    }
+  }, [])
+
+  const loadOlder = React.useCallback(() => {
+    const el = scrollRef.current
+    if (!el || !hasNextPage || isFetchingNextPage) return
+    prependingRef.current = true
+    prependAnchor.current = {
+      scrollHeight: el.scrollHeight,
+      scrollTop: el.scrollTop,
+    }
+    void fetchNextPage()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const onScroll = React.useCallback(() => {
     const el = scrollRef.current
-    if (!el || !hasNextPage || isFetchingNextPage) return
+    if (!el) return
     if (el.scrollTop < 80) {
-      void fetchNextPage()
+      loadOlder()
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+  }, [loadOlder])
 
   React.useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    el.addEventListener('scroll', onScroll)
+    el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
   }, [onScroll])
 
-  const lastLen = React.useRef(chronological.length)
-  const prevPageCount = React.useRef(0)
   React.useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el || chronological.length === 0) return
-    if (pages.length === 1 && prevPageCount.current === 0) {
-      el.scrollTop = el.scrollHeight
-    }
-    prevPageCount.current = pages.length
-  }, [pages.length, chronological.length])
 
-  React.useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    if (chronological.length > lastLen.current) {
-      const last = chronological[chronological.length - 1]
-      if (last && last.sender.id === selfUserId) {
+    const first = chronological[0]?.uuid ?? null
+    const last = chronological[chronological.length - 1]?.uuid ?? null
+    const snap = listSnapshot.current
+
+    if (!initialScrollDone.current) {
+      el.scrollTop = el.scrollHeight
+      initialScrollDone.current = true
+    } else if (prependingRef.current && first !== snap.first) {
+      const delta = el.scrollHeight - prependAnchor.current.scrollHeight
+      el.scrollTop = prependAnchor.current.scrollTop + delta
+      prependingRef.current = false
+    } else if (last !== snap.last) {
+      const newest = chronological[chronological.length - 1]
+      const shouldStick =
+        newest != null &&
+        (isNearBottom(el) || newest.sender.id === selfUserId)
+      if (shouldStick) {
         el.scrollTop = el.scrollHeight
       }
     }
-    lastLen.current = chronological.length
-  }, [chronological, selfUserId])
 
-  const v = virtualizer
+    if (prependingRef.current && !isFetchingNextPage && first === snap.first) {
+      prependingRef.current = false
+    }
+
+    listSnapshot.current = { first, last }
+  }, [chronological, selfUserId, isFetchingNextPage])
 
   return (
     <div
       ref={scrollRef}
-      className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-8 md:px-8"
+      className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-5 sm:px-6 sm:py-8 md:px-8"
     >
       {isFetchingNextPage ? (
         <div className="flex justify-center py-2">
           <Loader2 className="size-6 animate-spin text-chat-meta" />
         </div>
+      ) : hasNextPage ? (
+        <p className="pb-2 text-center text-[11px] text-chat-meta">
+          Scroll up for older messages
+        </p>
       ) : null}
-      <div
-        className="relative w-full"
-        style={{ height: `${v.getTotalSize()}px` }}
-      >
-        {v.getVirtualItems().map((vi) => {
-          const row = rows[vi.index]
-          if (!row) return null
+      <div className="flex w-full min-w-0 flex-col">
+        {rows.map((row) => {
           if (row.kind === 'day') {
             return (
               <div
                 key={row.key}
-                className={cn(
-                  'absolute left-0 right-0 flex items-center gap-4 py-1',
-                )}
-                style={{ transform: `translateY(${vi.start}px)` }}
+                className="flex w-full items-center gap-4 py-2"
               >
                 <div className="h-px flex-1 bg-chat-border-subtle" />
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-chat-meta">
@@ -145,18 +202,17 @@ export function InfiniteMessageList({
             )
           }
           return (
-            <div
-              key={row.message.uuid}
-              className="absolute left-0 right-0 py-1"
-              style={{ transform: `translateY(${vi.start}px)` }}
-            >
+            <div key={row.message.uuid} className="w-full min-w-0 py-1">
               <MessageBubble
                 message={row.message}
+                parentMessage={resolveParentMessage(row.message)}
                 isOwn={row.message.sender.id === selfUserId}
                 showAvatar={row.showAvatar}
+                highlighted={highlightUuid === row.message.uuid}
                 onReply={() => onReply(row.message)}
                 onEdit={() => onEdit(row.message)}
                 onDelete={() => onDelete(row.message)}
+                onScrollToParent={scrollToMessage}
               />
             </div>
           )
@@ -165,3 +221,4 @@ export function InfiniteMessageList({
     </div>
   )
 }
+

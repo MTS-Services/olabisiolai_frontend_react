@@ -6,6 +6,7 @@ import { TYPING_INDICATOR_CLEAR_MS } from '@/constants/config'
 import {
   appendOrMergeMessageInCache,
   removeMessageFromCache,
+  upsertOwnMessageInCache,
 } from '@/features/messaging/messageCache'
 import { applyNewMessagePreview } from '@/features/messaging/conversationCache'
 import { useEcho } from '@/hooks/useEcho'
@@ -51,7 +52,11 @@ export function useMessagingRealtime(
       convId,
       {
         onMessageSent: (msg) => {
-          appendOrMergeMessageInCache(queryClient, uuid, msg)
+          if (typeof selfUserId === 'number' && msg.sender.id === selfUserId) {
+            upsertOwnMessageInCache(queryClient, uuid, msg)
+          } else {
+            appendOrMergeMessageInCache(queryClient, uuid, msg)
+          }
           if (typeof selfUserId === 'number' && selfUserId > 0) {
             applyNewMessagePreview(queryClient, uuid, msg, {
               selfUserId,

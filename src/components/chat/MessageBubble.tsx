@@ -3,6 +3,7 @@ import { MoreHorizontal, Pencil } from 'lucide-react'
 
 import { AttachmentPreview } from '@/components/chat/AttachmentPreview'
 import { MessageStatusIcon } from '@/components/chat/MessageStatusIcon'
+import { ReplyQuote } from '@/components/chat/ReplyQuote'
 import { Avatar } from '@/components/ui/Avatar'
 import type { Message } from '@/types/message'
 import { cn } from '@/lib/utils'
@@ -10,26 +11,58 @@ import { formatMessageTime } from '@/utils/formatters'
 
 interface MessageBubbleProps {
   message: Message
+  parentMessage?: Message | null
   isOwn: boolean
   showAvatar: boolean
+  highlighted?: boolean
   onReply: () => void
   onEdit: () => void
   onDelete: () => void
+  onScrollToParent: (uuid: string) => void
 }
 
 export const MessageBubble = React.memo(function MessageBubble({
   message,
+  parentMessage,
   isOwn,
   showAvatar,
+  highlighted = false,
   onReply,
   onEdit,
   onDelete,
+  onScrollToParent,
 }: MessageBubbleProps) {
   const [menu, setMenu] = React.useState(false)
+  const menuRef = React.useRef<HTMLDivElement>(null)
+  const bubbleRef = React.useRef<HTMLDivElement>(null)
+
+  const replyParent = parentMessage ?? message.parent ?? null
+
+  React.useEffect(() => {
+    if (!menu) return
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (menuRef.current?.contains(target)) return
+      if (bubbleRef.current?.contains(target)) {
+        const actionsBtn = (target as HTMLElement).closest(
+          '[aria-label="Message actions"]',
+        )
+        if (actionsBtn) return
+      }
+      setMenu(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [menu])
 
   return (
     <div
-      className={cn('group flex gap-3', isOwn ? 'justify-end' : 'justify-start')}
+      ref={bubbleRef}
+      className={cn(
+        'group flex w-full min-w-0 gap-2 sm:gap-3',
+        isOwn ? 'justify-end' : 'justify-start',
+        highlighted && 'animate-pulse rounded-lg ring-2 ring-chat-accent/60',
+      )}
       data-message-uuid={message.uuid}
     >
       {!isOwn && showAvatar ? (
@@ -41,10 +74,15 @@ export const MessageBubble = React.memo(function MessageBubble({
       ) : !isOwn ? (
         <div className="size-8 shrink-0" aria-hidden />
       ) : null}
-      <div className={cn('min-w-0 max-w-md', isOwn && 'flex flex-col items-end')}>
+      <div
+        className={cn(
+          'flex min-w-0 w-full max-w-[min(100%,18rem)] flex-col sm:max-w-md',
+          isOwn ? 'ml-auto items-end' : 'mr-auto',
+        )}
+      >
         <div
           className={cn(
-            'rounded-2xl px-4 py-3 shadow-sm',
+            'w-full rounded-2xl px-3 py-2.5 shadow-sm sm:px-4 sm:py-3',
             isOwn
               ? 'rounded-br-md bg-chat-accent text-text-white sm:rounded-br-2xl'
               : 'rounded-bl-md bg-chat-bubble-them text-ink sm:rounded-bl-2xl',
@@ -56,13 +94,17 @@ export const MessageBubble = React.memo(function MessageBubble({
             setMenu(true)
           }}
         >
-          {message.parent_uuid ? (
-            <p className="mb-2 border-l-2 border-chat-accent pl-2 text-xs opacity-80">
-              Replying to a message
-            </p>
+          {replyParent ? (
+            <ReplyQuote
+              parent={replyParent}
+              isOwn={isOwn}
+              onScrollToParent={onScrollToParent}
+            />
           ) : null}
           {message.body ? (
-            <p className="whitespace-pre-wrap text-sm leading-5">{message.body}</p>
+            <p className="whitespace-pre-wrap wrap-anywhere text-sm leading-5">
+              {message.body}
+            </p>
           ) : null}
           <AttachmentPreview items={message.attachments} />
           {message.edited_at ? (
@@ -96,27 +138,46 @@ export const MessageBubble = React.memo(function MessageBubble({
         </div>
         {menu ? (
           <div
+            ref={menuRef}
             className={cn(
               'mt-1 flex gap-2 rounded-lg border border-chat-border bg-card p-2 text-xs shadow-md',
               isOwn ? 'justify-end' : '',
             )}
           >
-            <button type="button" className="hover:underline" onClick={() => { onReply(); setMenu(false) }}>
+            <button
+              type="button"
+              className="hover:underline"
+              onClick={() => {
+                onReply()
+                setMenu(false)
+              }}
+            >
               Reply
             </button>
             {isOwn ? (
-              <button type="button" className="hover:underline" onClick={() => { onEdit(); setMenu(false) }}>
+              <button
+                type="button"
+                className="hover:underline"
+                onClick={() => {
+                  onEdit()
+                  setMenu(false)
+                }}
+              >
                 Edit
               </button>
             ) : null}
             {isOwn ? (
-              <button type="button" className="text-destructive hover:underline" onClick={() => { onDelete(); setMenu(false) }}>
+              <button
+                type="button"
+                className="text-destructive hover:underline"
+                onClick={() => {
+                  onDelete()
+                  setMenu(false)
+                }}
+              >
                 Delete
               </button>
             ) : null}
-            <button type="button" className="hover:underline" onClick={() => setMenu(false)}>
-              Close
-            </button>
           </div>
         ) : null}
       </div>

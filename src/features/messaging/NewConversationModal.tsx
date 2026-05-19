@@ -15,15 +15,15 @@ export function NewConversationModal({
   onClose: () => void
   onCreated: (uuid: string) => void
 }) {
-  const [userId, setUserId] = React.useState('')
+  const [userUuid, setUserUuid] = React.useState('')
   const qc = useQueryClient()
   const m = useMutation({
-    mutationFn: () => createConversation([Number(userId)]),
+    mutationFn: () => createConversation([userUuid.trim().toUpperCase()]),
     onSuccess: (c) => {
       void qc.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
       onCreated(c.uuid)
       onClose()
-      setUserId('')
+      setUserUuid('')
     },
     onError: () => showError('Could not start conversation'),
   })
@@ -35,14 +35,16 @@ export function NewConversationModal({
       <div className="w-full max-w-md rounded-2xl border border-chat-border bg-card p-6 shadow-xl">
         <h3 className="text-lg font-bold text-ink">New direct message</h3>
         <p className="mt-2 text-sm text-chat-meta">
-          Enter the other participant&apos;s numeric user ID.
+          Enter the other participant&apos;s user UUID.
         </p>
         <input
-          type="number"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          className="mt-4 h-11 w-full rounded-xl border border-chat-border bg-chat-input-bg px-3 text-sm"
-          placeholder="User ID"
+          type="text"
+          value={userUuid}
+          onChange={(e) => setUserUuid(e.target.value.toUpperCase())}
+          className="mt-4 h-11 w-full rounded-xl border border-chat-border bg-chat-input-bg px-3 font-mono text-sm uppercase tracking-wide"
+          placeholder="User UUID"
+          autoCapitalize="characters"
+          spellCheck={false}
         />
         <div className="mt-6 flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>
@@ -51,7 +53,7 @@ export function NewConversationModal({
           <Button
             type="button"
             className="bg-chat-accent text-text-white"
-            disabled={!userId || m.isPending}
+            disabled={!userUuid.trim() || m.isPending}
             onClick={() => m.mutate()}
           >
             Start

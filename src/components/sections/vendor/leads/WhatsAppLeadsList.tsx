@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
@@ -9,19 +10,33 @@ export function WhatsAppLeadsList({
   onSelectLead,
   searchQuery = "",
   onSearchChange,
+  onNewConversation,
 }: {
   leads: Lead[];
   selectedLeadId: string;
   onSelectLead: (id: string) => void;
   searchQuery?: string;
   onSearchChange?: (q: string) => void;
+  onNewConversation?: () => void;
 }) {
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId);
 
   return (
     <div className="border-b border-neutral-200 bg-[#F3F3FE] lg:border-b-0 lg:border-r">
       <div className="space-y-4 p-4 md:p-5">
-        <h2 className="text-base font-bold text-foreground">Messages</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-base font-bold text-foreground">Messages</h2>
+          {onNewConversation ? (
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 shrink-0 rounded-full bg-sky-600 px-3 text-xs text-white hover:bg-sky-600/90"
+              onClick={onNewConversation}
+            >
+              New
+            </Button>
+          ) : null}
+        </div>
         <div className="relative">
           <Search
             className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"

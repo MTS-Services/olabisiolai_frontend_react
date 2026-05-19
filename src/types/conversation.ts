@@ -16,6 +16,7 @@ export interface ConversationParticipant {
   is_muted: boolean
   user: {
     id: number
+    uuid?: string
     name: string
     presence: ParticipantPresence | null
   } | null

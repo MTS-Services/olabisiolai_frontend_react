@@ -1,5 +1,15 @@
-import { ChevronDown, Download, Plus, X } from "lucide-react";
+import { ChevronDown, Download, Loader2, Plus, X } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+
+import {
+  approveAdminBoostRequest,
+  fetchAdminBoostRequests,
+  rejectAdminBoostRequest,
+  type AdminBoostRequestRow,
+} from "@/features/boost/adminBoostRequestsApi";
+import { showError, showSuccess } from "@/lib/sweetAlert";
+import { getLaravelErrorMessage } from "@/lib/laravelApiError";
 
 type SlotOption = { label: string; value: string; max: number };
 
@@ -152,6 +162,82 @@ const BOOST_PLANS = [
   },
 ] as const;
 
+function PendingBoostRequestsPanel() {
+  const queryClient = useQueryClient();
+  const { data: pending = [], isPending } = useQuery({
+    queryKey: ["admin", "boost-requests", "pending"],
+    queryFn: () => fetchAdminBoostRequests("pending_admin"),
+    staleTime: 15_000,
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: (id: number) => approveAdminBoostRequest(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin", "boost-requests"] });
+      showSuccess("Boost request approved.");
+    },
+    onError: (error: unknown) => showError(getLaravelErrorMessage(error, "Approval failed.")),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (id: number) => rejectAdminBoostRequest(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin", "boost-requests"] });
+      showSuccess("Boost request rejected.");
+    },
+    onError: (error: unknown) => showError(getLaravelErrorMessage(error, "Rejection failed.")),
+  });
+
+  return (
+    <section className="mb-4 rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4">
+      <h3 className="text-base font-semibold text-ink">Pending boost confirmations</h3>
+      <p className="text-sm text-chat-meta">Vendors who paid premium + boost or submitted a boost upgrade.</p>
+      {isPending ? (
+        <div className="mt-4 flex justify-center py-6">
+          <Loader2 className="size-6 animate-spin text-chat-accent" />
+        </div>
+      ) : pending.length === 0 ? (
+        <p className="mt-3 text-sm text-chat-meta">No requests awaiting approval.</p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {pending.map((row: AdminBoostRequestRow) => (
+            <li
+              key={row.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-chat-border-subtle bg-card px-3 py-2.5 text-sm"
+            >
+              <div>
+                <p className="font-semibold text-ink">{row.business?.business_name ?? "Business"}</p>
+                <p className="text-xs text-chat-meta">
+                  {row.tier_label} · {row.duration_days} days · {row.location?.label ?? row.location?.lga} · ₦
+                  {row.amount.toLocaleString()}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-md bg-success px-3 py-1.5 text-xs font-semibold text-white"
+                  disabled={approveMutation.isPending}
+                  onClick={() => approveMutation.mutate(row.id)}
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-semibold text-destructive"
+                  disabled={rejectMutation.isPending}
+                  onClick={() => rejectMutation.mutate(row.id)}
+                >
+                  Reject
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default function BoostSystem() {
   const [slotOpen, setSlotOpen] = useState(false);
   const [slotValue, setSlotValue] = useState("5");
@@ -255,6 +341,8 @@ export default function BoostSystem() {
           </article>
         </div>
       </section>
+
+      <PendingBoostRequestsPanel />
 
       <section className="mb-4 rounded-2xl border border-chat-border-subtle bg-card p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

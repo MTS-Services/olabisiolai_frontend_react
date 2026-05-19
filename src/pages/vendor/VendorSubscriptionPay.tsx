@@ -22,6 +22,10 @@ import {
   type FlutterwaveCallbackResponse,
 } from "@/features/payments/flutterwaveResponse";
 import {
+  readBoostCheckoutSelection,
+  clearBoostCheckoutSelection,
+} from "@/features/boost/boostCheckoutSession";
+import {
   confirmSubscriptionPayment,
   fetchSubscriptionPackages,
   initSubscriptionPayment,
@@ -81,8 +85,11 @@ export default function VendorSubscriptionPayPage() {
     staleTime: 30_000,
   });
 
+  const boostSelection = readBoostCheckoutSelection();
   const premiumPackage = packagesData?.packages[0];
-  const amountNgn = checkout?.amount ?? premiumPackage?.amount ?? 25000;
+  const premiumBase = premiumPackage?.amount ?? 25000;
+  const boostAddon = boostSelection?.amount ?? 0;
+  const amountNgn = checkout?.amount ?? premiumBase + boostAddon;
 
   useEffect(() => {
     if (profileInitDone) return;
@@ -199,6 +206,7 @@ export default function VendorSubscriptionPayPage() {
           await trySaveProfileFromResponse(response);
           closePaymentModal();
           persistCheckout(null);
+          clearBoostCheckoutSelection();
           localStorage.setItem("vendorPlan", "premium");
           localStorage.setItem("vendorBusinessCreated", "true");
           void queryClient.invalidateQueries({ queryKey: ["vendor"] });
@@ -245,7 +253,11 @@ export default function VendorSubscriptionPayPage() {
 
       let pay = checkout;
       if (!pay) {
-        pay = await initSubscriptionPayment();
+        pay = await initSubscriptionPayment(
+          boostSelection
+            ? { tierKey: boostSelection.tierKey, durationDays: boostSelection.durationDays }
+            : undefined,
+        );
         persistCheckout(pay);
       }
 
@@ -316,6 +328,14 @@ export default function VendorSubscriptionPayPage() {
             isPaying={isPaying || packagesLoading}
             planTitle={premiumPackage?.title ?? "Premium"}
             totalAmount={amountNgn}
+            boostLine={
+              boostSelection
+                ? {
+                  label: `${boostSelection.tierLabel} · ${boostSelection.durationDays} days`,
+                  amount: boostSelection.amount,
+                }
+                : null
+            }
             isVerification={false}
             beforePayButton={
               <label className="flex cursor-pointer items-start gap-2 text-xs text-muted-foreground">

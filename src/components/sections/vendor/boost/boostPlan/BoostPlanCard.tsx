@@ -58,7 +58,27 @@ const getSlotDotColor = (slotStatus: Plan["slotStatus"]) => {
   return slotStatus === "available" ? "bg-green-500" : "bg-red-500";
 };
 
-export function BoostPlanCard({ plan }: { plan: Plan }) {
+export type BoostPlanSelection = {
+  planId: string;
+  planTitle: string;
+  durationLabel: string;
+  durationDays: number;
+  priceLabel: string;
+  amount: number;
+};
+
+export function BoostPlanCard({
+  plan,
+  durationAmounts,
+  onSelect,
+  disabled,
+}: {
+  plan: Plan;
+  /** Map duration label (e.g. "7 Days") to numeric amount — from location LGA config */
+  durationAmounts?: Record<string, number>;
+  onSelect?: (selection: BoostPlanSelection) => void;
+  disabled?: boolean;
+}) {
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState(
     plan.pricingOptions.length - 1,
@@ -100,11 +120,10 @@ export function BoostPlanCard({ plan }: { plan: Plan }) {
           {plan.pricingOptions.map((option, index) => (
             <label
               key={index}
-              className={`flex items-center gap-3 bg-white border-2 rounded-xl px-4 py-2.5 cursor-pointer transition-colors ${
-                selectedOption === index
+              className={`flex items-center gap-3 bg-white border-2 rounded-xl px-4 py-2.5 cursor-pointer transition-colors ${selectedOption === index
                   ? `${getRadioBorder(plan.colorScheme)} bg-gray-50`
                   : "border-gray-200"
-              }`}
+                }`}
             >
               <input
                 type="radio"
@@ -155,8 +174,33 @@ export function BoostPlanCard({ plan }: { plan: Plan }) {
           ))}
         </ul>
         <button
-          onClick={() => navigate("/vendor/review-pay")}
-          className={`w-full ${getButtonClasses(plan.colorScheme)} active:scale-[0.98] transition-all text-white font-bold text-sm py-3.5 rounded-xl`}
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            const option = plan.pricingOptions[selectedOption];
+            if (!option) return;
+
+            const durationDays = Number.parseInt(option.duration, 10) || 0;
+            const amount =
+              durationAmounts?.[option.duration] ??
+              Number(option.price.replace(/[^\d]/g, "")) ??
+              0;
+
+            if (onSelect) {
+              onSelect({
+                planId: plan.id,
+                planTitle: plan.title,
+                durationLabel: option.duration,
+                durationDays,
+                priceLabel: option.price,
+                amount,
+              });
+              return;
+            }
+
+            navigate("/vendor/review-pay");
+          }}
+          className={`w-full ${getButtonClasses(plan.colorScheme)} active:scale-[0.98] transition-all text-white font-bold text-sm py-3.5 rounded-xl disabled:cursor-not-allowed disabled:opacity-60`}
         >
           {plan.cta}
         </button>

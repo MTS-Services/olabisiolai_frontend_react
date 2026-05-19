@@ -60,9 +60,18 @@ export async function fetchSubscriptionStatus(): Promise<{
   return res.data.data;
 }
 
-export async function initSubscriptionPayment(): Promise<SubscriptionPayment> {
+export async function initSubscriptionPayment(boost?: {
+  tierKey: string;
+  durationDays: number;
+}): Promise<SubscriptionPayment> {
   const res = await request.post<ApiEnvelope<{ payment: SubscriptionPayment }>>(
     '/vendor/subscription/payment/init',
+    boost
+      ? {
+        boost_tier_key: boost.tierKey,
+        boost_duration_days: boost.durationDays,
+      }
+      : undefined,
   );
   return res.data.data.payment;
 }

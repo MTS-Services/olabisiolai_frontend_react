@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import { BoostConfigureHeader } from "@/components/sections/vendor/boost/boostConfigure/BoostConfigureHeader";
 import { BoostScheduleCard } from "@/components/sections/vendor/boost/boostConfigure/BoostScheduleCard";
 import { EstimatedReachCard } from "@/components/sections/vendor/boost/boostConfigure/EstimatedReachCard";
 import { TargetLocationCard } from "@/components/sections/vendor/boost/boostConfigure/TargetLocationCard";
+import { fetchVendorBoostCatalog } from "@/features/boost/vendorBoostApi";
 import VendorBoostReviewPayPage from "./VendorBoostReviewPay";
 
 type VendorPlan = "free" | "premium";
@@ -14,6 +17,15 @@ export default function VendorBoostConfigurePage() {
   });
 
   const isPremium = plan === "premium";
+
+  const { data: catalog } = useQuery({
+    queryKey: ["vendor", "boost", "catalog"],
+    queryFn: fetchVendorBoostCatalog,
+    enabled: isPremium,
+    staleTime: 30_000,
+  });
+
+  const activeLocation = useMemo(() => catalog?.location ?? null, [catalog?.location]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -34,7 +46,7 @@ export default function VendorBoostConfigurePage() {
 
           <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
             <div className="space-y-4">
-              <TargetLocationCard />
+              <TargetLocationCard location={activeLocation} readOnly />
               <BoostScheduleCard />
             </div>
 

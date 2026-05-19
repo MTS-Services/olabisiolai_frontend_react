@@ -1,5 +1,6 @@
 import {
   formatNaira,
+  formatTierPriceRange,
   type ParsedLocationOption,
 } from "@/features/locations/vendorLocationOptions";
 
@@ -20,8 +21,6 @@ export function VendorLocationBoostDetails({ location, readOnly = true }: Vendor
     );
   }
 
-  const enabledDurations = boost.durations.filter((d) => d.enabled);
-
   return (
     <div className="mt-4 space-y-3">
       <div className="grid gap-2 sm:grid-cols-3">
@@ -40,40 +39,38 @@ export function VendorLocationBoostDetails({ location, readOnly = true }: Vendor
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase text-muted-foreground">Top slots & price</p>
+        <p className="text-xs font-semibold uppercase text-muted-foreground">Top slots & pricing</p>
         {boost.tiers.length > 0 ? (
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="grid gap-2">
             {boost.tiers.map((tier) => (
               <li
                 key={tier.key}
                 className="rounded-md border border-sky-100 bg-white px-3 py-2 text-xs text-foreground"
               >
-                <span className="font-semibold">{tier.label}</span>
-                <span className="text-muted-foreground"> · Slots: {tier.totalSlots}</span>
-                <span className="text-muted-foreground"> · Price: {formatNaira(tier.priceAmount)}</span>
+                <p className="font-semibold">{tier.label}</p>
+                <p className="text-muted-foreground">Slots: {tier.totalSlots}</p>
+                <p className="mt-1 text-muted-foreground">
+                  {formatTierPriceRange(tier, boost.durations)}
+                </p>
+                {tier.durations && tier.durations.length > 0 ? (
+                  <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                    {tier.durations
+                      .filter((d) => d.enabled && d.priceAmount > 0)
+                      .map((d) => (
+                        <li
+                          key={`${tier.key}-${d.days}`}
+                          className="rounded border border-sky-50 bg-sky-50/50 px-2 py-0.5"
+                        >
+                          {d.days}d — {formatNaira(d.priceAmount)}
+                        </li>
+                      ))}
+                  </ul>
+                ) : null}
               </li>
             ))}
           </ul>
         ) : (
           <p className="text-xs text-muted-foreground">No top slot config found for this location.</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase text-muted-foreground">Durations</p>
-        {enabledDurations.length > 0 ? (
-          <ul className="flex flex-wrap gap-2">
-            {enabledDurations.map((duration) => (
-              <li
-                key={duration.days}
-                className="rounded-md border border-sky-100 bg-white px-2.5 py-1 text-xs text-foreground"
-              >
-                {duration.days} days — {formatNaira(duration.priceAmount)}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs text-muted-foreground">No duration pricing configured.</p>
         )}
       </div>
 

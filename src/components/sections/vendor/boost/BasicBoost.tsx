@@ -1,15 +1,19 @@
+import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const mockPlans = [
-  { name: "Basic Boost", price: "$29", features: ["7 days visibility", "Basic analytics"] },
-  { name: "Premium Boost", price: "$79", features: ["30 days visibility", "Advanced analytics", "Priority placement"] },
-  { name: "Enterprise Boost", price: "$199", features: ["90 days visibility", "Full analytics", "Top placement", "Dedicated support"] },
-];
+import { buildPlansFromLocationBoost } from "@/features/boost/locationBoostPlans";
+import type { ParsedLocationOption } from "@/features/locations/vendorLocationOptions";
+import { formatNaira } from "@/features/locations/vendorLocationOptions";
 
-export function BasicBoost() {
+export function BasicBoost({ previewLocation = null }: { previewLocation?: ParsedLocationOption | null }) {
   const navigate = useNavigate();
+
+  const previewPlans = useMemo(() => {
+    if (!previewLocation?.boost?.enabled) return [];
+    return buildPlansFromLocationBoost(previewLocation).slice(0, 3);
+  }, [previewLocation]);
 
   const handleUpgradeClick = () => {
     navigate("/vendor/premium-payment");
@@ -40,7 +44,18 @@ export function BasicBoost() {
 
           {/* Plan Cards */}
           <div className="grid grid-cols-3 gap-4 mb-5">
-            {mockPlans.map((plan, index) => (
+            {(previewPlans.length > 0
+              ? previewPlans.map((plan) => ({
+                name: plan.title,
+                price: plan.pricingOptions[0]?.price ?? formatNaira(0),
+                features: plan.features.filter((f) => f.checked).map((f) => f.text),
+              }))
+              : [
+                { name: "Top 5 Boost", price: "—", features: ["Location-based pricing"] },
+                { name: "Top 3 Boost", price: "—", features: ["Select your LGA first"] },
+                { name: "Top 1 Exclusive", price: "—", features: ["Unlock with Premium"] },
+              ]
+            ).map((plan, index) => (
               <div key={index} className="bg-muted rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-2">{plan.name}</h3>
                 <p className="text-2xl font-bold mb-3">{plan.price}</p>

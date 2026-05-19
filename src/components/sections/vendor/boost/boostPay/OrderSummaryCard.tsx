@@ -11,6 +11,7 @@ export function OrderSummaryCard({
   planTitle = "Visibility Pro Plus",
   totalAmount = 5000,
   isVerification = false,
+  boostLine,
   beforePayButton,
 }: {
   onConfirmPay?: () => void;
@@ -18,6 +19,7 @@ export function OrderSummaryCard({
   planTitle?: string;
   totalAmount?: number;
   isVerification?: boolean;
+  boostLine?: { label: string; amount: number } | null;
   /** Optional slot for checkboxes / notices above Pay Now */
   beforePayButton?: ReactNode;
 }) {
@@ -60,6 +62,15 @@ export function OrderSummaryCard({
             <p className="text-base font-semibold">{planTitle}</p>
           </div>
         </div>
+
+        {boostLine && boostLine.amount > 0 ? (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Boost add-on ({boostLine.label})</span>
+            <span className="font-semibold text-foreground">
+              {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(boostLine.amount)}
+            </span>
+          </div>
+        ) : null}
 
         <div className="flex items-center justify-between border-t pt-3">
           <span className="text-lg font-semibold">Total Price</span>

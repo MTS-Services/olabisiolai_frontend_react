@@ -24,6 +24,7 @@ import {
 } from "@/features/payments/flutterwaveResponse";
 import {
   readBoostCheckoutSelection,
+  readPremiumBundledBoostSelection,
   clearBoostCheckoutSelection,
 } from "@/features/boost/boostCheckoutSession";
 import {
@@ -168,7 +169,15 @@ export default function VendorSubscriptionPayPage() {
     retry: 1,
   });
 
-  const boostSelection = readBoostCheckoutSelection();
+  const [boostSelection, setBoostSelection] = useState(() => readPremiumBundledBoostSelection());
+
+  useEffect(() => {
+    const stored = readBoostCheckoutSelection();
+    if (stored && !stored.bundledWithPremium) {
+      clearBoostCheckoutSelection();
+    }
+    setBoostSelection(readPremiumBundledBoostSelection());
+  }, []);
   const premiumPackage = packagesData?.packages[0];
   const premiumBase = premiumPackage?.amount ?? 25000;
   const boostAddon = boostSelection?.amount ?? 0;
@@ -396,6 +405,12 @@ export default function VendorSubscriptionPayPage() {
     trySaveProfileFromResponse,
   ]);
 
+  const onRemoveBoostAddon = () => {
+    clearBoostCheckoutSelection();
+    setBoostSelection(null);
+    persistCheckout(null);
+  };
+
   const onConfirmPay = async () => {
     if (selectedMethod === "bank") {
       showInfo("Bank transfer checkout is coming soon. Please use Card for now.");
@@ -505,18 +520,29 @@ export default function VendorSubscriptionPayPage() {
             }
             isVerification={false}
             beforePayButton={
-              <label className="flex cursor-pointer items-start gap-2 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 size-4 rounded border"
-                  checked={saveProfileAfterPay}
-                  onChange={(e) => setSaveProfileAfterPay(e.target.checked)}
-                />
-                <span>
-                  After a successful card payment, save masked card details and billing as a default checkout profile
-                  (last 4 digits only; never your full card number).
-                </span>
-              </label>
+              <div className="space-y-2">
+                {boostSelection ? (
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-brand-red underline"
+                    onClick={onRemoveBoostAddon}
+                  >
+                    Remove boost add-on (pay premium only)
+                  </button>
+                ) : null}
+                <label className="flex cursor-pointer items-start gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-4 rounded border"
+                    checked={saveProfileAfterPay}
+                    onChange={(e) => setSaveProfileAfterPay(e.target.checked)}
+                  />
+                  <span>
+                    After a successful card payment, save masked card details and billing as a default checkout
+                    profile (last 4 digits only; never your full card number).
+                  </span>
+                </label>
+              </div>
             }
           />
         </div>

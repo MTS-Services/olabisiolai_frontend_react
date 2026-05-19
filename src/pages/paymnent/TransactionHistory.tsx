@@ -34,7 +34,7 @@ function purposeBadgeClass(purpose: string) {
   const p = purpose.toLowerCase();
   if (p === "subscription") return "bg-violet-100 text-violet-900";
   if (p === "verification") return "bg-sky-100 text-sky-900";
-  if (p === "boost") return "bg-amber-100 text-amber-900";
+  if (p === "boosting" || p === "boost") return "bg-amber-100 text-amber-900";
   return "bg-slate-100 text-slate-800";
 }
 
@@ -143,7 +143,7 @@ export function TransactionHistory() {
                   <option value="">All types</option>
                   <option value="subscription">Subscription</option>
                   <option value="verification">Verification</option>
-                  <option value="boost">Boost</option>
+                  <option value="boosting">Boosting</option>
                 </select>
               </label>
               <label className="flex items-center gap-2 text-sm text-muted-foreground">

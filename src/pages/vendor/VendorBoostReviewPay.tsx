@@ -211,6 +211,8 @@ export default function VendorBoostReviewPayPage() {
       const result = await confirmVendorBoostPayment(paymentId, gatewayTransactionId);
       clearBoostCheckoutSelection();
       void queryClient.invalidateQueries({ queryKey: ["vendor", "boost", "catalog"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor", "business"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor", "business", "profile"] });
       navigate("/vendor/boost", { replace: true });
       showSuccess(
         result.message ||
@@ -408,6 +410,7 @@ export default function VendorBoostReviewPayPage() {
         const { payment } = await initVendorBoostPayment({
           tierKey: boostSelection.tierKey,
           durationDays: boostSelection.durationDays,
+          locationId: boostSelection.locationId,
           renewType: boostSelection.renewType,
           sourceCampaignId: boostSelection.sourceCampaignId,
         });

@@ -3,6 +3,8 @@ import { request } from '@/api/request';
 export type VendorPaymentListItem = {
   id: number;
   purpose: string;
+  /** Payment reference type (same as purpose; e.g. boosting, subscription, verification). */
+  reference_type?: string;
   purpose_label: string;
   description: string;
   amount: number;

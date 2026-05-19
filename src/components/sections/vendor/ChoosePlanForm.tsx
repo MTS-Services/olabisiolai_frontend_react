@@ -391,7 +391,9 @@ export default function ChoosePlanForm() {
         : null;
 
     if (boostCheckout && isPremiumPlanSelected()) {
-      saveBoostCheckoutSelection(boostCheckout);
+      saveBoostCheckoutSelection(boostCheckout, { bundledWithPremium: true });
+    } else {
+      clearBoostCheckoutSelection();
     }
 
     createBusinessMutation.mutate({
@@ -613,47 +615,47 @@ export default function ChoosePlanForm() {
                         {selectedLocation.boost.tiers.map((tier) => {
                           const tierAvailable = isTierSlotAvailable(tier);
                           return (
-                          <li
-                            key={tier.key}
-                            className={cn(
-                              "rounded-md border bg-white px-3 py-2 text-xs text-foreground",
-                              tierAvailable ? "border-sky-100" : "border-red-200 bg-red-50/50 opacity-80",
-                            )}
-                          >
-                            <label
+                            <li
+                              key={tier.key}
                               className={cn(
-                                "flex flex-wrap items-center gap-2",
-                                tierAvailable ? "cursor-pointer" : "cursor-not-allowed",
+                                "rounded-md border bg-white px-3 py-2 text-xs text-foreground",
+                                tierAvailable ? "border-sky-100" : "border-red-200 bg-red-50/50 opacity-80",
                               )}
                             >
-                              <input
-                                type="checkbox"
-                                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
-                                checked={selectedTopSlotKey === tier.key}
-                                disabled={!tierAvailable}
-                                onChange={(e) => {
-                                  if (!tierAvailable) return;
-                                  setSelectedTopSlotKey(e.target.checked ? tier.key : "");
-                                  setFieldErrors((prev) => {
-                                    const next = { ...prev };
-                                    delete next.boost_tier;
-                                    delete next.boost_duration;
-                                    return next;
-                                  });
-                                }}
-                              />
-                              <span className="font-semibold">{tier.label}</span>
-                              <span className={tierAvailable ? "text-muted-foreground" : "text-red-700"}>
-                                {tierSlotStatusLabel(tier)}
-                              </span>
-                              <span className="text-muted-foreground">
-                                Price:{" "}
-                                {selectedLocation.boost
-                                  ? formatTierPriceRange(tier, selectedLocation.boost.durations)
-                                  : formatNaira(tier.priceAmount)}
-                              </span>
-                            </label>
-                          </li>
+                              <label
+                                className={cn(
+                                  "flex flex-wrap items-center gap-2",
+                                  tierAvailable ? "cursor-pointer" : "cursor-not-allowed",
+                                )}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                                  checked={selectedTopSlotKey === tier.key}
+                                  disabled={!tierAvailable}
+                                  onChange={(e) => {
+                                    if (!tierAvailable) return;
+                                    setSelectedTopSlotKey(e.target.checked ? tier.key : "");
+                                    setFieldErrors((prev) => {
+                                      const next = { ...prev };
+                                      delete next.boost_tier;
+                                      delete next.boost_duration;
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <span className="font-semibold">{tier.label}</span>
+                                <span className={tierAvailable ? "text-muted-foreground" : "text-red-700"}>
+                                  {tierSlotStatusLabel(tier)}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  Price:{" "}
+                                  {selectedLocation.boost
+                                    ? formatTierPriceRange(tier, selectedLocation.boost.durations)
+                                    : formatNaira(tier.priceAmount)}
+                                </span>
+                              </label>
+                            </li>
                           );
                         })}
                       </ul>

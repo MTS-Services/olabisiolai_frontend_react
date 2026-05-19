@@ -53,7 +53,9 @@ export type BoostRenewType = "extend" | "boost_again";
 
 export type BoostPaymentSession = {
   id: number;
-  purpose: string;
+  /** Always `boosting` for boost checkout payments. */
+  purpose: 'boosting' | string;
+  reference_type?: string;
   package_id: string;
   amount: number;
   currency: string;
@@ -82,14 +84,21 @@ export async function resumeVendorBoostPayment(requestId: number): Promise<{
 export async function initVendorBoostPayment(params: {
   tierKey: string;
   durationDays: number;
+  locationId?: string | number;
   renewType?: BoostRenewType;
   sourceCampaignId?: number;
 }): Promise<{ payment: BoostPaymentSession; message: string }> {
+  const locationId =
+    params.locationId !== undefined && params.locationId !== ""
+      ? Number(params.locationId)
+      : undefined;
+
   const res = await request.post<
     ApiEnvelope<{ payment: BoostPaymentSession; request: unknown }>
   >("/vendor/boost/payment/init", {
     tier_key: params.tierKey,
     duration_days: params.durationDays,
+    location_id: locationId && Number.isFinite(locationId) ? locationId : undefined,
     renew_type: params.renewType,
     source_campaign_id: params.sourceCampaignId,
   });
@@ -120,14 +129,21 @@ export async function confirmVendorBoostPayment(
 export async function submitVendorBoostRequest(params: {
   tierKey: string;
   durationDays: number;
+  locationId?: string | number;
   renewType?: BoostRenewType;
   sourceCampaignId?: number;
 }): Promise<{ message: string; campaigns: BoostCampaignRow[] }> {
+  const locationId =
+    params.locationId !== undefined && params.locationId !== ""
+      ? Number(params.locationId)
+      : undefined;
+
   const res = await request.post<
     ApiEnvelope<{ request: unknown; campaigns: BoostCampaignRow[] }>
   >("/vendor/boost/request", {
     tier_key: params.tierKey,
     duration_days: params.durationDays,
+    location_id: locationId && Number.isFinite(locationId) ? locationId : undefined,
     renew_type: params.renewType,
     source_campaign_id: params.sourceCampaignId,
   });

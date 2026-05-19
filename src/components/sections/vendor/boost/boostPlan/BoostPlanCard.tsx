@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 import type { BoostPlanCampaignStatus } from "@/features/boost/boostCampaignTypes";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ export function BoostPlanCard({
   durationAmounts,
   onSelect,
   disabled,
+  isSubmitting = false,
   highlighted = false,
   defaultDurationDays,
   campaignStatus = null,
@@ -87,6 +89,7 @@ export function BoostPlanCard({
   durationAmounts?: Record<string, number>;
   onSelect?: (selection: BoostPlanSelection) => void;
   disabled?: boolean;
+  isSubmitting?: boolean;
   highlighted?: boolean;
   defaultDurationDays?: number;
   campaignStatus?: BoostPlanCampaignStatus | null;
@@ -258,7 +261,10 @@ export function BoostPlanCard({
         <button
           type="button"
           disabled={
-            disabled || isPendingPlan || (plan.slotStatus === "occupied" && !isActivePlan && !isExpiredPlan)
+            disabled ||
+            isSubmitting ||
+            isPendingPlan ||
+            (plan.slotStatus === "occupied" && !isActivePlan && !isExpiredPlan)
           }
           onClick={() => {
             if (plan.slotStatus === "occupied" && !isActivePlan) {
@@ -296,17 +302,22 @@ export function BoostPlanCard({
                 : getButtonClasses(plan.colorScheme),
           )}
         >
-          {isAwaitingPayment
-            ? "Continue Payment"
-            : isActivePlan
-              ? "Extend Boost"
-              : isExpiredPlan
-                ? "Boost Again"
-                : isPendingPlan
-                  ? campaignStatus?.awaitingPayment
-                    ? "Continue Payment"
-                    : "Pending approval"
-                  : plan.cta}
+          {isSubmitting ? (
+            <span className="inline-flex items-center justify-center gap-2">
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              Processing…
+            </span>
+          ) : isAwaitingPayment ? (
+            "Continue Payment"
+          ) : isActivePlan ? (
+            "Extend Boost"
+          ) : isExpiredPlan ? (
+            "Boost Again"
+          ) : isPendingPlan ? (
+            campaignStatus?.awaitingPayment ? "Continue Payment" : "Pending approval"
+          ) : (
+            plan.cta
+          )}
         </button>
       </div>
     </div>

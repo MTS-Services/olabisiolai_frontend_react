@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -26,30 +26,24 @@ import {
 } from "@/features/boost/boostCampaignTypes";
 import {
   fetchVendorBoostCatalog,
-  submitVendorBoostRequest,
   type BoostRenewType,
 } from "@/features/boost/vendorBoostApi";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
+import { fetchVendorOnboardingStatus } from "@/features/subscription/vendorOnboardingApi";
 import { parseVendorLocationOptions } from "@/features/locations/vendorLocationOptions";
-import { showError, showSuccess } from "@/lib/sweetAlert";
-import { getLaravelErrorMessage } from "@/lib/laravelApiError";
+import { showError } from "@/lib/sweetAlert";
 import { cn } from "@/lib/utils";
-
-type VendorPlan = "free" | "premium";
-
-function useVendorPlan(): VendorPlan {
-  const [plan] = useState<VendorPlan>(() => {
-    const savedPlan = localStorage.getItem("vendorPlan");
-    return savedPlan === "premium" ? "premium" : "free";
-  });
-  return plan;
-}
 
 export default function VendorBoost() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const plan = useVendorPlan();
-  const isPremium = plan === "premium";
+
+  const { data: onboarding } = useQuery({
+    queryKey: ["vendor", "onboarding", "status"],
+    queryFn: fetchVendorOnboardingStatus,
+    staleTime: 30_000,
+  });
+
+  const isPremium = onboarding?.subscription?.is_premium_active === true;
 
   const { data: catalog, isPending: catalogLoading } = useQuery({
     queryKey: ["vendor", "boost", "catalog"],
@@ -74,6 +68,9 @@ export default function VendorBoost() {
     tierKey: string;
     durationDays: number;
   } | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const campaigns = catalog?.campaigns ?? [];
 
   useEffect(() => {
     if (defaultLocationId && !selectedLocationId) {
@@ -158,37 +155,51 @@ export default function VendorBoost() {
     tierLabel: string;
     durationDays: number;
     amount: number;
-    renewType: BoostRenewType;
-    sourceCampaignId: number;
+    renewType?: BoostRenewType;
+    sourceCampaignId?: number;
   }) => {
     if (!activeLocation) {
       showError("Select a location first.");
       return;
     }
 
-    if (catalog?.pendingRequest?.status === "pending_admin") {
+    if (catalog?.pendingRequest?.status === "pending_admin" && !checkout.renewType) {
       showError("You already have a boost request awaiting admin approval.");
       return;
     }
 
-    const existingUnpaid = campaigns.find(
-      (campaign) =>
-        campaign.can_continue_payment &&
+    const existingUnpaid = campaigns.find((campaign) => {
+      if (!campaign.can_continue_payment) return false;
+      if (!checkout.renewType) {
+        return (
+          campaign.tier_key === checkout.tierKey &&
+          !campaign.renew_type &&
+          campaign.duration_days === checkout.durationDays
+        );
+      }
+      return (
         campaign.renew_type === checkout.renewType &&
         (checkout.renewType !== "extend" ||
-          campaign.source_campaign_id === checkout.sourceCampaignId),
-    );
+          campaign.source_campaign_id === checkout.sourceCampaignId)
+      );
+    });
 
     if (existingUnpaid) {
       continueBoostPayment(existingUnpaid);
       return;
     }
 
+    setIsCheckingOut(true);
     saveBoostCheckoutSelection(
       {
         locationId: activeLocation.id,
         locationLabel: activeLocation.label,
-        ...checkout,
+        tierKey: checkout.tierKey,
+        tierLabel: checkout.tierLabel,
+        durationDays: checkout.durationDays,
+        amount: checkout.amount,
+        renewType: checkout.renewType,
+        sourceCampaignId: checkout.sourceCampaignId,
       },
       { standalonePayment: true },
     );
@@ -223,19 +234,6 @@ export default function VendorBoost() {
     });
   };
 
-  const submitBoostMutation = useMutation({
-    mutationFn: submitVendorBoostRequest,
-    onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: ["vendor", "boost", "catalog"] });
-      setRenewContext(null);
-      setHighlightPlanId(null);
-      showSuccess(result.message);
-    },
-    onError: (error: unknown) => {
-      showError(getLaravelErrorMessage(error, "Unable to submit boost request."));
-    },
-  });
-
   const handlePlanSelect = (selection: BoostPlanSelection) => {
     if (!activeLocation) {
       showError("Select a location first.");
@@ -261,14 +259,17 @@ export default function VendorBoost() {
     }
 
     if (!catalog?.isPremiumActive) {
-      saveBoostCheckoutSelection({
-        locationId: activeLocation.id,
-        locationLabel: activeLocation.label,
-        tierKey: selection.planId,
-        tierLabel: selection.planTitle,
-        durationDays: selection.durationDays,
-        amount: selection.amount,
-      });
+      saveBoostCheckoutSelection(
+        {
+          locationId: activeLocation.id,
+          locationLabel: activeLocation.label,
+          tierKey: selection.planId,
+          tierLabel: selection.planTitle,
+          durationDays: selection.durationDays,
+          amount: selection.amount,
+        },
+        { bundledWithPremium: true },
+      );
       navigate("/vendor/premium-payment");
       return;
     }
@@ -295,7 +296,6 @@ export default function VendorBoost() {
       return;
     }
 
-    const campaigns = catalog?.campaigns ?? [];
     const activeRow = campaigns.find(
       (row) => row.tier_key === selection.planId && row.display_status === "active",
     );
@@ -353,13 +353,13 @@ export default function VendorBoost() {
       return;
     }
 
-    submitBoostMutation.mutate({
+    goToBoostPayment({
       tierKey: selection.planId,
+      tierLabel: selection.planTitle,
       durationDays: selection.durationDays,
+      amount: selection.amount,
     });
   };
-
-  const campaigns = catalog?.campaigns ?? [];
 
   return (
     <div className={cn("p-4", "md:p-6")}>
@@ -465,12 +465,13 @@ export default function VendorBoost() {
                       catalog?.pendingRequest,
                     )}
                     onSelect={handlePlanSelect}
+                    isSubmitting={isCheckingOut}
                     highlighted={highlightPlanId === boostPlan.id}
                     defaultDurationDays={
                       renewContext?.tierKey === boostPlan.id ? renewContext.durationDays : undefined
                     }
                     disabled={
-                      submitBoostMutation.isPending ||
+                      isCheckingOut ||
                       (catalog?.pendingRequest?.status === "pending_admin" && !renewContext) ||
                       (!renewContext &&
                         !locationHasAnyBoostSlot(activeLocation) &&

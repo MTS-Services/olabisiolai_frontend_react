@@ -53,6 +53,10 @@ export default function VendorPaymentDetailPage() {
             </div>
             <dl className="grid gap-3 sm:grid-cols-2">
               <div>
+                <dt className="text-xs font-semibold uppercase text-muted-foreground">Reference type</dt>
+                <dd className="font-medium capitalize">{p.reference_type ?? p.purpose}</dd>
+              </div>
+              <div>
                 <dt className="text-xs font-semibold uppercase text-muted-foreground">Purpose</dt>
                 <dd className="font-medium">{p.purpose_label}</dd>
               </div>

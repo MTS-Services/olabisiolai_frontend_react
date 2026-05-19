@@ -6,6 +6,7 @@ import {
   primeVerificationDocumentSession,
   type VerificationStatusPayload,
 } from "@/features/verification/vendorVerificationApi";
+import { formatNaira } from "@/lib/currency";
 
 type Props = {
   status: VerificationStatusPayload | null;
@@ -21,7 +22,7 @@ export function VerificationDocumentSubmissionPrompt({ status }: Props) {
   const purchased = status.purchased_package;
   const planTitle = purchased?.title ?? "verification plan";
   const amountLabel =
-    purchased?.amount != null ? `₦${purchased.amount.toLocaleString()}` : null;
+    purchased?.amount != null ? formatNaira(purchased.amount, { freeLabel: false }) : null;
 
   const goToDocumentUpload = () => {
     primeVerificationDocumentSession(status);

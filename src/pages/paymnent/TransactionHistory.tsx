@@ -11,16 +11,9 @@ import {
 } from "@/features/vendor/vendorPaymentsApi";
 import { getLaravelErrorMessage } from "@/lib/laravelApiError";
 import { showError, showSuccess } from "@/lib/sweetAlert";
+import { formatMoney } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { Download, Eye, Loader2 } from "lucide-react";
-
-function formatMoney(amount: number, currency: string) {
-  try {
-    return new Intl.NumberFormat("en-NG", { style: "currency", currency }).format(amount);
-  } catch {
-    return `${currency} ${amount.toFixed(2)}`;
-  }
-}
 
 function formatWhen(row: VendorPaymentListItem) {
   const raw = row.paid_at_iso ?? row.created_at;

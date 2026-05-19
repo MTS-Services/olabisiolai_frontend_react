@@ -18,6 +18,7 @@ import {
   type AddLocationWizardSubmit,
 } from '@/components/admin/locations/AddLocationWizardModal'
 import { env } from '@/config/env'
+import { formatNaira as formatNairaAmount } from '@/lib/currency'
 import { alert, showError } from '@/lib/sweetAlert'
 import {
   adminStoreLocation,
@@ -156,12 +157,8 @@ function mapsPreviewUrl(lat: number, lng: number): string {
 }
 
 function formatNaira(n: number): string {
-  if (!Number.isFinite(n) || n <= 0) return '—'
-  try {
-    return `₦${new Intl.NumberFormat('en-NG').format(Math.round(n))}`
-  } catch {
-    return `₦${Math.round(n).toLocaleString()}`
-  }
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  return formatNairaAmount(n, { freeLabel: false });
 }
 
 /** Representative boost price for table column (max tier price). */

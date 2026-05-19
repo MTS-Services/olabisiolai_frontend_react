@@ -32,9 +32,21 @@ import {
 import { billingFromUser, billingFromVendorPaymentMethod } from "@/features/vendor/vendorBillingProfile";
 import { createVendorPaymentMethod, fetchVendorPaymentMethods } from "@/features/vendor/vendorPaymentsApi";
 import type { VendorPaymentMethod } from "@/features/vendor/vendorPaymentsApi";
+import {
+  clearBoostCheckoutSelection,
+  readBoostCheckoutSelection,
+} from "@/features/boost/boostCheckoutSession";
+import {
+  confirmVendorBoostPayment,
+  initVendorBoostPayment,
+  resumeVendorBoostPayment,
+  type BoostPaymentSession,
+} from "@/features/boost/vendorBoostApi";
 import { getLaravelErrorMessage } from "@/lib/laravelApiError";
 
 const PLAN_STORAGE_KEY = "verificationPlanId";
+
+type CheckoutPayment = VerificationPayment | BoostPaymentSession;
 
 function redirectToDocumentUpload(
   navigate: ReturnType<typeof useNavigate>,
@@ -51,7 +63,7 @@ export default function VendorBoostReviewPayPage() {
   const queryClient = useQueryClient();
   const [selectedMethod, setSelectedMethod] = useState<"card" | "bank">("card");
   const [isPaying, setIsPaying] = useState(false);
-  const [checkoutPayment, setCheckoutPayment] = useState<VerificationPayment | null>(null);
+  const [checkoutPayment, setCheckoutPayment] = useState<CheckoutPayment | null>(null);
   const [shouldOpenFlutterwave, setShouldOpenFlutterwave] = useState(false);
   const [billing, setBilling] = useState<BillingFormValues>(() => billingFromUser(null));
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
@@ -60,6 +72,8 @@ export default function VendorBoostReviewPayPage() {
   const { user } = useAuth();
 
   const isVerification = sessionStorage.getItem("paymentSource") === "verification";
+  const boostSelection = readBoostCheckoutSelection();
+  const isBoostCheckout = !isVerification && boostSelection !== null;
   const packageId = (sessionStorage.getItem(PLAN_STORAGE_KEY) as PlanId | null) ?? "individual";
   const selectedPlan = plans.find((p) => p.id === packageId) ?? plans[0];
 
@@ -102,11 +116,23 @@ export default function VendorBoostReviewPayPage() {
   }, [user, profileInitDone, selectedProfileId]);
 
   const apiPackage = packagesData?.packages.find((p) => p.id === packageId);
-  const amountNgn =
-    checkoutPayment?.amount ??
-    apiPackage?.amount ??
-    Number(selectedPlan.amount.replace(/,/g, "")) ??
-    5000;
+  const amountNgn = isBoostCheckout
+    ? (checkoutPayment?.amount ?? boostSelection?.amount ?? 0)
+    : (checkoutPayment?.amount ??
+      apiPackage?.amount ??
+      Number(selectedPlan.amount.replace(/,/g, "")) ??
+      5000);
+
+  const boostPlanTitle = boostSelection
+    ? `${boostSelection.tierLabel} · ${boostSelection.durationDays} days`
+    : "Boost campaign";
+
+  const boostActionLabel =
+    boostSelection?.renewType === "extend"
+      ? "Extend boost"
+      : boostSelection?.renewType === "boost_again"
+        ? "Boost again"
+        : "Boost purchase";
 
   useEffect(() => {
     if (!isVerification || !verificationStatus?.awaiting_document_submission) {
@@ -116,11 +142,47 @@ export default function VendorBoostReviewPayPage() {
     redirectToDocumentUpload(navigate, verificationStatus);
   }, [isVerification, navigate, verificationStatus]);
 
+  useEffect(() => {
+    if (isVerification || isBoostCheckout) {
+      return;
+    }
+    navigate("/vendor/boost", { replace: true });
+  }, [isBoostCheckout, isVerification, navigate]);
+
+  const isResumingBoostPayment = Boolean(isBoostCheckout && boostSelection?.requestId);
+
+  useEffect(() => {
+    if (!isBoostCheckout || !boostSelection?.requestId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const { payment } = await resumeVendorBoostPayment(boostSelection.requestId!);
+        if (!cancelled) {
+          setCheckoutPayment(payment);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          showError(getLaravelErrorMessage(error, "Unable to resume boost payment."));
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isBoostCheckout, boostSelection?.requestId]);
+
   const customerEmail = billing.email.trim() || user?.email || "guest@gidira.app";
   const customerPhone = billing.phone.trim() || "08000000000";
   const customerName = billing.cardholder_name.trim() || "Gidira Vendor";
 
-  const flutterwaveTxRef = checkoutPayment?.tx_ref ?? `verification_pending_${packageId}`;
+  const flutterwaveTxRef =
+    checkoutPayment?.tx_ref ??
+    (isBoostCheckout ? `boost_pending_${boostSelection?.tierKey ?? "plan"}` : `verification_pending_${packageId}`);
 
   const handleFlutterPayment = useFlutterwave({
     public_key: env.flutterwavePublicKey,
@@ -135,10 +197,28 @@ export default function VendorBoostReviewPayPage() {
     },
     customizations: {
       title: isVerification ? "Gidira Verification Payment" : "Gidira Boost Payment",
-      description: isVerification ? "Verification package" : "Boost plan purchase",
+      description: isVerification
+        ? "Verification package"
+        : boostSelection?.renewType === "extend"
+          ? "Extend boost campaign"
+          : "Boost plan purchase",
       logo: "/favicon.ico",
     },
   });
+
+  const completeBoostCheckout = useCallback(
+    async (paymentId: number, gatewayTransactionId: string) => {
+      const result = await confirmVendorBoostPayment(paymentId, gatewayTransactionId);
+      clearBoostCheckoutSelection();
+      void queryClient.invalidateQueries({ queryKey: ["vendor", "boost", "catalog"] });
+      navigate("/vendor/boost", { replace: true });
+      showSuccess(
+        result.message ||
+        "Payment received. An admin will assign your boost — your campaign will extend once approved.",
+      );
+    },
+    [navigate, queryClient],
+  );
 
   const completeVerificationCheckout = useCallback(
     async (paymentId: number, gatewayTransactionId: string) => {
@@ -232,11 +312,15 @@ export default function VendorBoostReviewPayPage() {
             return;
           }
 
-          await completeVerificationCheckout(resolvedPaymentId, txId);
+          if (isBoostCheckout) {
+            await completeBoostCheckout(resolvedPaymentId, txId);
+          } else {
+            await completeVerificationCheckout(resolvedPaymentId, txId);
+            showSuccess("Payment confirmed. Upload your documents next.");
+          }
           await trySaveProfileFromResponse(response);
           void queryClient.invalidateQueries({ queryKey: ["vendor", "payments"] });
           closePaymentModal();
-          showSuccess("Payment confirmed. Upload your documents next.");
         } catch (error) {
           const recovered = await recoverAfterConfirmFailure();
           if (recovered) {
@@ -262,6 +346,8 @@ export default function VendorBoostReviewPayPage() {
     handleFlutterPayment,
     recoverAfterConfirmFailure,
     completeVerificationCheckout,
+    completeBoostCheckout,
+    isBoostCheckout,
     trySaveProfileFromResponse,
     queryClient,
   ]);
@@ -277,8 +363,9 @@ export default function VendorBoostReviewPayPage() {
       return;
     }
 
-    if (!isVerification) {
-      showInfo("Boost payment API is not wired yet.");
+    if (!isVerification && !isBoostCheckout) {
+      showError("No boost checkout found. Select a plan from the boost page first.");
+      navigate("/vendor/boost", { replace: true });
       return;
     }
 
@@ -300,6 +387,35 @@ export default function VendorBoostReviewPayPage() {
 
     try {
       setIsPaying(true);
+
+      if (isBoostCheckout && boostSelection) {
+        if (
+          checkoutPayment &&
+          checkoutPayment.status === "pending" &&
+          !checkoutPayment.is_consumed
+        ) {
+          setShouldOpenFlutterwave(true);
+          return;
+        }
+
+        if (boostSelection.requestId) {
+          const { payment } = await resumeVendorBoostPayment(boostSelection.requestId);
+          setCheckoutPayment(payment);
+          setShouldOpenFlutterwave(true);
+          return;
+        }
+
+        const { payment } = await initVendorBoostPayment({
+          tierKey: boostSelection.tierKey,
+          durationDays: boostSelection.durationDays,
+          renewType: boostSelection.renewType,
+          sourceCampaignId: boostSelection.sourceCampaignId,
+        });
+        setCheckoutPayment(payment);
+        setShouldOpenFlutterwave(true);
+        return;
+      }
+
       clearVerificationPaymentSession();
 
       const payment = await initVerificationPayment(packageId);
@@ -347,9 +463,24 @@ export default function VendorBoostReviewPayPage() {
           <OrderSummaryCard
             onConfirmPay={() => void onConfirmPay()}
             isPaying={isPaying}
-            planTitle={isVerification ? (apiPackage?.title ?? selectedPlan.title) : "Visibility Pro Plus"}
+            confirmLabel={isResumingBoostPayment ? "Continue Payment" : undefined}
+            planTitle={
+              isBoostCheckout
+                ? boostPlanTitle
+                : isVerification
+                  ? (apiPackage?.title ?? selectedPlan.title)
+                  : "Visibility Pro Plus"
+            }
             totalAmount={amountNgn}
             isVerification={isVerification}
+            boostLine={
+              isBoostCheckout && boostSelection
+                ? {
+                  label: `${boostActionLabel} · ${boostSelection.locationLabel}`,
+                  amount: amountNgn,
+                }
+                : null
+            }
             beforePayButton={
               <label className="flex cursor-pointer items-start gap-2 text-xs text-muted-foreground">
                 <input

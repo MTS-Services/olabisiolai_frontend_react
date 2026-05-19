@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import type { BoostPlanCampaignStatus } from "@/features/boost/boostCampaignTypes";
+import { cn } from "@/lib/utils";
 
 import { type Plan } from "./boostPlanData";
 
@@ -44,10 +47,13 @@ const getButtonClasses = (colorScheme: Plan["colorScheme"]) => {
   }
 };
 
-const getSlotText = (slotStatus: Plan["slotStatus"]) => {
-  return slotStatus === "available"
+const getSlotText = (plan: Plan) => {
+  if (plan.slotLabel) {
+    return plan.slotLabel;
+  }
+  return plan.slotStatus === "available"
     ? "Slots available in this LGA"
-    : "Slot currently occupied";
+    : "No slots available — fully booked";
 };
 
 const getSlotColor = (slotStatus: Plan["slotStatus"]) => {
@@ -72,31 +78,94 @@ export function BoostPlanCard({
   durationAmounts,
   onSelect,
   disabled,
+  highlighted = false,
+  defaultDurationDays,
+  campaignStatus = null,
 }: {
   plan: Plan;
   /** Map duration label (e.g. "7 Days") to numeric amount — from location LGA config */
   durationAmounts?: Record<string, number>;
   onSelect?: (selection: BoostPlanSelection) => void;
   disabled?: boolean;
+  highlighted?: boolean;
+  defaultDurationDays?: number;
+  campaignStatus?: BoostPlanCampaignStatus | null;
 }) {
+  const isActivePlan = campaignStatus?.status === "active";
+  const isPendingPlan = campaignStatus?.status === "pending";
+  const isExpiredPlan = campaignStatus?.status === "expired";
+  const isAwaitingPayment = Boolean(campaignStatus?.awaitingPayment);
   const navigate = useNavigate();
-  const [selectedOption, setSelectedOption] = useState(
-    plan.pricingOptions.length - 1,
+  const defaultIndex = Math.max(
+    0,
+    plan.pricingOptions.findIndex((option) => {
+      const match = option.duration.match(/^(\d+)/);
+      return match ? Number(match[1]) === defaultDurationDays : false;
+    }),
   );
+  const [selectedOption, setSelectedOption] = useState(
+    defaultDurationDays ? defaultIndex : plan.pricingOptions.length - 1,
+  );
+
+  useEffect(() => {
+    if (!defaultDurationDays) return;
+    const index = plan.pricingOptions.findIndex((option) => {
+      const match = option.duration.match(/^(\d+)/);
+      return match ? Number(match[1]) === defaultDurationDays : false;
+    });
+    if (index >= 0) {
+      setSelectedOption(index);
+    }
+  }, [defaultDurationDays, plan.pricingOptions]);
 
   return (
     <div
-      className={`flex-1 flex flex-col rounded-2xl p-6 relative ${getBgClasses(plan.colorScheme)} ${plan.highlighted ? "mt-5 md:mt-0" : ""}`}
+      id={`boost-plan-${plan.id}`}
+      className={cn(
+        "relative flex flex-1 flex-col rounded-2xl p-6 transition-shadow",
+        getBgClasses(plan.colorScheme),
+        plan.highlighted ? "mt-5 md:mt-0" : "",
+        highlighted && "ring-2 ring-brand-red ring-offset-2 shadow-lg",
+        isActivePlan && !highlighted && "ring-2 ring-emerald-500 ring-offset-2 shadow-md",
+        isPendingPlan && !highlighted && !isActivePlan && "ring-2 ring-amber-400 ring-offset-1",
+      )}
     >
-      {/* Badge */}
-      {plan.badge && (
+      {isActivePlan ? (
+        <div className="absolute right-4 top-4 z-10">
+          <span className="inline-flex rounded-full bg-emerald-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+            Active
+          </span>
+        </div>
+      ) : null}
+      {isPendingPlan ? (
+        <div className="absolute right-4 top-4 z-10">
+          <span className="inline-flex rounded-full bg-amber-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+            Pending
+          </span>
+        </div>
+      ) : null}
+      {isExpiredPlan && !isActivePlan && !isPendingPlan ? (
+        <div className="absolute right-4 top-4 z-10">
+          <span className="inline-flex rounded-full bg-pink-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+            Expired
+          </span>
+        </div>
+      ) : null}
+
+      {plan.badge && !isActivePlan && !isPendingPlan ? (
         <div className="absolute -top-4 left-0 right-0 flex justify-center">
           <span className="bg-red-500 text-white text-[11px] font-bold tracking-widest uppercase px-4 py-1.5 rounded-full">
             {plan.badge}
           </span>
         </div>
-      )}
-      <div className={`flex flex-col flex-1 ${plan.highlighted ? "pt-8" : ""}`}>
+      ) : null}
+      <div
+        className={cn(
+          "flex flex-1 flex-col",
+          plan.highlighted || plan.badge ? "pt-8" : "",
+          (isActivePlan || isPendingPlan || isExpiredPlan) && "pt-2",
+        )}
+      >
         <div className="flex flex-col items-center mb-5 scale-90">
           {" "}
           <div className="relative flex items-center w-20 h-24 rounded-lg overflow-hidden">
@@ -112,17 +181,30 @@ export function BoostPlanCard({
         <h2 className="text-center text-xl font-extrabold text-gray-900 mb-1">
           {plan.title}
         </h2>
-        <p className="text-center text-gray-500 text-sm mb-5">
-          {plan.subtitle}
-        </p>
+        <p className="text-center text-gray-500 text-sm mb-2">{plan.subtitle}</p>
+        {isActivePlan && campaignStatus?.durationLeftLabel ? (
+          <p className="mb-4 text-center text-sm font-semibold text-emerald-700">
+            {campaignStatus.durationLeftLabel} remaining · {campaignStatus.label}
+          </p>
+        ) : isPendingPlan ? (
+          <p className="mb-4 text-center text-sm font-semibold text-amber-800">
+            {campaignStatus?.label ?? "Awaiting admin approval"}
+          </p>
+        ) : isExpiredPlan ? (
+          <p className="mb-4 text-center text-sm font-semibold text-pink-600">
+            {campaignStatus?.label ?? "Campaign ended"} — boost again below
+          </p>
+        ) : (
+          <div className="mb-5" />
+        )}
         {/* Pricing Options */}
         <div className="flex flex-col gap-2 mb-4">
           {plan.pricingOptions.map((option, index) => (
             <label
               key={index}
               className={`flex items-center gap-3 bg-white border-2 rounded-xl px-4 py-2.5 cursor-pointer transition-colors ${selectedOption === index
-                  ? `${getRadioBorder(plan.colorScheme)} bg-gray-50`
-                  : "border-gray-200"
+                ? `${getRadioBorder(plan.colorScheme)} bg-gray-50`
+                : "border-gray-200"
                 }`}
             >
               <input
@@ -146,7 +228,7 @@ export function BoostPlanCard({
           <span
             className={`w-2 h-2 rounded-full inline-block ${getSlotDotColor(plan.slotStatus)}`}
           />
-          {getSlotText(plan.slotStatus)}
+          {getSlotText(plan)}
         </p>
         {/* Features */}
         <ul className="flex-1 flex flex-col gap-2 mb-6 text-sm text-gray-700">
@@ -175,8 +257,13 @@ export function BoostPlanCard({
         </ul>
         <button
           type="button"
-          disabled={disabled}
+          disabled={
+            disabled || isPendingPlan || (plan.slotStatus === "occupied" && !isActivePlan && !isExpiredPlan)
+          }
           onClick={() => {
+            if (plan.slotStatus === "occupied" && !isActivePlan) {
+              return;
+            }
             const option = plan.pricingOptions[selectedOption];
             if (!option) return;
 
@@ -200,9 +287,26 @@ export function BoostPlanCard({
 
             navigate("/vendor/review-pay");
           }}
-          className={`w-full ${getButtonClasses(plan.colorScheme)} active:scale-[0.98] transition-all text-white font-bold text-sm py-3.5 rounded-xl disabled:cursor-not-allowed disabled:opacity-60`}
+          className={cn(
+            "w-full active:scale-[0.98] transition-all text-white font-bold text-sm py-3.5 rounded-xl disabled:cursor-not-allowed disabled:opacity-60",
+            isActivePlan
+              ? "bg-emerald-600 hover:bg-emerald-700"
+              : isExpiredPlan
+                ? "bg-pink-500 hover:bg-pink-600"
+                : getButtonClasses(plan.colorScheme),
+          )}
         >
-          {plan.cta}
+          {isAwaitingPayment
+            ? "Continue Payment"
+            : isActivePlan
+              ? "Extend Boost"
+              : isExpiredPlan
+                ? "Boost Again"
+                : isPendingPlan
+                  ? campaignStatus?.awaitingPayment
+                    ? "Continue Payment"
+                    : "Pending approval"
+                  : plan.cta}
         </button>
       </div>
     </div>

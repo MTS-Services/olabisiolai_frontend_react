@@ -1,5 +1,9 @@
 import type { Plan } from "@/components/sections/vendor/boost/boostPlan/boostPlanData";
 import {
+  isTierSlotAvailable,
+  tierSlotStatusLabel,
+} from "@/features/boost/boostSlotAvailability";
+import {
   formatNaira,
   parseBoostData,
   resolveBoostSelectionPrice,
@@ -10,26 +14,34 @@ import {
 export { resolveBoostSelectionPrice };
 
 const TIER_THEME: Record<string, Plan["colorScheme"]> = {
-  top_5: "orange",
+  top_10: "orange",
+  top_5: "gray",
   top_3: "gray",
   top_1: "yellow",
 };
 
 const TIER_MEDAL: Record<string, number> = {
-  top_5: 3,
+  top_10: 3,
+  top_5: 2,
   top_3: 2,
   top_1: 1,
 };
 
 const TIER_FEATURES: Record<string, Plan["features"]> = {
-  top_5: [
-    { text: "Appear in Top 5 in your LGA", checked: true },
+  top_10: [
+    { text: "Appear in Top 10 in your LGA", checked: true },
     { text: "Boost badge on listing", checked: true },
     { text: "Increased visibility & enquiries", checked: true },
     { text: "No exclusivity", checked: false },
   ],
+  top_5: [
+    { text: "Guaranteed Top 5 placement", checked: true },
+    { text: "Higher ranking than Bronze", checked: true },
+    { text: "Boost badge & strong visibility", checked: true },
+    { text: "No exclusivity", checked: false },
+  ],
   top_3: [
-    { text: "Guaranteed Top 3 placement", checked: true },
+    { text: "Guaranteed Top 5 placement", checked: true },
     { text: "Higher ranking than Bronze", checked: true },
     { text: "Boost badge & strong visibility", checked: true },
     { text: "No exclusivity", checked: false },
@@ -62,9 +74,7 @@ export function buildPlansFromLocationBoost(location: ParsedLocationOption): Pla
       })
       .filter((entry): entry is { duration: string; price: string; days: number; amount: number } => entry !== null);
 
-    const slotsRemaining = boost.stats.slotsRemaining;
-    const isTop1 = tier.key === "top_1";
-    const occupied = isTop1 && slotsRemaining <= 0;
+    const occupied = !isTierSlotAvailable(tier);
 
     return {
       id: tier.key,
@@ -72,17 +82,18 @@ export function buildPlansFromLocationBoost(location: ParsedLocationOption): Pla
       subtitle:
         tier.key === "top_1"
           ? "The #1 spot — only one business per LGA"
-          : tier.key === "top_3"
+          : tier.key === "top_5" || tier.key === "top_3"
             ? "Higher visibility for competitive LGAs"
             : "Affordable visibility for growing businesses",
       pricingOptions: pricingOptions.map(({ duration, price }) => ({ duration, price })),
       slotStatus: occupied ? "occupied" : "available",
-      features: TIER_FEATURES[tier.key] ?? TIER_FEATURES.top_5,
-      cta: occupied ? "Join Waiting List" : `Boost with ${tier.label}`,
+      slotLabel: tierSlotStatusLabel(tier),
+      features: TIER_FEATURES[tier.key] ?? TIER_FEATURES.top_10,
+      cta: occupied ? "Slot full" : `Boost with ${tier.label}`,
       colorScheme: TIER_THEME[tier.key] ?? "orange",
       medal: TIER_MEDAL[tier.key] ?? 3 - index,
-      badge: tier.key === "top_3" ? "Most Popular" : undefined,
-      highlighted: tier.key === "top_3",
+      badge: tier.key === "top_5" || tier.key === "top_3" ? "Most Popular" : undefined,
+      highlighted: tier.key === "top_5" || tier.key === "top_3",
     } satisfies Plan;
   });
 }

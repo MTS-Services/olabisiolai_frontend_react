@@ -7,11 +7,17 @@ const TIER_THEMES: Record<
   string,
   { card: string; accent: string; priceRow: string; medal: string }
 > = {
-  top_5: {
+  top_10: {
     card: 'border-[#f0d6bd] bg-gradient-to-b from-[#fff9f2] to-[#fff3e8]',
     accent: 'text-[#c77b38]',
     priceRow: 'border-[#f0d6bd]/80 bg-white/90',
     medal: '3',
+  },
+  top_5: {
+    card: 'border-[#d9dee8] bg-gradient-to-b from-[#f8fafc] to-[#f1f4f9]',
+    accent: 'text-[#5f6b7a]',
+    priceRow: 'border-[#d9dee8] bg-white/90',
+    medal: '2',
   },
   top_3: {
     card: 'border-[#d9dee8] bg-gradient-to-b from-[#f8fafc] to-[#f1f4f9]',
@@ -60,7 +66,7 @@ export function LgaBoostTierConfigCards({ tiers, onChange, disabled }: Props) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {tiers.map((tier) => {
-        const theme = TIER_THEMES[tier.key] ?? TIER_THEMES.top_5
+        const theme = TIER_THEMES[tier.key] ?? TIER_THEMES.top_10
         return (
           <article
             key={tier.key}

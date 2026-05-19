@@ -279,7 +279,7 @@ export function AddLocationWizardModal({
                   disabled={!boostConfig.enabled}
                 />
                 <p className="mt-2 text-[11px] text-gray-500">
-                  Top 5 (5 slots), Top 3 (3 slots), and Top 1 (1 slot). Set 7 / 14 / 30 day prices per plan.
+                  Top 10 (10 slots), Top 5 (5 slots), and Top 1 (1 slot). Set 7 / 14 / 30 day prices per plan.
                   Slot availability is tracked automatically once boosts go live.
                 </p>
               </div>

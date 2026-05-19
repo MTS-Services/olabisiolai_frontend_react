@@ -15,6 +15,7 @@ import { OrderSummaryCard } from "@/components/sections/vendor/boost/boostPay/Or
 import { PaymentMethodsCard } from "@/components/sections/vendor/boost/boostPay/PaymentMethodsCard";
 import { SavedCheckoutProfilesCard } from "@/components/sections/vendor/boost/boostPay/SavedCheckoutProfilesCard";
 import { env } from "@/config/env";
+import { formatNaira } from "@/lib/currency";
 import {
   extractFlutterwaveCardMeta,
   extractFlutterwaveTransactionId,
@@ -308,7 +309,7 @@ export default function VendorSubscriptionPayPage() {
 
         {packagesError ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            Could not load premium package details. You can still pay ₦{amountNgn.toLocaleString()} below.
+            Could not load premium package details. You can still pay {formatNaira(amountNgn, { freeLabel: false })} below.
           </p>
         ) : null}
 

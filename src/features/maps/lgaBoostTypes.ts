@@ -1,4 +1,4 @@
-/** Per-tier boost slot configuration (Top 5 / Top 3 / Top 1). */
+/** Per-tier boost slot configuration (Top 10 / Top 5 / Top 1). */
 export type LgaBoostTierForm = {
   key: string
   label: string
@@ -23,14 +23,14 @@ export type LgaBoostFormState = {
   durations: LgaBoostDurationForm[]
 }
 
-export const LGA_BOOST_TIER_ORDER = ['top_5', 'top_3', 'top_1'] as const
+export const LGA_BOOST_TIER_ORDER = ['top_10', 'top_5', 'top_1'] as const
 
 const TIER_DEFAULTS: Record<
   (typeof LGA_BOOST_TIER_ORDER)[number],
   { label: string; totalSlots: number; prices: [number, number, number] }
 > = {
-  top_5: { label: 'Top 5 Boost', totalSlots: 5, prices: [3000, 5000, 10000] },
-  top_3: { label: 'Top 3 Boost', totalSlots: 3, prices: [5000, 10000, 15000] },
+  top_10: { label: 'Top 10 Boost', totalSlots: 10, prices: [3000, 5000, 10000] },
+  top_5: { label: 'Top 5 Boost', totalSlots: 5, prices: [5000, 10000, 15000] },
   top_1: { label: 'Top 1 Exclusive', totalSlots: 1, prices: [10000, 15000, 20000] },
 }
 
@@ -81,16 +81,19 @@ export function parseTierDurationsFromRaw(
     : buildTierDurations([0, 0, 0], globalDurations)
 }
 
-/** Normalize to fixed tiers (top_5 / top_3 / top_1) with slots 5 / 3 / 1. */
+/** Normalize to fixed tiers (top_10 / top_5 / top_1) with slots 10 / 5 / 1. */
 export function normalizeBoostTiers(
   tiers: LgaBoostTierForm[],
   globalDurations?: { days: number; enabled: boolean; priceAmount: number }[],
 ): LgaBoostTierForm[] {
+  const incomingKeys = new Set(tiers.map((tier) => tier.key))
   const byKey = new Map<string, LgaBoostTierForm>()
   for (const tier of tiers) {
     let key = tier.key
-    if (key === 'top_10') {
-      key = 'top_3'
+    if (key === 'top_3') {
+      key = 'top_5'
+    } else if (key === 'top_5' && !incomingKeys.has('top_10')) {
+      key = 'top_10'
     }
     byKey.set(key, { ...tier, key })
   }

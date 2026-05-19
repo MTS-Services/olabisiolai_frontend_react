@@ -51,8 +51,8 @@ export function BasicBoost({ previewLocation = null }: { previewLocation?: Parse
                 features: plan.features.filter((f) => f.checked).map((f) => f.text),
               }))
               : [
-                { name: "Top 5 Boost", price: "—", features: ["Location-based pricing"] },
-                { name: "Top 3 Boost", price: "—", features: ["Select your LGA first"] },
+                { name: "Top 10 Boost", price: "—", features: ["Location-based pricing"] },
+                { name: "Top 5 Boost", price: "—", features: ["Select your LGA first"] },
                 { name: "Top 1 Exclusive", price: "—", features: ["Unlock with Premium"] },
               ]
             ).map((plan, index) => (

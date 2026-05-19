@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { formatNaira } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { plans, type PlanId } from "./verificationData";
 import { TierRadio } from "./TierRadio";
@@ -40,7 +41,7 @@ export function VerificationPlansGrid({
               </div>
               <div className="flex flex-1 items-start justify-end gap-3">
                 <p className="text-2xl font-bold leading-none tracking-tight text-slate-900 md:text-[26px]">
-                  ₦{plan.amount}
+                  {formatNaira(Number(plan.amount), { freeLabel: false })}
                 </p>
                 <TierRadio selected={selected} />
               </div>

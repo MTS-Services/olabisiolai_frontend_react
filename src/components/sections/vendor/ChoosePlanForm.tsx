@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+﻿import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, MapPin, Plus, Upload, X } from "lucide-react";
@@ -16,6 +16,13 @@ import {
   isPremiumPlanSelected,
 } from "@/features/business/vendorBusinessApi";
 import { clearBoostCheckoutSelection, saveBoostCheckoutSelection } from "@/features/boost/boostCheckoutSession";
+import { BoostSlotAvailabilityAlert } from "@/components/sections/vendor/boost/BoostSlotAvailabilityAlert";
+import {
+  isTierSlotAvailable,
+  locationHasAnyBoostSlot,
+  tierSlotFullMessage,
+  tierSlotStatusLabel,
+} from "@/features/boost/boostSlotAvailability";
 import { resolveBoostSelectionPrice } from "@/features/boost/locationBoostPlans";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
 import {
@@ -352,6 +359,23 @@ export default function ChoosePlanForm() {
         });
         return;
       }
+      if (selectedTopSlot && selectedLocation && !isTierSlotAvailable(selectedTopSlot)) {
+        setFieldErrors({
+          boost_tier: tierSlotFullMessage(selectedTopSlot, selectedLocation),
+        });
+        return;
+      }
+      if (
+        selectedTopSlotKey &&
+        selectedDurationDays &&
+        selectedLocation &&
+        !locationHasAnyBoostSlot(selectedLocation)
+      ) {
+        setFieldErrors({
+          boost_tier: "No boost slots are available for this location. Choose another LGA or skip boost for now.",
+        });
+        return;
+      }
     }
 
     const boostCheckout =
@@ -446,7 +470,7 @@ export default function ChoosePlanForm() {
               >
                 <option value="">
                   {formOptionsLoading
-                    ? "Loading categories…"
+                    ? "Loading categoriesâ€¦"
                     : formOptionsError
                       ? "Categories unavailable"
                       : "Select category"}
@@ -487,7 +511,7 @@ export default function ChoosePlanForm() {
               >
                 <option value="">
                   {formOptionsLoading
-                    ? "Loading locations…"
+                    ? "Loading locationsâ€¦"
                     : locationOptions.length === 0
                       ? "No locations"
                       : "Select location"}
@@ -555,7 +579,7 @@ export default function ChoosePlanForm() {
             <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
               <p className="text-sm font-semibold text-foreground">Boost options (optional)</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                If you pick a boost plan, you must also select a duration — partial selection is not allowed.
+                If you pick a boost plan, you must also select a duration â€” partial selection is not allowed.
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {selectedLocation.state} / {selectedLocation.city} / {selectedLocation.lga}
@@ -563,6 +587,8 @@ export default function ChoosePlanForm() {
 
               {selectedLocation.boost?.enabled ? (
                 <div className="mt-4 space-y-3">
+                  <BoostSlotAvailabilityAlert location={selectedLocation} />
+
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div className="rounded-md border border-sky-100 bg-white px-3 py-2">
                       <p className="text-[11px] uppercase text-muted-foreground">Total slots</p>
@@ -584,17 +610,29 @@ export default function ChoosePlanForm() {
                     <p className="text-xs font-semibold uppercase text-muted-foreground">Top slots & price</p>
                     {selectedLocation.boost.tiers.length > 0 ? (
                       <ul className="grid gap-2 sm:grid-cols-2">
-                        {selectedLocation.boost.tiers.map((tier) => (
+                        {selectedLocation.boost.tiers.map((tier) => {
+                          const tierAvailable = isTierSlotAvailable(tier);
+                          return (
                           <li
                             key={tier.key}
-                            className="rounded-md border border-sky-100 bg-white px-3 py-2 text-xs text-foreground"
+                            className={cn(
+                              "rounded-md border bg-white px-3 py-2 text-xs text-foreground",
+                              tierAvailable ? "border-sky-100" : "border-red-200 bg-red-50/50 opacity-80",
+                            )}
                           >
-                            <label className="flex cursor-pointer items-center gap-2">
+                            <label
+                              className={cn(
+                                "flex flex-wrap items-center gap-2",
+                                tierAvailable ? "cursor-pointer" : "cursor-not-allowed",
+                              )}
+                            >
                               <input
                                 type="checkbox"
-                                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                                 checked={selectedTopSlotKey === tier.key}
+                                disabled={!tierAvailable}
                                 onChange={(e) => {
+                                  if (!tierAvailable) return;
                                   setSelectedTopSlotKey(e.target.checked ? tier.key : "");
                                   setFieldErrors((prev) => {
                                     const next = { ...prev };
@@ -605,7 +643,9 @@ export default function ChoosePlanForm() {
                                 }}
                               />
                               <span className="font-semibold">{tier.label}</span>
-                              <span className="text-muted-foreground">Slots: {tier.totalSlots}</span>
+                              <span className={tierAvailable ? "text-muted-foreground" : "text-red-700"}>
+                                {tierSlotStatusLabel(tier)}
+                              </span>
                               <span className="text-muted-foreground">
                                 Price:{" "}
                                 {selectedLocation.boost
@@ -614,7 +654,8 @@ export default function ChoosePlanForm() {
                               </span>
                             </label>
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                     ) : (
                       <p className="text-xs text-muted-foreground">No top slot config found for this location.</p>

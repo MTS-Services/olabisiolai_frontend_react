@@ -3,15 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchVendorPaymentDetail } from "@/features/vendor/vendorPaymentsApi";
+import { formatMoney } from "@/lib/currency";
 import { ArrowLeft, Loader2 } from "lucide-react";
-
-function formatMoney(amount: number, currency: string) {
-  try {
-    return new Intl.NumberFormat("en-NG", { style: "currency", currency }).format(amount);
-  } catch {
-    return `${currency} ${amount.toFixed(2)}`;
-  }
-}
 
 export default function VendorPaymentDetailPage() {
   const { paymentId } = useParams<{ paymentId: string }>();

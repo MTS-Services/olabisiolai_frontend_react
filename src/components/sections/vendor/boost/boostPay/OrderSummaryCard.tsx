@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatNaira } from "@/lib/currency";
 
 export function OrderSummaryCard({
   onConfirmPay,
@@ -13,9 +14,11 @@ export function OrderSummaryCard({
   isVerification = false,
   boostLine,
   beforePayButton,
+  confirmLabel,
 }: {
   onConfirmPay?: () => void;
   isPaying?: boolean;
+  confirmLabel?: string;
   planTitle?: string;
   totalAmount?: number;
   isVerification?: boolean;
@@ -25,10 +28,7 @@ export function OrderSummaryCard({
 }) {
   const navigate = useNavigate();
 
-  const formattedTotal = new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-  }).format(totalAmount);
+  const formattedTotal = formatNaira(totalAmount, { freeLabel: false });
 
   const handleConfirmPay = () => {
     if (onConfirmPay) {
@@ -67,7 +67,7 @@ export function OrderSummaryCard({
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>Boost add-on ({boostLine.label})</span>
             <span className="font-semibold text-foreground">
-              {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(boostLine.amount)}
+              {formatNaira(boostLine.amount, { freeLabel: false })}
             </span>
           </div>
         ) : null}
@@ -85,7 +85,7 @@ export function OrderSummaryCard({
           disabled={isPaying}
         >
           <Lock className="size-4" />
-          {isPaying ? "Processing..." : "Pay Now"}
+          {isPaying ? "Processing..." : (confirmLabel ?? "Pay Now")}
         </Button>
 
         <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">

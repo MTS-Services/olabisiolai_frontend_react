@@ -3,6 +3,9 @@ export type BoostTierView = {
   label: string;
   totalSlots: number;
   priceAmount: number;
+  slotsOccupied?: number;
+  slotsRemaining?: number;
+  isAvailable?: boolean;
   durations?: BoostDurationView[];
 };
 
@@ -57,14 +60,8 @@ function toNumber(value: unknown): number {
   return 0;
 }
 
-export function formatNaira(amount: number): string {
-  if (!Number.isFinite(amount) || amount <= 0) return "Free";
-  try {
-    return `₦${new Intl.NumberFormat("en-NG").format(Math.round(amount))}`;
-  } catch {
-    return `₦${Math.round(amount).toLocaleString()}`;
-  }
-}
+export { formatNaira, formatMoney, CURRENCY_CODE, CURRENCY_SYMBOL } from "@/lib/currency";
+import { formatNaira } from "@/lib/currency";
 
 /** Price for a tier + duration (admin stores prices on tier.durations, not tier.price_amount). */
 export function tierDurationPrice(
@@ -157,10 +154,24 @@ export function parseBoostData(raw: unknown): ParsedLocationOption["boost"] {
           })
           .filter((duration): duration is BoostDurationView => duration !== null && duration.days > 0);
 
+        const totalSlots = toNumber(tierRecord.total_slots ?? tierRecord.totalSlots);
+        const slotsOccupied = toNumber(tierRecord.slots_occupied ?? tierRecord.slotsOccupied);
+        const slotsRemainingRaw = tierRecord.slots_remaining ?? tierRecord.slotsRemaining;
+        const slotsRemaining =
+          slotsRemainingRaw !== undefined && slotsRemainingRaw !== null
+            ? toNumber(slotsRemainingRaw)
+            : Math.max(0, totalSlots - slotsOccupied);
+
         return {
           key: readString(tierRecord.key) ?? `tier-${index + 1}`,
           label: readString(tierRecord.label) ?? readString(tierRecord.name) ?? `Tier ${index + 1}`,
-          totalSlots: toNumber(tierRecord.total_slots ?? tierRecord.totalSlots),
+          totalSlots,
+          slotsOccupied,
+          slotsRemaining,
+          isAvailable:
+            tierRecord.is_available !== undefined
+              ? Boolean(tierRecord.is_available ?? tierRecord.isAvailable)
+              : totalSlots > 0 && slotsRemaining > 0,
           priceAmount: toNumber(tierRecord.price_amount ?? tierRecord.priceAmount ?? tierRecord.price),
           durations: tierDurations.length > 0 ? tierDurations : undefined,
         } satisfies BoostTierView;

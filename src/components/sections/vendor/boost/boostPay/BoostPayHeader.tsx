@@ -1,6 +1,8 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { isBoostPaymentCheckout } from "@/features/boost/boostCheckoutSession";
+
 type BoostPayHeaderProps = {
   variant?: "boost" | "subscription";
 };
@@ -13,7 +15,11 @@ export function BoostPayHeader({ variant = "boost" }: BoostPayHeaderProps) {
     <>
       <button
         type="button"
-        onClick={() => navigate(isSubscription ? "/vendor/dashboard" : "/vendor/boost/configure")}
+        onClick={() =>
+          navigate(
+            isSubscription ? "/vendor/dashboard" : isBoostPaymentCheckout() ? "/vendor/boost" : "/vendor/boost/configure",
+          )
+        }
         className="inline-flex items-center gap-1 text-sm font-inter text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" />

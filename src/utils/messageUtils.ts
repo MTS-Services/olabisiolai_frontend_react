@@ -72,22 +72,37 @@ export function normalizeMessageParent(
 
 export function normalizeAttachment(raw: Record<string, unknown>): Attachment {
   const type = (raw.type as Attachment['type']) ?? 'document'
-  const thumb =
-    (raw.thumbnail_url as string | null | undefined) ??
-    ((raw.thumbnail_path as string | undefined)
-      ? String(raw.thumbnail_path)
-      : null)
+  const url = resolveAttachmentUrl(String(raw.url ?? ''))
+  const thumbRaw = raw.thumbnail_url as string | null | undefined
+  const thumbnail_url =
+    thumbRaw && (thumbRaw.startsWith('http://') || thumbRaw.startsWith('https://'))
+      ? thumbRaw
+      : thumbRaw
+        ? resolveAttachmentUrl(thumbRaw)
+        : null
+
   return {
     id: raw.id != null ? Number(raw.id) : undefined,
     uuid: String(raw.uuid ?? ''),
-    file_name: String(raw.file_name ?? ''),
-    mime_type: String(raw.mime_type ?? ''),
+    file_name: String(raw.file_name ?? 'Attachment'),
+    mime_type: String(raw.mime_type ?? 'application/octet-stream'),
     type,
-    url: String(raw.url ?? ''),
-    thumbnail_url: thumb,
+    url,
+    thumbnail_url,
     thumbnail_path: (raw.thumbnail_path as string | null | undefined) ?? null,
     file_size: raw.file_size as number | undefined,
   }
+}
+
+/** Turn API attachment URLs into browser-loadable absolute URLs. */
+export function resolveAttachmentUrl(url: string): string {
+  const trimmed = url.trim()
+  if (!trimmed) return ''
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
+
+  const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, '') ?? ''
+  const origin = apiBase.replace(/\/api\/v\d+$/, '')
+  return `${origin}${trimmed.startsWith('/') ? trimmed : `/${trimmed}`}`
 }
 
 export function normalizeMessage(raw: Record<string, unknown>): Message {

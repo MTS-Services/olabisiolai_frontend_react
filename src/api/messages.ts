@@ -1,3 +1,4 @@
+import { uploadAttachment } from '@/api/attachments'
 import { api } from '@/api/client'
 import { messagingPath } from '@/api/messagingPaths'
 import type { ApiResponse } from '@/types/api'
@@ -19,14 +20,15 @@ export async function getMessages(
 
 export async function sendMessage(
   conversationUuid: string,
-  body: string,
+  body: string | null,
   attachmentIds?: number[],
   parentUuid?: string | null,
 ): Promise<Message> {
+  const trimmed = body?.trim() ?? ''
   const res = await api.post<ApiResponse<Record<string, unknown>>>(
     messagingPath(`/conversations/${conversationUuid}/messages`),
     {
-      body,
+      body: trimmed || undefined,
       attachment_ids: attachmentIds?.length ? attachmentIds : undefined,
       parent_uuid: parentUuid ?? undefined,
     },
@@ -35,6 +37,26 @@ export async function sendMessage(
   return normalizeMessage(data)
 }
 
+/** Upload files first, then send JSON message with attachment_ids (matches Postman flow). */
+export async function sendMessageWithAttachments(
+  conversationUuid: string,
+  body: string | null,
+  files: File[],
+  parentUuid?: string | null,
+  onUploadProgress?: (fileIndex: number, percent: number) => void,
+): Promise<Message> {
+  const attachmentIds: number[] = []
+  for (let i = 0; i < files.length; i += 1) {
+    const att = await uploadAttachment(files[i], (pct) => onUploadProgress?.(i, pct))
+    if (att.id == null) {
+      throw new Error('Attachment upload did not return an id')
+    }
+    attachmentIds.push(att.id)
+  }
+  return sendMessage(conversationUuid, body, attachmentIds, parentUuid)
+}
+
+/** Multipart send — kept for compatibility; prefer sendMessageWithAttachments. */
 export async function sendMessageWithFiles(
   conversationUuid: string,
   body: string | null,
@@ -42,11 +64,11 @@ export async function sendMessageWithFiles(
   parentUuid?: string | null,
 ): Promise<Message> {
   const form = new FormData()
-  if (body && body.trim()) form.append('body', body)
+  if (body?.trim()) form.append('body', body.trim())
   if (parentUuid) form.append('parent_uuid', parentUuid)
-  for (const f of files) {
-    form.append('attachments[]', f)
-  }
+  files.forEach((f, index) => {
+    form.append(`attachments[${index}]`, f)
+  })
   const res = await api.post<ApiResponse<Record<string, unknown>>>(
     messagingPath(`/conversations/${conversationUuid}/messages`),
     form,

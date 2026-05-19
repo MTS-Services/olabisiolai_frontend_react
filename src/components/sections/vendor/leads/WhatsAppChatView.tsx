@@ -1,9 +1,14 @@
 import { Fragment, useLayoutEffect, useRef, useState } from "react";
+import { AttachmentPreview } from "@/components/chat/AttachmentPreview";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { TYPING_DEBOUNCE_MS } from "@/constants/config";
+import {
+  MESSAGING_ATTACHMENT_ACCEPT,
+  MESSAGING_ATTACHMENT_MAX_COUNT,
+  TYPING_DEBOUNCE_MS,
+} from "@/constants/config";
 import { cn } from "@/lib/utils";
 import type { TypingUser } from "@/types/message";
 import { CheckCheck, Paperclip, Send, Smile } from "lucide-react";
@@ -18,7 +23,11 @@ export function WhatsAppChatInterface({
   onMessageDraftChange,
   onComposerTyping,
   onSend,
+  onFiles,
+  pendingFiles = [],
+  onRemoveFile,
   isSending = false,
+  fileBusy = false,
   messagesLoading = false,
   typingPeers = [],
 }: {
@@ -31,7 +40,11 @@ export function WhatsAppChatInterface({
   /** Fires while the vendor types (drives API typing + realtime for the other party). */
   onComposerTyping?: () => void;
   onSend: () => void;
+  onFiles?: (files: File[]) => void;
+  pendingFiles?: File[];
+  onRemoveFile?: (index: number) => void;
   isSending?: boolean;
+  fileBusy?: boolean;
   messagesLoading?: boolean;
   typingPeers?: TypingUser[];
 }) {
@@ -41,7 +54,8 @@ export function WhatsAppChatInterface({
   const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [emojiOpen, setEmojiOpen] = useState(false);
 
-  const composerDisabled = !selectedLead || isSending;
+  const composerDisabled = !selectedLead || isSending || fileBusy;
+  const canSend = messageDraft.trim().length > 0 || pendingFiles.length > 0;
 
   const handleDraftChange = (value: string) => {
     onMessageDraftChange(value);
@@ -132,7 +146,8 @@ export function WhatsAppChatInterface({
                 </div>
                 <div className="min-w-0 max-w-[min(100%,18rem)] sm:max-w-md">
                   <div className="rounded-2xl rounded-bl-md bg-[#e8e6f4] px-3.5 py-2.5 text-sm leading-relaxed wrap-anywhere text-foreground shadow-sm">
-                    {message.text}
+                    {message.text ? <p>{message.text}</p> : null}
+                    <AttachmentPreview items={message.attachments ?? []} />
                   </div>
                   <p className="mt-1 pl-1 text-[11px] text-muted-foreground">
                     {message.time}
@@ -143,7 +158,8 @@ export function WhatsAppChatInterface({
               <div className="mb-4 flex w-full min-w-0 justify-end">
                 <div className="min-w-0 max-w-[min(100%,18rem)] text-right sm:max-w-md">
                   <div className="rounded-2xl rounded-br-md bg-sky-600 px-3.5 py-2.5 text-left text-sm leading-relaxed wrap-anywhere text-white shadow-sm">
-                    {message.text}
+                    {message.text ? <p>{message.text}</p> : null}
+                    <AttachmentPreview items={message.attachments ?? []} />
                   </div>
                   <div className="mt-1 flex items-center justify-end gap-1 pr-0.5">
                     <span className="text-[11px] text-muted-foreground">
@@ -166,13 +182,32 @@ export function WhatsAppChatInterface({
       <div className="shrink-0 border-t border-chat-border-footer bg-card px-3 pt-2 sm:px-4">
         <TypingIndicator users={typingPeers} />
       </div>
+      {pendingFiles.length > 0 ? (
+        <div className="flex flex-wrap gap-2 border-t border-chat-border bg-card px-4 py-2">
+          {pendingFiles.map((f, i) => (
+            <button
+              key={`${f.name}-${f.size}-${i}`}
+              type="button"
+              className="rounded-lg bg-muted px-2 py-1 text-xs"
+              onClick={() => onRemoveFile?.(i)}
+            >
+              {f.name} ×
+            </button>
+          ))}
+        </div>
+      ) : null}
       <footer className="flex shrink-0 items-end gap-2 border-t border-chat-border-footer bg-card px-3 py-3 backdrop-blur-sm sm:gap-3 sm:px-6 sm:py-4">
         <input
           ref={fileRef}
           type="file"
           multiple
+          accept={MESSAGING_ATTACHMENT_ACCEPT}
           className="hidden"
           onChange={(e) => {
+            const list = e.target.files;
+            if (list?.length) {
+              onFiles?.(Array.from(list).slice(0, MESSAGING_ATTACHMENT_MAX_COUNT));
+            }
             e.target.value = "";
           }}
         />
@@ -219,7 +254,7 @@ export function WhatsAppChatInterface({
         <Button
           type="button"
           size="icon"
-          disabled={composerDisabled || !messageDraft.trim()}
+          disabled={composerDisabled || !canSend}
           className={cn(
             "size-11 shrink-0 rounded-xl bg-chat-accent text-text-white shadow-md hover:opacity-90 sm:size-12",
           )}

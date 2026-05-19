@@ -4,7 +4,7 @@ import { Paperclip, Send, Smile, X } from 'lucide-react'
 import { EmojiPicker } from '@/components/chat/EmojiPicker'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { TYPING_DEBOUNCE_MS } from '@/constants/config'
+import { TYPING_DEBOUNCE_MS, MESSAGING_ATTACHMENT_ACCEPT, MESSAGING_ATTACHMENT_MAX_COUNT } from '@/constants/config'
 import type { Message } from '@/types/message'
 import { cn } from '@/lib/utils'
 import { getMessagePreviewText } from '@/utils/messageUtils'
@@ -19,7 +19,9 @@ interface MessageInputProps {
   editingMessage: Message | null
   onCancelEdit: () => void
   onTyping: () => void
-  onFiles: (files: FileList | null) => void
+  onFiles: (files: FileList | File[] | null) => void
+  pendingFiles?: File[]
+  onRemoveFile?: (index: number) => void
 }
 
 export function MessageInput({
@@ -33,6 +35,8 @@ export function MessageInput({
   onCancelEdit,
   onTyping,
   onFiles,
+  pendingFiles = [],
+  onRemoveFile,
 }: MessageInputProps) {
   const [emojiOpen, setEmojiOpen] = React.useState(false)
   const emojiAnchorRef = React.useRef<HTMLDivElement>(null)
@@ -59,6 +63,10 @@ export function MessageInput({
     }
   }
 
+  const canSend =
+    !disabled &&
+    (editingMessage ? value.trim().length > 0 : value.trim().length > 0 || pendingFiles.length > 0)
+
   return (
     <div className="relative">
       {replyingTo ? (
@@ -79,14 +87,33 @@ export function MessageInput({
           </button>
         </div>
       ) : null}
+      {pendingFiles.length > 0 ? (
+        <div className="flex flex-wrap gap-2 border-t border-chat-border px-4 py-2">
+          {pendingFiles.map((f, i) => (
+            <button
+              key={`${f.name}-${f.size}-${i}`}
+              type="button"
+              className="rounded-lg bg-muted px-2 py-1 text-xs"
+              onClick={() => onRemoveFile?.(i)}
+            >
+              {f.name} ×
+            </button>
+          ))}
+        </div>
+      ) : null}
       <footer className="flex items-end gap-2 border-t border-chat-border-footer bg-card px-3 py-3 backdrop-blur-sm sm:gap-3 sm:px-6 sm:py-4">
         <input
           ref={fileRef}
           type="file"
           multiple
+          accept={MESSAGING_ATTACHMENT_ACCEPT}
           className="hidden"
           onChange={(e) => {
-            onFiles(e.target.files)
+            const list = e.target.files
+            if (list?.length) {
+              const capped = Array.from(list).slice(0, MESSAGING_ATTACHMENT_MAX_COUNT)
+              onFiles(capped)
+            }
             e.target.value = ''
           }}
         />
@@ -131,7 +158,7 @@ export function MessageInput({
         <Button
           type="button"
           size="icon"
-          disabled={disabled}
+          disabled={!canSend}
           className={cn(
             'size-11 shrink-0 rounded-xl bg-chat-accent text-text-white shadow-md hover:opacity-90 sm:size-12',
           )}

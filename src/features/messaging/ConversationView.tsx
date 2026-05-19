@@ -8,8 +8,10 @@ import { MessageInput } from '@/components/chat/MessageInput'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { ChatErrorBoundary } from '@/components/ui/ChatErrorBoundary'
 import type { AuthUser } from '@/auth/types'
-import { sendMessageWithFiles } from '@/api/messages'
+import { sendMessageWithAttachments } from '@/api/messages'
 import { QUERY_KEYS } from '@/constants/queryKeys'
+import { appendOrMergeMessageInCache } from '@/features/messaging/messageCache'
+import { applyNewMessagePreview } from '@/features/messaging/conversationCache'
 import { useConversation } from '@/hooks/useConversation'
 import { useInfiniteMessages } from '@/hooks/useInfiniteMessages'
 import { useMessageActions } from '@/hooks/useMessageActions'
@@ -92,7 +94,7 @@ export function ConversationView({
     if (files.length > 0) {
       try {
         setFileBusy(true)
-        await sendMessageWithFiles(
+        const sent = await sendMessageWithAttachments(
           conversationUuid,
           text || null,
           files,
@@ -101,9 +103,13 @@ export function ConversationView({
         clearFiles()
         setDraft('')
         setReplyingTo(null)
-        void queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.messages(conversationUuid),
-        })
+        appendOrMergeMessageInCache(queryClient, conversationUuid, sent)
+        if (me) {
+          applyNewMessagePreview(queryClient, conversationUuid, sent, {
+            selfUserId: me.id,
+            isActiveConversation: true,
+          })
+        }
         void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
       } catch {
         showError('Failed to send with attachments')
@@ -133,6 +139,7 @@ export function ConversationView({
     setReplyingTo,
     sendMessage,
     queryClient,
+    me,
   ])
 
   const onDelete = React.useCallback(
@@ -206,21 +213,9 @@ export function ConversationView({
             }}
             onTyping={signalTyping}
             onFiles={(list) => list && addFiles(list)}
+            pendingFiles={files}
+            onRemoveFile={removeFile}
           />
-          {files.length > 0 ? (
-            <div className="flex flex-wrap gap-2 border-t border-chat-border px-4 py-2">
-              {files.map((f, i) => (
-                <button
-                  key={`${f.name}-${i}`}
-                  type="button"
-                  className="rounded-lg bg-muted px-2 py-1 text-xs"
-                  onClick={() => removeFile(i)}
-                >
-                  {f.name} ×
-                </button>
-              ))}
-            </div>
-          ) : null}
         </div>
       </section>
     </ChatErrorBoundary>

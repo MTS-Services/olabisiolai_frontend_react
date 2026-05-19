@@ -286,6 +286,7 @@ export function BusinessDetailsModal({ open, onClose, businessId }: BusinessDeta
                   </ul>
                 </div>
               ) : null}
+
             </div>
           </>
         ) : null}

@@ -20,4 +20,5 @@ export type RealtimeNotificationPayload = {
   sender_name?: string
   preview?: string
   unread_count?: number
+  from_platform_admin?: boolean
 }

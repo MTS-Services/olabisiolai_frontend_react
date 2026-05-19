@@ -1,4 +1,4 @@
-export type LeadChannel = "direct" | "whatsapp";
+export type LeadChannel = "direct" | "whatsapp" | "admin";
 export type LeadStatus = "new" | "contacted";
 
 export type Lead = {

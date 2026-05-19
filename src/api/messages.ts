@@ -1,4 +1,5 @@
 import { api } from '@/api/client'
+import { messagingPath } from '@/api/messagingPaths'
 import type { ApiResponse } from '@/types/api'
 import type { Message } from '@/types/message'
 import { normalizeMessage, unwrapApi } from '@/utils/messageUtils'
@@ -8,7 +9,7 @@ export async function getMessages(
   cursor?: string,
 ): Promise<{ messages: Message[]; meta: ApiResponse<Message[]>['meta'] }> {
   const res = await api.get<ApiResponse<Record<string, unknown>[]>>(
-    `/conversations/${conversationUuid}/messages`,
+    messagingPath(`/conversations/${conversationUuid}/messages`),
     { params: cursor ? { cursor } : {} },
   )
   const { data, meta } = unwrapApi(res.data)
@@ -23,7 +24,7 @@ export async function sendMessage(
   parentUuid?: string | null,
 ): Promise<Message> {
   const res = await api.post<ApiResponse<Record<string, unknown>>>(
-    `/conversations/${conversationUuid}/messages`,
+    messagingPath(`/conversations/${conversationUuid}/messages`),
     {
       body,
       attachment_ids: attachmentIds?.length ? attachmentIds : undefined,
@@ -47,7 +48,7 @@ export async function sendMessageWithFiles(
     form.append('attachments[]', f)
   }
   const res = await api.post<ApiResponse<Record<string, unknown>>>(
-    `/conversations/${conversationUuid}/messages`,
+    messagingPath(`/conversations/${conversationUuid}/messages`),
     form,
   )
   const { data } = unwrapApi(res.data)
@@ -55,7 +56,7 @@ export async function sendMessageWithFiles(
 }
 
 export async function editMessage(uuid: string, body: string): Promise<Message> {
-  const res = await api.patch<ApiResponse<Record<string, unknown>>>(`/messages/${uuid}`, {
+  const res = await api.patch<ApiResponse<Record<string, unknown>>>(messagingPath(`/messages/${uuid}`), {
     body,
   })
   const { data } = unwrapApi(res.data)
@@ -63,16 +64,16 @@ export async function editMessage(uuid: string, body: string): Promise<Message> 
 }
 
 export async function deleteMessage(uuid: string): Promise<void> {
-  await api.delete(`/messages/${uuid}`)
+  await api.delete(messagingPath(`/messages/${uuid}`))
 }
 
 export async function markAsRead(uuid: string): Promise<void> {
-  await api.post(`/messages/${uuid}/read`)
+  await api.post(messagingPath(`/messages/${uuid}/read`))
 }
 
 export async function sendTypingIndicator(
   conversationUuid: string,
   isTyping: boolean,
 ): Promise<void> {
-  await api.post(`/conversations/${conversationUuid}/typing`, { is_typing: isTyping })
+  await api.post(messagingPath(`/conversations/${conversationUuid}/typing`), { is_typing: isTyping })
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
   Ban,
@@ -17,6 +18,7 @@ import {
   changeAdminBusinessStatus,
   deleteAdminBusiness,
   fetchAdminBusinessList,
+  startAdminVendorConversation,
   type AdminBusinessInfo,
   type AdminBusinessStatusApi,
   type AdminFilterOption,
@@ -113,6 +115,7 @@ function nextApiStatusForToggle(current: Status): AdminBusinessStatusApi {
 }
 
 export default function BusinessTable() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const perPage = 15;
   const [page, setPage] = useState(1);
@@ -124,6 +127,7 @@ export default function BusinessTable() {
   const [boostFilter, setBoostFilter] = useState("all");
   const [selectedBusinessId, setSelectedBusinessId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openingChatBusinessId, setOpeningChatBusinessId] = useState<number | null>(null);
   const [actionBusinessId, setActionBusinessId] = useState<number | null>(null);
   const [actionType, setActionType] = useState<"status" | "delete" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Business | null>(null);
@@ -205,6 +209,20 @@ export default function BusinessTable() {
     onSettled: () => {
       setActionBusinessId(null);
       setActionType(null);
+    },
+  });
+
+  const openVendorChatMutation = useMutation({
+    mutationFn: (businessId: number) => startAdminVendorConversation(businessId),
+    onSuccess: ({ conversationUuid }) => {
+      navigate(`/admin/messages?c=${encodeURIComponent(conversationUuid)}`);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Could not open vendor chat.";
+      showError(message);
+    },
+    onSettled: () => {
+      setOpeningChatBusinessId(null);
     },
   });
 
@@ -479,9 +497,19 @@ export default function BusinessTable() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          className="inline-flex h-8 items-center gap-1 rounded-md bg-brand-red px-3 text-xs font-semibold text-white transition-colors hover:bg-brand-red/90"
+                          className="inline-flex h-8 items-center gap-1 rounded-md bg-brand-red px-3 text-xs font-semibold text-white transition-colors hover:bg-brand-red/90 disabled:opacity-60"
+                          title={`Message ${b.name}`}
+                          disabled={openingChatBusinessId === b.id}
+                          onClick={() => {
+                            setOpeningChatBusinessId(b.id);
+                            openVendorChatMutation.mutate(b.id);
+                          }}
                         >
-                          <ArrowUpRight className="size-3" />
+                          {openingChatBusinessId === b.id ? (
+                            <Loader2 className="size-3 animate-spin" aria-hidden />
+                          ) : (
+                            <ArrowUpRight className="size-3" aria-hidden />
+                          )}
                           Message Business
                         </button>
                         <button

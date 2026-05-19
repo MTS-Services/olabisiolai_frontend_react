@@ -647,3 +647,28 @@ export async function deleteAdminBusiness(businessInfoId: number): Promise<void>
   });
   assertApiSuccess(res.data, "Failed to delete business profile.");
 }
+
+export type AdminVendorConversationResult = {
+  conversationUuid: string;
+  vendorUserUuid: string | null;
+};
+
+/** Open vendor chat in admin Messages (uses `messages` table). */
+export async function startAdminVendorConversation(
+  businessInfoId: number,
+  message?: string,
+): Promise<AdminVendorConversationResult> {
+  const res = await request.post("/admin/business-info/message", {
+    business_info_id: businessInfoId,
+    ...(message?.trim() ? { message: message.trim() } : {}),
+  });
+  assertApiSuccess(res.data, "Failed to open vendor chat.");
+  const data = asRecord(asRecord(res.data)?.data);
+  const conversationUuid = pickString(data ?? {}, ["conversation_uuid"], "");
+  if (!conversationUuid) {
+    throw new Error("Could not start conversation with vendor.");
+  }
+  const vendorUserUuid = pickString(data ?? {}, ["vendor_user_uuid"], "") || null;
+
+  return { conversationUuid, vendorUserUuid };
+}

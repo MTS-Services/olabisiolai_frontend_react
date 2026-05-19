@@ -102,8 +102,12 @@ export function toNotificationDisplay(item: StoredNotification): NotificationDis
     typeof d.conversation_uuid === 'string' ? d.conversation_uuid : null
 
   let href = resolveNotificationHref(type, d.action_url)
-  if (type === 'new_message' && conversationUuid) {
-    href = `/vendor/leads?c=${encodeURIComponent(conversationUuid)}`
+  if (type === 'new_message') {
+    if (d.from_platform_admin === true && typeof d.action_url === 'string' && d.action_url.startsWith('/')) {
+      href = d.action_url
+    } else if (conversationUuid) {
+      href = `/messages?c=${encodeURIComponent(conversationUuid)}`
+    }
   }
 
   return {

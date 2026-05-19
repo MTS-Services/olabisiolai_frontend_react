@@ -1,8 +1,10 @@
 import { Lock, PlugZap } from "lucide-react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatNaira } from "@/lib/currency";
 
 export function OrderSummaryCard({
   onConfirmPay,
@@ -10,19 +12,23 @@ export function OrderSummaryCard({
   planTitle = "Visibility Pro Plus",
   totalAmount = 5000,
   isVerification = false,
+  boostLine,
+  beforePayButton,
+  confirmLabel,
 }: {
   onConfirmPay?: () => void;
   isPaying?: boolean;
+  confirmLabel?: string;
   planTitle?: string;
   totalAmount?: number;
   isVerification?: boolean;
+  boostLine?: { label: string; amount: number } | null;
+  /** Optional slot for checkboxes / notices above Pay Now */
+  beforePayButton?: ReactNode;
 }) {
   const navigate = useNavigate();
 
-  const formattedTotal = new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-  }).format(totalAmount);
+  const formattedTotal = formatNaira(totalAmount, { freeLabel: false });
 
   const handleConfirmPay = () => {
     if (onConfirmPay) {
@@ -57,10 +63,21 @@ export function OrderSummaryCard({
           </div>
         </div>
 
+        {boostLine && boostLine.amount > 0 ? (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Boost add-on ({boostLine.label})</span>
+            <span className="font-semibold text-foreground">
+              {formatNaira(boostLine.amount, { freeLabel: false })}
+            </span>
+          </div>
+        ) : null}
+
         <div className="flex items-center justify-between border-t pt-3">
           <span className="text-lg font-semibold">Total Price</span>
           <span className="text-4xl font-bold text-brand-red">{formattedTotal}</span>
         </div>
+
+        {beforePayButton ? <div className="space-y-2">{beforePayButton}</div> : null}
 
         <Button
           className="w-full bg-brand-red text-white hover:bg-brand-red/90"
@@ -68,7 +85,7 @@ export function OrderSummaryCard({
           disabled={isPaying}
         >
           <Lock className="size-4" />
-          {isPaying ? "Processing..." : "Pay Now"}
+          {isPaying ? "Processing..." : (confirmLabel ?? "Pay Now")}
         </Button>
 
         <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">

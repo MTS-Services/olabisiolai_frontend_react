@@ -15,6 +15,7 @@ import {
 } from "@/features/verification/adminVerificationApi";
 import { groupDocumentsByType, type NestedDocFile } from "@/features/verification/verificationDocuments";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { formatNaira } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
 const interactiveBtn =
@@ -356,7 +357,7 @@ export default function AdminVerificationDetail() {
               <h3 className="mb-2 text-xs font-semibold uppercase text-chat-meta">Payment</h3>
               {detail.payments.map((p) => (
                 <p key={p.id} className="text-sm">
-                  {p.package_id} · ₦{p.amount.toLocaleString()} ·{" "}
+                  {p.package_id} · {formatNaira(p.amount, { freeLabel: false })} ·{" "}
                   <span className="capitalize">{p.status}</span>
                 </p>
               ))}

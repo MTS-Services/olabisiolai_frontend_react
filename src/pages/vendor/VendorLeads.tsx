@@ -123,6 +123,16 @@ export default function VendorLeads() {
 
   useEffect(() => {
     if (!isChatChannel) return;
+    const conversationUuid = searchParams.get("c")?.trim();
+    if (!conversationUuid || !conversationsQuery.data?.length) return;
+    const match = conversationsQuery.data.find((c) => c.uuid === conversationUuid);
+    if (!match) return;
+    setChannelFilter("whatsapp");
+    setSelectedLeadId(match.uuid);
+  }, [searchParams, conversationsQuery.data]);
+
+  useEffect(() => {
+    if (channelFilter !== "whatsapp") return;
     if (!filteredLeads.length) {
       if (selectedLeadId) setSelectedLeadId("");
       return;

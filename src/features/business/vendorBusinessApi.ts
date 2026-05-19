@@ -1,6 +1,7 @@
 import { request } from "@/api/request";
 
 export type CreateVendorBusinessPayload = {
+  subscription_plan?: "free" | "premium";
   category_id: string;
   /** Must match `locations.id` from form-options (required by API). */
   location_id: string;
@@ -25,8 +26,24 @@ function appendIfTruthy(formData: FormData, key: string, value: string | undefin
   }
 }
 
-export async function createVendorBusiness(payload: CreateVendorBusinessPayload): Promise<unknown> {
+export type CreateVendorBusinessResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    requires_subscription_payment?: boolean;
+    subscription?: { requires_payment?: boolean };
+  };
+};
+
+export async function createVendorBusiness(
+  payload: CreateVendorBusinessPayload,
+): Promise<CreateVendorBusinessResponse> {
   const formData = new FormData();
+
+  const plan =
+    payload.subscription_plan ??
+    (localStorage.getItem("vendorPlan") === "premium" ? "premium" : "free");
+  formData.append("subscription_plan", plan);
 
   formData.append("category_id", payload.category_id);
   formData.append("location_id", payload.location_id.trim());
@@ -57,8 +74,23 @@ export async function createVendorBusiness(payload: CreateVendorBusinessPayload)
     formData.append(`cover_photos[${index}]`, photo);
   });
 
-  const res = await request.post("/vendor/business/create", formData);
+  const res = await request.post<CreateVendorBusinessResponse>("/vendor/business/create", formData);
   return res.data;
+}
+
+export function isPremiumPlanSelected(): boolean {
+  return localStorage.getItem("vendorPlan") === "premium";
+}
+
+export function businessCreateRequiresPayment(response: CreateVendorBusinessResponse): boolean {
+  if (isPremiumPlanSelected()) {
+    return true;
+  }
+
+  return (
+    response.data?.requires_subscription_payment === true ||
+    response.data?.subscription?.requires_payment === true
+  );
 }
 
 export type UpdateVendorBusinessPayload = {

@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 
 import { useNav } from "@/hooks/useNav";
 import { VendorHeader } from "@/components/partials/vendor/VendorHeader";
+import { VendorAccessGuard } from "@/components/partials/vendor/VendorAccessGuard";
 import { VendorSidebar } from "@/components/partials/vendor/VendorSidebar";
 
 export function VendorLayout() {
@@ -21,7 +22,9 @@ export function VendorLayout() {
         <VendorHeader onMenuClick={() => nav.toggle()} />
 
         <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain">
-          <Outlet />
+          <VendorAccessGuard>
+            <Outlet />
+          </VendorAccessGuard>
         </main>
       </div>
     </div>

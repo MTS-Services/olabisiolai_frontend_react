@@ -1,7 +1,9 @@
 import {
   extractBearerTokenFromLoginBody,
   extractRefreshTokenFromLoginBody,
+  extractTwoFactorLoginToken,
   extractUserFromAuthPayload,
+  isTwoFactorLoginRequired,
 } from '@/api/laravelResponse'
 import { request } from '@/api/request'
 import { type AuthContextValue } from '@/auth/context'
@@ -97,13 +99,50 @@ async function hydrateSessionFromLoginBody(
   return refreshedUser ?? loggedInUser
 }
 
-export async function loginUserWithRole(payload: LoginPayload, handlers: AuthHandlers) {
+export type LoginUserResult =
+  | { kind: 'authenticated'; user: AuthUser }
+  | { kind: 'two_factor'; twoFactorToken: string }
+
+export async function loginUserWithRole(
+  payload: LoginPayload,
+  handlers: AuthHandlers,
+): Promise<LoginUserResult> {
   try {
     const res = await request.post<unknown>('/auth/login', payload)
+
+    if (isTwoFactorLoginRequired(res.data)) {
+      const twoFactorToken = extractTwoFactorLoginToken(res.data)
+      if (!twoFactorToken) {
+        throw new Error('Two-factor authentication is required, but the login token is missing.')
+      }
+      handlers.resetAuthState()
+      return { kind: 'two_factor', twoFactorToken }
+    }
+
     const user = await hydrateSessionFromLoginBody(
       res.data,
       handlers,
       'Unable to restore your session after login.',
+      'Login response is missing access token.',
+    )
+    ensureRoleMatchesExpected(user, payload.role)
+    return { kind: 'authenticated', user }
+  } catch (error) {
+    handlers.resetAuthState()
+    throw error
+  }
+}
+
+export async function verifyLoginTwoFactor(
+  payload: { two_factor_token: string; code: string; role: AuthRole },
+  handlers: AuthHandlers,
+): Promise<AuthUser> {
+  try {
+    const res = await request.post<unknown>('/auth/two-factor/verify', payload)
+    const user = await hydrateSessionFromLoginBody(
+      res.data,
+      handlers,
+      'Unable to restore your session after two-factor verification.',
       'Login response is missing access token.',
     )
     ensureRoleMatchesExpected(user, payload.role)
@@ -228,7 +267,7 @@ export async function verifyRegistrationOtp(
 export function resolveDashboardPath(user: unknown, selectedRole: AuthRole) {
   const roles = getUserRoles(extractUserFromAuthPayload(user))
   if (roles.includes('admin')) return '/admin'
-  if (roles.includes('vendor')) return '/vendor/choose-your-plan'
+  if (roles.includes('vendor')) return '/vendor'
   if (roles.includes('user')) return '/user/dashboard'
 
   const dashboardFromPolicy = roles
@@ -236,5 +275,5 @@ export function resolveDashboardPath(user: unknown, selectedRole: AuthRole) {
     .find((value): value is string => Boolean(value))
 
   if (dashboardFromPolicy) return dashboardFromPolicy
-  return selectedRole === 'vendor' ? '/vendor/choose-your-plan' : '/user/dashboard'
+  return selectedRole === 'vendor' ? '/vendor' : '/user/dashboard'
 }

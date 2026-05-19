@@ -13,9 +13,9 @@ const barHeights = [45, 60, 55, 70, 50, 90, 80, 65, 75, 85, 55, 40];
 
 export function BasicAnalytics() {
   const navigate = useNavigate();
-  
+
   const handleUpgradeClick = () => {
-    navigate("/vendor/choose-your-plan");
+    navigate("/vendor/premium-payment");
   };
 
   return (
@@ -29,14 +29,14 @@ export function BasicAnalytics() {
         <p className="text-sm text-popover-foreground text-center max-w-[260px]">
           Unlock deep analytics, conversion tracking, and competitor benchmarks.
         </p>
-        <button 
+        <button
           onClick={handleUpgradeClick}
           className="bg-red-600 hover:bg-brand-red text-text-white rounded-full px-6 py-3 text-sm font-medium"
         >
           Get Premium Access
         </button>
       </div>
-      
+
       <Card className="opacity-40 h-screen">
         <CardContent className="p-6">
           <h2 className="text-xl font-bold font-inter mb-5">Analytics Dashboard</h2>

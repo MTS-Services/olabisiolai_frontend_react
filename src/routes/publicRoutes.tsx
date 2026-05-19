@@ -3,6 +3,9 @@ import type { RouteObject } from "react-router-dom";
 
 import { FrontendLayout } from "@/layouts/frontend/FrontendLayout";
 import { suspensePage } from "@/routes/routeUtils";
+import { VendorOnboardingGate } from "@/components/partials/vendor/VendorOnboardingGate";
+import { VendorPremiumPaymentGate } from "@/components/partials/vendor/VendorPremiumPaymentGate";
+import VendorSubscriptionPay from "@/pages/vendor/VendorSubscriptionPay";
 
 const Home = lazy(() => import("@/pages/frontend/Home"));
 const Cart = lazy(() => import("@/pages/frontend/Cart"));
@@ -77,7 +80,29 @@ export const publicRoutes: RouteObject = {
     { path: "/single-application", element: suspensePage(SingleApplication) },
     { path: "/cookies-policy", element: suspensePage(CookiesPolicy) },
     { path: "/careers", element: suspensePage(Careers) },
-    { path: "/vendor/choose-your-plan", element: suspensePage(ChooseYourVendorPlan) },
-    { path: "/vendor/plan-form", element: suspensePage(PlanForm) },
+    {
+      path: "/vendor/choose-your-plan",
+      element: (
+        <VendorOnboardingGate onboardingOnly>
+          {suspensePage(ChooseYourVendorPlan)}
+        </VendorOnboardingGate>
+      ),
+    },
+    {
+      path: "/vendor/plan-form",
+      element: (
+        <VendorOnboardingGate onboardingOnly requireAuth>
+          {suspensePage(PlanForm)}
+        </VendorOnboardingGate>
+      ),
+    },
+    {
+      path: "/vendor/premium-payment",
+      element: (
+        <VendorPremiumPaymentGate>
+          <VendorSubscriptionPay />
+        </VendorPremiumPaymentGate>
+      ),
+    },
   ],
 };

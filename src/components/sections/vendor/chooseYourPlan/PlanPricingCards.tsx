@@ -65,7 +65,7 @@ export function PlanPricingCards() {
             <PlanFeatureCheck>Everything in Basic</PlanFeatureCheck>
             <PlanFeatureCheck>Up to 20 photos</PlanFeatureCheck>
             <PlanFeatureCheck>Full analytics dashboard</PlanFeatureCheck>
-            <PlanFeatureCheck>Verification included free</PlanFeatureCheck>
+            <PlanFeatureLocked>Verified badge (separate verification fee)</PlanFeatureLocked>
             <PlanFeatureCheck>Priority boost access</PlanFeatureCheck>
             <PlanFeatureCheck>Featured in search results</PlanFeatureCheck>
           </ul>

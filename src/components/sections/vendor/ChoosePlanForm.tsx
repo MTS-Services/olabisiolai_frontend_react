@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+﻿import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, MapPin, Plus, Upload, X } from "lucide-react";
@@ -10,8 +10,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { createVendorBusiness } from "@/features/business/vendorBusinessApi";
+import {
+  businessCreateRequiresPayment,
+  createVendorBusiness,
+  isPremiumPlanSelected,
+} from "@/features/business/vendorBusinessApi";
+import { clearBoostCheckoutSelection, saveBoostCheckoutSelection } from "@/features/boost/boostCheckoutSession";
+import { BoostSlotAvailabilityAlert } from "@/components/sections/vendor/boost/BoostSlotAvailabilityAlert";
+import {
+  isTierSlotAvailable,
+  locationHasAnyBoostSlot,
+  tierSlotFullMessage,
+  tierSlotStatusLabel,
+} from "@/features/boost/boostSlotAvailability";
+import { resolveBoostSelectionPrice } from "@/features/boost/locationBoostPlans";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
+import {
+  formatNaira,
+  formatTierPriceRange,
+  getSelectableDurationsForTier,
+  parseVendorLocationOptions,
+} from "@/features/locations/vendorLocationOptions";
 
 function Label({ children }: { children: ReactNode }) {
   return (
@@ -191,22 +210,25 @@ export default function ChoosePlanForm() {
     () => (selectedLocation?.city ? [selectedLocation.city] : []),
     [selectedLocation?.city],
   );
-  const enabledDurations = useMemo(
-    () => (selectedLocation?.boost?.durations ?? []).filter((duration) => duration.enabled),
-    [selectedLocation?.boost?.durations],
-  );
   const selectedTopSlot = useMemo(
     () => selectedLocation?.boost?.tiers.find((tier) => tier.key === selectedTopSlotKey) ?? null,
     [selectedLocation?.boost?.tiers, selectedTopSlotKey],
   );
+  const enabledDurations = useMemo(() => {
+    if (!selectedLocation?.boost?.enabled || !selectedTopSlot) return [];
+    return getSelectableDurationsForTier(selectedTopSlot, selectedLocation.boost);
+  }, [selectedLocation?.boost, selectedTopSlot]);
   const selectedDuration = useMemo(
     () => enabledDurations.find((duration) => String(duration.days) === selectedDurationDays) ?? null,
     [enabledDurations, selectedDurationDays],
   );
-  const selectedCombinedPrice = useMemo(
-    () => (selectedTopSlot?.priceAmount ?? 0) + (selectedDuration?.priceAmount ?? 0),
-    [selectedDuration?.priceAmount, selectedTopSlot?.priceAmount],
-  );
+  const selectedCombinedPrice = useMemo(() => {
+    if (!selectedLocation || !selectedTopSlotKey || !selectedDurationDays) return 0;
+    return (
+      resolveBoostSelectionPrice(selectedLocation, selectedTopSlotKey, Number(selectedDurationDays))
+        ?.amount ?? 0
+    );
+  }, [selectedLocation, selectedTopSlotKey, selectedDurationDays]);
 
   const orphanFieldErrorSummary = useMemo(() => {
     const parts = Object.entries(fieldErrors)
@@ -232,6 +254,10 @@ export default function ChoosePlanForm() {
   }, [selectedLocation]);
 
   useEffect(() => {
+    setSelectedDurationDays("");
+  }, [selectedTopSlotKey]);
+
+  useEffect(() => {
     if (!logo) {
       setLogoPreviewUrl(null);
       return;
@@ -253,12 +279,23 @@ export default function ChoosePlanForm() {
 
   const createBusinessMutation = useMutation({
     mutationFn: createVendorBusiness,
-    onSuccess: () => {
+    onSuccess: (response) => {
+      const requiresPayment = businessCreateRequiresPayment(response);
+
       localStorage.setItem("vendorBusinessCreated", "true");
       void queryClient.invalidateQueries({ queryKey: ["vendor", "business", "profile"] });
-      navigate("/vendor/dashboard");
+      void queryClient.invalidateQueries({ queryKey: ["vendor", "subscription", "status"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor", "onboarding", "status"] });
+
+      if (requiresPayment) {
+        navigate("/vendor/premium-payment", { replace: true });
+        return;
+      }
+
+      navigate("/vendor/dashboard", { replace: true });
     },
     onError: (error: unknown) => {
+      clearBoostCheckoutSelection();
       const parsed = parseVendorBusinessApiFailure(error);
       setFieldErrors(parsed.fieldErrors);
       setSubmitError(parsed.general);
@@ -299,7 +336,66 @@ export default function ChoosePlanForm() {
       return;
     }
 
+    if (selectedLocation?.boost?.enabled) {
+      if (selectedTopSlotKey && !selectedDurationDays) {
+        setFieldErrors({
+          boost_duration: "You selected a boost plan. Please also choose a duration (7, 14, or 30 days).",
+        });
+        return;
+      }
+      if (selectedDurationDays && !selectedTopSlotKey) {
+        setFieldErrors({
+          boost_tier: "Please select a boost plan before choosing a duration.",
+        });
+        return;
+      }
+      if (
+        selectedTopSlotKey &&
+        selectedDurationDays &&
+        selectedCombinedPrice <= 0
+      ) {
+        setFieldErrors({
+          boost_duration: "No valid price found for this plan and duration. Pick another option or contact support.",
+        });
+        return;
+      }
+      if (selectedTopSlot && selectedLocation && !isTierSlotAvailable(selectedTopSlot)) {
+        setFieldErrors({
+          boost_tier: tierSlotFullMessage(selectedTopSlot, selectedLocation),
+        });
+        return;
+      }
+      if (
+        selectedTopSlotKey &&
+        selectedDurationDays &&
+        selectedLocation &&
+        !locationHasAnyBoostSlot(selectedLocation)
+      ) {
+        setFieldErrors({
+          boost_tier: "No boost slots are available for this location. Choose another LGA or skip boost for now.",
+        });
+        return;
+      }
+    }
+
+    const boostCheckout =
+      selectedTopSlot && selectedDuration && selectedLocation && selectedCombinedPrice > 0
+        ? {
+          locationId: selectedLocation.id,
+          locationLabel: selectedLocation.label,
+          tierKey: selectedTopSlot.key,
+          tierLabel: selectedTopSlot.label,
+          durationDays: selectedDuration.days,
+          amount: selectedCombinedPrice,
+        }
+        : null;
+
+    if (boostCheckout && isPremiumPlanSelected()) {
+      saveBoostCheckoutSelection(boostCheckout);
+    }
+
     createBusinessMutation.mutate({
+      subscription_plan: isPremiumPlanSelected() ? "premium" : "free",
       category_id: categoryId,
       location_id: locationId,
       business_name: String(formData.get("businessName") ?? ""),
@@ -374,7 +470,7 @@ export default function ChoosePlanForm() {
               >
                 <option value="">
                   {formOptionsLoading
-                    ? "Loading categories…"
+                    ? "Loading categoriesâ€¦"
                     : formOptionsError
                       ? "Categories unavailable"
                       : "Select category"}
@@ -415,7 +511,7 @@ export default function ChoosePlanForm() {
               >
                 <option value="">
                   {formOptionsLoading
-                    ? "Loading locations…"
+                    ? "Loading locationsâ€¦"
                     : locationOptions.length === 0
                       ? "No locations"
                       : "Select location"}
@@ -481,13 +577,18 @@ export default function ChoosePlanForm() {
 
           {selectedLocation ? (
             <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
-              <p className="text-sm font-semibold text-foreground">Boost options (Optional)</p>
+              <p className="text-sm font-semibold text-foreground">Boost options (optional)</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                If you pick a boost plan, you must also select a duration â€” partial selection is not allowed.
+              </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {selectedLocation.state} / {selectedLocation.city} / {selectedLocation.lga}
               </p>
 
               {selectedLocation.boost?.enabled ? (
                 <div className="mt-4 space-y-3">
+                  <BoostSlotAvailabilityAlert location={selectedLocation} />
+
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div className="rounded-md border border-sky-100 bg-white px-3 py-2">
                       <p className="text-[11px] uppercase text-muted-foreground">Total slots</p>
@@ -509,26 +610,52 @@ export default function ChoosePlanForm() {
                     <p className="text-xs font-semibold uppercase text-muted-foreground">Top slots & price</p>
                     {selectedLocation.boost.tiers.length > 0 ? (
                       <ul className="grid gap-2 sm:grid-cols-2">
-                        {selectedLocation.boost.tiers.map((tier) => (
+                        {selectedLocation.boost.tiers.map((tier) => {
+                          const tierAvailable = isTierSlotAvailable(tier);
+                          return (
                           <li
                             key={tier.key}
-                            className="rounded-md border border-sky-100 bg-white px-3 py-2 text-xs text-foreground"
+                            className={cn(
+                              "rounded-md border bg-white px-3 py-2 text-xs text-foreground",
+                              tierAvailable ? "border-sky-100" : "border-red-200 bg-red-50/50 opacity-80",
+                            )}
                           >
-                            <label className="flex cursor-pointer items-center gap-2">
+                            <label
+                              className={cn(
+                                "flex flex-wrap items-center gap-2",
+                                tierAvailable ? "cursor-pointer" : "cursor-not-allowed",
+                              )}
+                            >
                               <input
                                 type="checkbox"
-                                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                                 checked={selectedTopSlotKey === tier.key}
-                                onChange={(e) =>
-                                  setSelectedTopSlotKey(e.target.checked ? tier.key : "")
-                                }
+                                disabled={!tierAvailable}
+                                onChange={(e) => {
+                                  if (!tierAvailable) return;
+                                  setSelectedTopSlotKey(e.target.checked ? tier.key : "");
+                                  setFieldErrors((prev) => {
+                                    const next = { ...prev };
+                                    delete next.boost_tier;
+                                    delete next.boost_duration;
+                                    return next;
+                                  });
+                                }}
                               />
                               <span className="font-semibold">{tier.label}</span>
-                              <span className="text-muted-foreground">Slots: {tier.totalSlots}</span>
-                              <span className="text-muted-foreground">Price: {formatNaira(tier.priceAmount)}</span>
+                              <span className={tierAvailable ? "text-muted-foreground" : "text-red-700"}>
+                                {tierSlotStatusLabel(tier)}
+                              </span>
+                              <span className="text-muted-foreground">
+                                Price:{" "}
+                                {selectedLocation.boost
+                                  ? formatTierPriceRange(tier, selectedLocation.boost.durations)
+                                  : formatNaira(tier.priceAmount)}
+                              </span>
                             </label>
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                     ) : (
                       <p className="text-xs text-muted-foreground">No top slot config found for this location.</p>
@@ -536,14 +663,17 @@ export default function ChoosePlanForm() {
                     {selectedTopSlot ? (
                       <p className="text-xs text-sky-900">
                         Selected: <span className="font-semibold">{selectedTopSlot.label}</span> | Slots:{" "}
-                        {selectedTopSlot.totalSlots} | Price: {formatNaira(selectedTopSlot.priceAmount)}
+                        {selectedTopSlot.totalSlots} | From:{" "}
+                        {formatTierPriceRange(selectedTopSlot, selectedLocation.boost.durations)}
                       </p>
                     ) : null}
                   </div>
 
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase text-muted-foreground">Durations</p>
-                    {selectedLocation.boost.durations.length > 0 ? (
+                    {!selectedTopSlot ? (
+                      <p className="text-xs text-muted-foreground">Select a boost plan above to see duration prices.</p>
+                    ) : enabledDurations.length > 0 ? (
                       <ul className="flex flex-wrap gap-2">
                         {enabledDurations.map((duration) => (
                           <li
@@ -555,9 +685,16 @@ export default function ChoosePlanForm() {
                                 type="checkbox"
                                 className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                                 checked={selectedDurationDays === String(duration.days)}
-                                onChange={(e) =>
-                                  setSelectedDurationDays(e.target.checked ? String(duration.days) : "")
-                                }
+                                onChange={(e) => {
+                                  setSelectedDurationDays(
+                                    e.target.checked ? String(duration.days) : "",
+                                  );
+                                  setFieldErrors((prev) => {
+                                    const next = { ...prev };
+                                    delete next.boost_duration;
+                                    return next;
+                                  });
+                                }}
                               />
                               <span>
                                 {duration.days} days - {formatNaira(duration.priceAmount)}
@@ -569,6 +706,8 @@ export default function ChoosePlanForm() {
                     ) : (
                       <p className="text-xs text-muted-foreground">No duration pricing configured.</p>
                     )}
+                    <FieldErrorText id="err-boost_duration" message={fieldErrors.boost_duration} />
+                    <FieldErrorText id="err-boost_tier" message={fieldErrors.boost_tier} />
                     {selectedDuration ? (
                       <p className="text-xs text-sky-900">
                         Selected duration: <span className="font-semibold">{selectedDuration.days} days</span> | Price:{" "}
@@ -919,6 +1058,8 @@ const VENDOR_FORM_INLINE_ERROR_KEYS = new Set([
   "website",
   "logo",
   "cover_photos",
+  "boost_tier",
+  "boost_duration",
 ]);
 
 function parseVendorBusinessApiFailure(error: unknown): {
@@ -1016,147 +1157,6 @@ function getMessageFromUnknown(error: unknown): string {
   }
   if (error instanceof Error && error.message.trim()) return error.message;
   return "Could not create business profile.";
-}
-
-type BoostTierView = {
-  key: string;
-  label: string;
-  totalSlots: number;
-  priceAmount: number;
-};
-
-type BoostDurationView = {
-  days: number;
-  enabled: boolean;
-  priceAmount: number;
-};
-
-type ParsedLocationOption = {
-  id: string;
-  location: string;
-  state: string;
-  city: string;
-  lga: string;
-  label: string;
-  boost: {
-    enabled: boolean;
-    tiers: BoostTierView[];
-    durations: BoostDurationView[];
-    stats: {
-      totalSlots: number;
-      slotsSold: number;
-      slotsRemaining: number;
-    };
-  } | null;
-};
-
-function parseVendorLocationOptions(raw: unknown): ParsedLocationOption[] {
-  const rows = Array.isArray(raw)
-    ? raw
-    : raw && typeof raw === "object" && Array.isArray((raw as Record<string, unknown>).data)
-      ? ((raw as Record<string, unknown>).data as unknown[])
-      : [];
-  if (rows.length === 0) return [];
-  return rows
-    .map((item, index) => {
-      if (!item || typeof item !== "object") return null;
-      const record = item as Record<string, unknown>;
-      const state = readNestedString(record, ["state", "name"]);
-      const city = readNestedString(record, ["city", "name"]);
-      const lga = readNestedString(record, ["lga", "name"]);
-      const country = readNestedString(record, ["country", "name"]) ?? "Nigeria";
-      const idValue = readString(record.id) ?? String(record.id ?? `${state}-${city}-${lga}-${index}`);
-      if (!state || !city || !lga) return null;
-
-      return {
-        id: idValue,
-        location: country,
-        state,
-        city,
-        lga,
-        label: `${state} / ${city} / ${lga}`,
-        boost: parseBoostData(readNestedValue(record, ["lga", "boost"])),
-      } satisfies ParsedLocationOption;
-    })
-    .filter((entry): entry is ParsedLocationOption => entry !== null);
-}
-
-function parseBoostData(raw: unknown): ParsedLocationOption["boost"] {
-  if (!raw || typeof raw !== "object") return null;
-  const record = raw as Record<string, unknown>;
-  const tiersRaw = Array.isArray(record.tiers) ? record.tiers : [];
-  const durationsRaw = Array.isArray(record.durations) ? record.durations : [];
-  const statsRaw =
-    record.stats && typeof record.stats === "object"
-      ? (record.stats as Record<string, unknown>)
-      : ({} as Record<string, unknown>);
-
-  return {
-    enabled: Boolean(record.enabled),
-    tiers: tiersRaw
-      .map((tier, index) => {
-        if (!tier || typeof tier !== "object") return null;
-        const tierRecord = tier as Record<string, unknown>;
-        return {
-          key: readString(tierRecord.key) ?? `tier-${index + 1}`,
-          label: readString(tierRecord.label) ?? readString(tierRecord.name) ?? `Tier ${index + 1}`,
-          totalSlots: toNumber(tierRecord.total_slots ?? tierRecord.totalSlots),
-          priceAmount: toNumber(tierRecord.price_amount ?? tierRecord.priceAmount ?? tierRecord.price),
-        } satisfies BoostTierView;
-      })
-      .filter((tier): tier is BoostTierView => tier !== null),
-    durations: durationsRaw
-      .map((duration) => {
-        if (!duration || typeof duration !== "object") return null;
-        const durationRecord = duration as Record<string, unknown>;
-        return {
-          days: toNumber(durationRecord.days ?? durationRecord.duration_days),
-          enabled: Boolean(durationRecord.enabled ?? durationRecord.is_active),
-          priceAmount: toNumber(durationRecord.price_amount ?? durationRecord.priceAmount ?? durationRecord.price),
-        } satisfies BoostDurationView;
-      })
-      .filter((duration): duration is BoostDurationView => duration !== null && duration.days > 0),
-    stats: {
-      totalSlots: toNumber(statsRaw.total_slots ?? statsRaw.totalSlots),
-      slotsSold: toNumber(statsRaw.slots_sold ?? statsRaw.slotsSold),
-      slotsRemaining: toNumber(statsRaw.slots_remaining ?? statsRaw.slotsRemaining),
-    },
-  };
-}
-
-function readNestedValue(record: Record<string, unknown>, path: string[]): unknown {
-  let current: unknown = record;
-  for (const key of path) {
-    if (!current || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[key];
-  }
-  return current;
-}
-
-function readNestedString(record: Record<string, unknown>, path: string[]): string | undefined {
-  return readString(readNestedValue(record, path));
-}
-
-function readString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim() ? value : undefined;
-}
-
-function toNumber(value: unknown): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return 0;
-}
-
-function formatNaira(amount: number): string {
-  if (!Number.isFinite(amount) || amount <= 0) return "Free";
-  try {
-    return `₦${new Intl.NumberFormat("en-NG").format(Math.round(amount))}`;
-  } catch {
-    return `₦${Math.round(amount).toLocaleString()}`;
-  }
 }
 
 function isAcceptedImage(file: File): boolean {

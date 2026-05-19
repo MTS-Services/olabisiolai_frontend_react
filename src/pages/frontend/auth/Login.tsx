@@ -92,10 +92,13 @@ export default function Login() {
         effectiveUser = refreshed ?? loggedInUser
       }
 
-      const from = (location.state as { from?: { pathname?: string } } | null)?.from
-        ?.pathname
-      if (from && !isUnsafePostLoginPath(from)) {
-        navigate(from, { replace: true })
+      const returnTo = (location.state as { from?: { pathname?: string; state?: unknown } } | null)
+        ?.from
+      if (returnTo?.pathname && !isUnsafePostLoginPath(returnTo.pathname)) {
+        navigate(returnTo.pathname, {
+          replace: true,
+          state: returnTo.state,
+        })
         return
       }
 

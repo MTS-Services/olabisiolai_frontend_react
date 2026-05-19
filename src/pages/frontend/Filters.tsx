@@ -1,12 +1,27 @@
+import { FiltersResultsMap, type MapBusinessPin } from "@/components/maps/FiltersResultsMap";
 import FiltersSection from "@/components/sections/filters/FiltersSection";
 import ServiceCard from "@/components/sections/filters/ServiceCard";
-import { useQuery } from "@tanstack/react-query";
+import { env } from "@/config/env";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCategoryCatalog } from "@/features/categories/useCategoryCatalog";
 import { useLocationCatalog } from "@/features/locations/useLocationCatalog";
 import { fetchPublicBusinessesPage, type PublicBusiness } from "@/features/business/publicBusinessApi";
+import { DEFAULT_GEO_SEARCH_RADIUS_KM } from "@/features/maps/geoMapTypes";
 import { ChevronLeft, Loader2, Map as MapIcon, RotateCcw, SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+
+import { router } from "@/routes/router";
+
+function parseCoord(raw: string | null): number | null {
+  if (raw == null || raw.trim() === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function hasGeoSearchParams(searchParams: URLSearchParams): boolean {
+  return searchParams.has("lat") && searchParams.has("lng");
+}
 
 const fallbackBusiness = (
   id: number,
@@ -37,7 +52,10 @@ const FALLBACK_BUSINESSES: PublicBusiness[] = [
   fallbackBusiness(4, "Glamour Beauty Spa", "Beauty & Spa", "Lagos, Lekki", "/images/feature/1-3.jpg"),
 ];
 
+const FILTERS_BASE_PATH = "/filters";
+
 export default function Filters() {
+  const queryClient = useQueryClient();
   const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -51,6 +69,17 @@ export default function Filters() {
   const selectedMinRating = Number.isFinite(ratingRaw) && ratingRaw >= 1 && ratingRaw <= 5 ? ratingRaw : null;
   const pageRaw = Number(searchParams.get("page") ?? "");
   const currentPage = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
+  const mapLat = parseCoord(searchParams.get("lat"));
+  const mapLng = parseCoord(searchParams.get("lng"));
+  const mapPlaceLabel = (searchParams.get("place") ?? "").trim();
+  const radiusRaw = Number(searchParams.get("radius_km") ?? DEFAULT_GEO_SEARCH_RADIUS_KM);
+  const geoRadiusKm =
+    Number.isFinite(radiusRaw) && radiusRaw >= 1 && radiusRaw <= 200
+      ? radiusRaw
+      : DEFAULT_GEO_SEARCH_RADIUS_KM;
+  const hasGeoSearch =
+    hasGeoSearchParams(searchParams) && mapLat !== null && mapLng !== null;
+  const mapCenter = hasGeoSearch ? { lat: mapLat, lng: mapLng } : null;
 
   const { data: apiCategories = [], isPending: categoriesLoading } = useCategoryCatalog();
   const { data: catalogLocations = [] } = useLocationCatalog();
@@ -79,11 +108,25 @@ export default function Filters() {
   }, [apiCategories, filterCategoryId]);
 
   const businessesQuery = useQuery({
-    queryKey: ["filters", filterCategoryId, selectedLocationId, searchTerm, verifiedOnly, currentPage, perPage],
+    queryKey: [
+      "filters",
+      filterCategoryId,
+      selectedLocationId,
+      searchTerm,
+      verifiedOnly,
+      currentPage,
+      perPage,
+      mapLat,
+      mapLng,
+      geoRadiusKm,
+    ],
     queryFn: () =>
       fetchPublicBusinessesPage({
         category_id: filterCategoryId ?? undefined,
         location_id: selectedLocationId ?? undefined,
+        lat: mapLat ?? undefined,
+        lng: mapLng ?? undefined,
+        radius_km: hasGeoSearch ? geoRadiusKm : undefined,
         search: searchTerm || undefined,
         verification_status: verifiedOnly ? "approved" : undefined,
         page: currentPage,
@@ -96,6 +139,7 @@ export default function Filters() {
       const hasActiveFilters =
         filterCategoryId != null ||
         selectedLocationId != null ||
+        hasGeoSearch ||
         searchTerm.length > 0 ||
         verifiedOnly;
       return hasActiveFilters ? [] : FALLBACK_BUSINESSES;
@@ -106,6 +150,7 @@ export default function Filters() {
     businessesQuery.isError,
     filterCategoryId,
     selectedLocationId,
+    hasGeoSearch,
     searchTerm,
     verifiedOnly,
   ]);
@@ -210,14 +255,39 @@ export default function Filters() {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [catalogLocations, businesses]);
 
-  const mapQuery = useMemo(() => {
+  const mapPins = useMemo<MapBusinessPin[]>(() => {
+    return visibleBusinesses
+      .filter(
+        (b) =>
+          b.latitude != null &&
+          b.longitude != null &&
+          Number.isFinite(b.latitude) &&
+          Number.isFinite(b.longitude),
+      )
+      .map((b) => ({
+        id: b.id,
+        name: b.name,
+        lat: b.latitude as number,
+        lng: b.longitude as number,
+      }));
+  }, [visibleBusinesses]);
+
+  const mapFallbackQuery = useMemo(() => {
+    if (mapPlaceLabel) return mapPlaceLabel;
+    if (mapCenter) return `${mapCenter.lat},${mapCenter.lng}`;
     if (visibleBusinesses[0]) return visibleBusinesses[0].location;
     if (selectedLocationId) {
       const option = locationOptions.find((opt) => opt.id === selectedLocationId);
       if (option) return option.label;
     }
     return "Nigeria";
-  }, [visibleBusinesses, selectedLocationId, locationOptions]);
+  }, [mapPlaceLabel, mapCenter, visibleBusinesses, selectedLocationId, locationOptions]);
+
+  useEffect(() => {
+    if (hasGeoSearch && searchParams.get("map") === "1") {
+      setShowMap(true);
+    }
+  }, [hasGeoSearch, searchParams]);
 
   const totalPages = Math.max(1, businessesQuery.data?.lastPage ?? 1);
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -230,6 +300,7 @@ export default function Filters() {
       searchTerm.length > 0 ||
       verifiedOnly ||
       selectedLocationId != null ||
+      hasGeoSearch ||
       selectedMinRating != null ||
       currentPage > 1
     );
@@ -239,17 +310,27 @@ export default function Filters() {
     searchTerm,
     verifiedOnly,
     selectedLocationId,
+    hasGeoSearch,
     selectedMinRating,
     currentPage,
   ]);
 
-  const handleResetFilters = () => {
-    setShowFilters(false);
-    setSearchParams(new URLSearchParams(), { replace: true });
-  };
+  const onResetFiltersClick = useCallback(
+    (event?: { preventDefault?: () => void }) => {
+      event?.preventDefault?.();
+      setShowFilters(false);
+      setShowMap(false);
+      void queryClient.cancelQueries({ queryKey: ["filters"] });
+      void queryClient.removeQueries({ queryKey: ["filters"] });
+      // RR v7 + createBrowserRouter: imperative navigate clears ?lat=&lng= on same path.
+      void router.navigate(FILTERS_BASE_PATH, { replace: true });
+      setSearchParams("", { replace: true });
+    },
+    [queryClient, setSearchParams],
+  );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div key={searchParams.toString() || "default"} className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card shadow-sm py-4 px-6">
         <div className="container mx-auto px-4">
@@ -264,11 +345,13 @@ export default function Filters() {
             {searchTerm ? "Search results" : "All Business"}
           </h1>
           <p className="text-text-secondary font-inter font-normal text-sm sm:text-base mt-2">
-            {searchTerm
-              ? `Showing businesses matching "${searchTerm}"`
-              : filterCategoryName
-                ? `Showing businesses in ${filterCategoryName}`
-                : "Browse and filter businesses by category, location, and more"}
+            {hasGeoSearch
+              ? `Showing businesses within ${geoRadiusKm} km of ${mapPlaceLabel || "your selected point"}`
+              : searchTerm
+                ? `Showing businesses matching "${searchTerm}"`
+                : filterCategoryName
+                  ? `Showing businesses in ${filterCategoryName}`
+                  : "Browse and filter businesses by category, location, and more"}
           </p>
         </div>
       </div>
@@ -285,7 +368,7 @@ export default function Filters() {
         {hasActiveFilters && (
           <button
             type="button"
-            onClick={handleResetFilters}
+            onClick={() => onResetFiltersClick()}
             className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-primary hover:bg-muted"
             aria-label="Reset filters"
           >
@@ -328,6 +411,7 @@ export default function Filters() {
             </div>
             <div className="p-4">
               <FiltersSection
+                key={searchParams.toString() || "default"}
                 radioGroupId="filters-mobile-drawer"
                 categories={apiCategories}
                 selectedCategoryId={filterCategoryId}
@@ -369,15 +453,27 @@ export default function Filters() {
                 <X size={20} className="text-text-secondary" />
               </button>
             </div>
-            <iframe
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+            <div className="h-[calc(100%-4rem)]">
+              {mapCenter ? (
+                <FiltersResultsMap
+                  apiKey={env.googleMapsApiKey}
+                  center={mapCenter}
+                  centerLabel={mapPlaceLabel || undefined}
+                  businesses={mapPins}
+                  className="h-full w-full"
+                />
+              ) : (
+                <iframe
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(mapFallbackQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -390,7 +486,7 @@ export default function Filters() {
           {hasActiveFilters && (
             <button
               type="button"
-              onClick={handleResetFilters}
+              onClick={() => onResetFiltersClick()}
               className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-text-primary shadow-sm hover:bg-muted"
             >
               <RotateCcw size={16} className="shrink-0" aria-hidden />
@@ -398,6 +494,7 @@ export default function Filters() {
             </button>
           )}
           <FiltersSection
+            key={searchParams.toString() || "default"}
             radioGroupId="filters-desktop-sidebar"
             categories={apiCategories}
             selectedCategoryId={filterCategoryId}
@@ -503,26 +600,27 @@ export default function Filters() {
         <aside className="hidden lg:block w-2/6 shrink-0">
           <div className="bg-card rounded-lg shadow-md overflow-hidden sticky top-20">
             <div className="h-[750px] bg-muted relative">
-              <iframe
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-              <div className="absolute bottom-4 right-4 bg-card rounded-lg shadow-md p-2">
-                <button className="p-2 hover:bg-muted rounded">
-                  <span className="text-text-primary">+</span>
-                </button>
-                <button className="p-2 hover:bg-muted rounded">
-                  <span className="text-text-primary">-</span>
-                </button>
-                <button className="p-2 hover:bg-muted rounded">
-                  <span className="text-text-primary">fullscreen</span>
-                </button>
-              </div>
+              {mapCenter ? (
+                <FiltersResultsMap
+                  key={`geo-${mapLat}-${mapLng}`}
+                  apiKey={env.googleMapsApiKey}
+                  center={mapCenter}
+                  centerLabel={mapPlaceLabel || undefined}
+                  businesses={mapPins}
+                  className="h-full w-full"
+                />
+              ) : (
+                <iframe
+                  key="map-default"
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(mapFallbackQuery)}&t=&z=6&ie=UTF8&iwloc=&output=embed`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              )}
             </div>
           </div>
         </aside>

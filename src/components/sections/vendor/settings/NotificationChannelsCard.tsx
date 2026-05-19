@@ -36,15 +36,15 @@ function RedToggle({
 export function NotificationChannelsCard({
   notifyEmail,
   setNotifyEmail,
-  notifyPush,
-  setNotifyPush,
+  notifySms,
+  setNotifySms,
   notifyWhatsapp,
   setNotifyWhatsapp,
 }: {
   notifyEmail: boolean;
   setNotifyEmail: (v: boolean) => void;
-  notifyPush: boolean;
-  setNotifyPush: (v: boolean) => void;
+  notifySms: boolean;
+  setNotifySms: (v: boolean) => void;
   notifyWhatsapp: boolean;
   setNotifyWhatsapp: (v: boolean) => void;
 }) {
@@ -66,13 +66,9 @@ export function NotificationChannelsCard({
         <div className="flex items-center justify-between gap-3 pb-3">
           <div className="flex items-center gap-3">
             <MessageSquare className="size-4" aria-hidden />
-            <span className="text-sm font-medium text-foreground font-inter">Notifications</span>
+            <span className="text-sm font-medium text-foreground font-inter">SMS notifications</span>
           </div>
-          <RedToggle
-            id="vendor-notify-push"
-            checked={notifyPush}
-            onCheckedChange={setNotifyPush}
-          />
+          <RedToggle checked={notifySms} onCheckedChange={setNotifySms} />
         </div>
         <div className="flex items-center justify-between gap-3 pb-3">
           <div className="flex items-center gap-3">

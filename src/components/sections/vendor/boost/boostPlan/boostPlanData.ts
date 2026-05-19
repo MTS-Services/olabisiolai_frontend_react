@@ -16,6 +16,7 @@ export type Plan = {
   subtitle: string;
   pricingOptions: PricingOption[];
   slotStatus: "available" | "occupied";
+  slotLabel?: string;
   features: Feature[];
   cta: string;
   colorScheme: "orange" | "gray" | "yellow";
@@ -27,7 +28,7 @@ export type Plan = {
 export const oneTimePlans: Plan[] = [
   {
     id: "bronze",
-    title: "Top 5 Boost",
+    title: "Top 10 Boost",
     subtitle: "Affordable visibility for growing businesses",
     pricingOptions: [
       { duration: "7 Days", price: "₦3,000" },
@@ -36,7 +37,7 @@ export const oneTimePlans: Plan[] = [
     ],
     slotStatus: "available",
     features: [
-      { text: "Appear in Top 5 in your LGA", checked: true },
+      { text: "Appear in Top 10 in your LGA", checked: true },
       { text: "Boost badge on listing", checked: true },
       { text: "Increased visibility & enquiries", checked: true },
       { text: "No exclusivity", checked: false },
@@ -47,7 +48,7 @@ export const oneTimePlans: Plan[] = [
   },
   {
     id: "silver",
-    title: "Top 3 Boost",
+    title: "Top 5 Boost",
     subtitle: "Higher visibility for competitive LGAs",
     pricingOptions: [
       { duration: "7 Days", price: "₦5,000" },
@@ -56,7 +57,7 @@ export const oneTimePlans: Plan[] = [
     ],
     slotStatus: "available",
     features: [
-      { text: "Guaranteed Top 3 placement", checked: true },
+      { text: "Guaranteed Top 5 placement", checked: true },
       { text: "Higher ranking than Bronze", checked: true },
       { text: "Boost badge & strong visibility", checked: true },
       { text: "No exclusivity", checked: false },

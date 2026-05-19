@@ -1,173 +1,209 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, CircleAlert, CreditCard, TextAlignStart, WalletCards, X } from "lucide-react";
-import { useState } from "react";
+import { createVendorPaymentMethod } from "@/features/vendor/vendorPaymentsApi";
+import { getLaravelErrorMessage } from "@/lib/laravelApiError";
+import { showError, showSuccess } from "@/lib/sweetAlert";
+import { CheckCircle2, X } from "lucide-react";
 
-type ModalStep = "none" | "email" | "verify" | "accountType" | "success";
+type ModalStep = "none" | "form" | "success";
 
 export function PaymentHeader() {
-        const [modalStep, setModalStep] = useState<ModalStep>("none");
-    const [email, setEmail] = useState("");
+  const qc = useQueryClient();
+  const [modalStep, setModalStep] = useState<ModalStep>("none");
+  const [label, setLabel] = useState("");
+  const [cardholderName, setCardholderName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [lastFour, setLastFour] = useState("");
+  const [cardBrand, setCardBrand] = useState("");
+  const [billingLine1, setBillingLine1] = useState("");
+  const [billingCity, setBillingCity] = useState("");
+  const [billingState, setBillingState] = useState("");
+  const [billingCountry, setBillingCountry] = useState("Nigeria");
+  const [makeDefault, setMakeDefault] = useState(true);
+
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      createVendorPaymentMethod({
+        label: label.trim() || null,
+        cardholder_name: cardholderName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        last_four: lastFour.replace(/\D/g, "").length === 4 ? lastFour.replace(/\D/g, "").slice(-4) : null,
+        card_brand: cardBrand.trim() || null,
+        billing_line1: billingLine1.trim() || null,
+        billing_city: billingCity.trim() || null,
+        billing_state: billingState.trim() || null,
+        billing_country: billingCountry.trim() || null,
+        is_default: makeDefault,
+      }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["vendor", "payment-methods"] });
+      setModalStep("success");
+      showSuccess("Saved checkout profile added.");
+    },
+    onError: (e) => showError(getLaravelErrorMessage(e, "Could not save profile.")),
+  });
+
+  const resetForm = () => {
+    setLabel("");
+    setCardholderName("");
+    setEmail("");
+    setPhone("");
+    setLastFour("");
+    setCardBrand("");
+    setBillingLine1("");
+    setBillingCity("");
+    setBillingState("");
+    setBillingCountry("Nigeria");
+    setMakeDefault(true);
+  };
+
+  const openForm = () => {
+    resetForm();
+    setModalStep("form");
+  };
+
+  const closeAll = () => {
+    setModalStep("none");
+    resetForm();
+  };
+
   return (
     <div>
       <header className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold font-inter">Payout Methods</h1>
+          <h1 className="font-inter text-xl font-bold">Saved checkout profiles</h1>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            Store billing details and optional masked card info (last 4 digits only). Full card numbers are never stored
+            on our servers.
+          </p>
         </div>
         <button
           type="button"
-          className="text-sm font-inter font-semibold text-brand-red hover:underline cursor-pointer"
-          onClick={() => setModalStep("accountType")}
+          className="cursor-pointer font-inter text-sm font-semibold text-brand-red hover:underline"
+          onClick={openForm}
         >
-          + Add Payout Method
+          + Add saved profile
         </button>
       </header>
       {modalStep !== "none" ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-          <Card className="w-full max-w-md p-4 sm:p-5 bg-[#EFF6FF] rounded-xl max-h-[90vh] overflow-y-auto">
-            <CardContent className="w-full relative space-y-4 sm:space-y-6">
+          <Card className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-[#EFF6FF] p-4 sm:p-5">
+            <CardContent className="relative w-full space-y-4 sm:space-y-6">
               <button
                 type="button"
-                className="absolute right-4 top-0 rounded-full border p-1 text-muted-foreground"
-                onClick={() => setModalStep("none")}
+                className="absolute right-0 top-0 rounded-full border p-1 text-muted-foreground"
+                onClick={closeAll}
               >
                 <X className="size-4" />
               </button>
 
-              {modalStep === "email" ? (
+              {modalStep === "form" ? (
                 <>
-                  <p className="text-base font-inter font-normal">Email</p>
+                  <p className="pr-8 font-inter text-lg font-semibold">Add saved profile</p>
+                  <Input placeholder="Label (e.g. Work card)" value={label} onChange={(e) => setLabel(e.target.value)} />
                   <Input
-                    placeholder="example@gmail.com"
+                    placeholder="Cardholder name *"
+                    value={cardholderName}
+                    onChange={(e) => setCardholderName(e.target.value)}
+                    className="bg-[#F6F6F6]"
+                  />
+                  <Input
+                    type="email"
+                    placeholder="Email *"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="border-brand-red p-4 h-14"
+                    className="bg-[#F6F6F6]"
                   />
+                  <Input
+                    placeholder="Phone *"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="bg-[#F6F6F6]"
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      placeholder="Last 4 digits (optional)"
+                      value={lastFour}
+                      onChange={(e) => setLastFour(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      className="bg-[#F6F6F6]"
+                    />
+                    <Input
+                      placeholder="Brand (e.g. Visa)"
+                      value={cardBrand}
+                      onChange={(e) => setCardBrand(e.target.value)}
+                      className="bg-[#F6F6F6]"
+                    />
+                  </div>
+                  <Input
+                    placeholder="Address line"
+                    value={billingLine1}
+                    onChange={(e) => setBillingLine1(e.target.value)}
+                    className="bg-[#F6F6F6]"
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      placeholder="City"
+                      value={billingCity}
+                      onChange={(e) => setBillingCity(e.target.value)}
+                      className="bg-[#F6F6F6]"
+                    />
+                    <Input
+                      placeholder="State"
+                      value={billingState}
+                      onChange={(e) => setBillingState(e.target.value)}
+                      className="bg-[#F6F6F6]"
+                    />
+                  </div>
+                  <Input
+                    placeholder="Country"
+                    value={billingCountry}
+                    onChange={(e) => setBillingCountry(e.target.value)}
+                    className="bg-[#F6F6F6]"
+                  />
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={makeDefault}
+                      onChange={(e) => setMakeDefault(e.target.checked)}
+                      className="size-4 rounded border"
+                    />
+                    Set as default checkout profile
+                  </label>
                   <Button
                     className="w-full bg-brand-red text-white hover:bg-brand-red/90"
-                    onClick={() => setModalStep("verify")}
+                    disabled={saveMutation.isPending}
+                    onClick={() => {
+                      if (!cardholderName.trim() || !email.trim() || !phone.trim()) {
+                        showError("Name, email, and phone are required.");
+                        return;
+                      }
+                      saveMutation.mutate();
+                    }}
                   >
-                    Continue
+                    {saveMutation.isPending ? "Saving…" : "Save profile"}
                   </Button>
-                </>
-              ) : null}
-
-              {modalStep === "verify" ? (
-                <>
-                  <p className="text-center text-lg sm:text-xl md:text-2xl font-inter font-semibold">
-                    Verify Your Account
-                  </p>
-                  <p className="text-center text-xs sm:text-sm text-muted-foreground">
-                    We sent a 4-digit verification code to your email{" "}
-                    {email || "example@gmail.com"}.
-                  </p>
-                  <div className="grid grid-cols-4 gap-2 sm:gap-3">
-                    {[5, 3, 3, 6].map((n, i) => (
-                      <div
-                        key={`${n}-${i}`}
-                        className="rounded-md border bg-muted/30 py-2 sm:py-3 text-center text-2xl sm:text-3xl font-semibold"
-                      >
-                        {n}
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-center text-xs text-muted-foreground">
-                    Didn't receive code?{" "}
-                    <button className="underline">Resend Code</button>
-                  </p>
-                  <Button
-                    className="w-full bg-brand-red text-white hover:bg-brand-red/90 py-2.5 sm:py-3 text-sm sm:text-base"
-                    onClick={() => setModalStep("success")}
-                  >
-                    Continue
-                  </Button>
-                </>
-              ) : null}
-
-              {modalStep === "accountType" ? (
-                <>
-                  <div className="">
-                    <div className="">
-                      <p className="text-center font-inter text-2xl sm:text-3xl md:text-4xl font-semibold mb-4 sm:mb-6">
-                        Account Type
-                      </p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-8">
-                      <div className="flex gap-2 items-center text-text-white py-2 px-3 bg-brand rounded-md w-full sm:w-auto justify-center">
-                        <CreditCard className="size-4" />
-                        <p className="font-inter text-sm sm:text-base font-normal">Card</p>
-                      </div>
-                      <div className="flex gap-2 items-center text-text-white py-2 px-3 bg-[#DDDDDD] rounded-md w-full sm:w-auto justify-center">
-                        <WalletCards className="size-4" />
-                        <p className="font-inter text-sm sm:text-base font-normal">Pay</p>
-                      </div>
-                      <div className="flex gap-2 items-center text-text-white py-2 px-3 bg-[#DDDDDD] rounded-md w-full sm:w-auto justify-center">
-                        <TextAlignStart className="size-4 text-brand" />
-                        <p className="font-inter text-sm sm:text-base font-normal">
-                          Paystack
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-2 rounded-md bg-[#9FD8FF] py-4 sm:py-6 px-3 sm:px-4 mb-4 sm:mb-6">
-                      <div className="flex gap-3 sm:gap-4 items-center mb-3 sm:mb-5">
-                        <CreditCard className="text-chat-accent size-4 sm:size-5" />
-                        <p className="text-xs sm:text-sm text-chat-accent font-normal font-inter">
-                          Add Credit / Debit Card
-                        </p>
-                      </div>
-                      <Input
-                        placeholder=" Card Holder's Name"
-                        className="bg-[#F6F6F6] p-3 sm:p-4 h-12 sm:h-14 text-sm sm:text-base"
-                      />
-                      <Input
-                        placeholder="Card Number"
-                        className="bg-[#F6F6F6] p-3 sm:p-4 h-12 sm:h-14 text-sm sm:text-base"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          placeholder="Month"
-                          className="bg-[#F6F6F6] p-3 sm:p-4 h-12 sm:h-14 text-sm sm:text-base"
-                        />
-                        <Input
-                          placeholder="Year"
-                          className="bg-[#F6F6F6] p-3 sm:p-4 h-12 sm:h-14 text-sm sm:text-base"
-                        />
-                        <div className="flex gap-1 items-center col-span-2 sm:col-span-1">
-                          <Input
-                            placeholder="Security Code"
-                            className="bg-[#F6F6F6] p-3 sm:p-4 h-12 sm:h-14 text-sm sm:text-base flex-1"
-                          />
-                          <CircleAlert className="text-chat-accent size-4 sm:size-5 flex-shrink-0" />
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      className="w-full bg-brand-red text-white hover:bg-brand-red/90 py-2.5 sm:py-3 text-sm sm:text-base"
-                      onClick={() => setModalStep("email")}
-                    >
-                      Continue
-                    </Button>
-                  </div>
                 </>
               ) : null}
 
               {modalStep === "success" ? (
                 <>
-                  <div className="mx-auto flex size-12 sm:size-16 items-center justify-center rounded-full bg-sky-100 text-sky-700">
-                    <CheckCircle2 className="size-6 sm:size-8" />
+                  <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-sky-100 text-sky-700">
+                    <CheckCircle2 className="size-8" />
                   </div>
-                  <h3 className="text-center text-lg sm:text-xl md:text-2xl font-inter font-semibold mb-2">
-                    Account Added Successful!
-                  </h3>
-                  <p className="text-center text-xs sm:text-sm font-inter text-muted-foreground leading-relaxed">
-                    Your bank account has been linked to your profile. You can
-                    now receive payments and manage your transactions
-                    seamlessly.
+                  <h3 className="text-center font-inter text-xl font-semibold">Profile saved</h3>
+                  <p className="text-center text-sm text-muted-foreground">
+                    You can select this profile on checkout pages to autofill billing details.
                   </p>
                   <Button
-                    className="w-full bg-brand-red text-white hover:bg-brand-red/90 py-2.5 sm:py-3 text-sm sm:text-base"
-                    onClick={() => setModalStep("none")}
+                    className="w-full bg-brand-red text-white hover:bg-brand-red/90"
+                    onClick={() => {
+                      closeAll();
+                    }}
                   >
                     Close
                   </Button>

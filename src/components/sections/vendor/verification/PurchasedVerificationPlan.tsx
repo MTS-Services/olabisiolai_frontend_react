@@ -1,6 +1,7 @@
 import { BadgeCheck } from "lucide-react";
 
 import type { PurchasedVerificationPackage } from "@/features/verification/vendorVerificationApi";
+import { formatNaira } from "@/lib/currency";
 import { plans } from "./verificationData";
 
 export function PurchasedVerificationPlan({
@@ -9,7 +10,7 @@ export function PurchasedVerificationPlan({
   purchased: PurchasedVerificationPackage;
 }) {
   const planMeta = plans.find((p) => p.id === purchased.id);
-  const amountLabel = `₦${Number(purchased.amount).toLocaleString()}`;
+  const amountLabel = formatNaira(Number(purchased.amount), { freeLabel: false });
 
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-4 md:px-5">

@@ -3,6 +3,10 @@ export type BoostTierView = {
   label: string;
   totalSlots: number;
   priceAmount: number;
+  slotsOccupied?: number;
+  slotsRemaining?: number;
+  isAvailable?: boolean;
+  durations?: BoostDurationView[];
 };
 
 export type BoostDurationView = {
@@ -56,13 +60,67 @@ function toNumber(value: unknown): number {
   return 0;
 }
 
-export function formatNaira(amount: number): string {
-  if (!Number.isFinite(amount) || amount <= 0) return "Free";
-  try {
-    return `₦${new Intl.NumberFormat("en-NG").format(Math.round(amount))}`;
-  } catch {
-    return `₦${Math.round(amount).toLocaleString()}`;
+export { formatNaira, formatMoney, CURRENCY_CODE, CURRENCY_SYMBOL } from "@/lib/currency";
+import { formatNaira } from "@/lib/currency";
+
+/** Price for a tier + duration (admin stores prices on tier.durations, not tier.price_amount). */
+export function tierDurationPrice(
+  tier: BoostTierView,
+  days: number,
+  globalDurations: BoostDurationView[],
+): number | null {
+  const tierDuration = tier.durations?.find((d) => d.days === days && d.enabled);
+  if (tierDuration && tierDuration.priceAmount > 0) {
+    return tierDuration.priceAmount;
   }
+  const global = globalDurations.find((d) => d.days === days && d.enabled);
+  if (global && global.priceAmount > 0) {
+    return global.priceAmount;
+  }
+  if (tier.priceAmount > 0) {
+    return tier.priceAmount;
+  }
+  return null;
+}
+
+export function formatTierPriceRange(tier: BoostTierView, globalDurations: BoostDurationView[]): string {
+  const prices = [7, 14, 30]
+    .map((days) => tierDurationPrice(tier, days, globalDurations))
+    .filter((price): price is number => price !== null && price > 0);
+
+  if (prices.length === 0) {
+    return formatNaira(tier.priceAmount);
+  }
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  if (min === max) {
+    return formatNaira(min);
+  }
+  return `${formatNaira(min)} – ${formatNaira(max)}`;
+}
+
+export function getSelectableDurationsForTier(
+  tier: BoostTierView | null,
+  boost: NonNullable<ParsedLocationOption["boost"]>,
+): BoostDurationView[] {
+  if (tier?.durations?.length) {
+    return tier.durations.filter((d) => d.enabled && d.priceAmount > 0);
+  }
+  return boost.durations.filter((d) => d.enabled && d.priceAmount > 0);
+}
+
+export function resolveBoostSelectionPrice(
+  location: ParsedLocationOption,
+  tierKey: string,
+  durationDays: number,
+): { amount: number; tierLabel: string } | null {
+  const boost = location.boost;
+  if (!boost?.enabled) return null;
+  const tier = boost.tiers.find((t) => t.key === tierKey);
+  if (!tier) return null;
+  const amount = tierDurationPrice(tier, durationDays, boost.durations);
+  if (amount === null) return null;
+  return { amount, tierLabel: tier.label };
 }
 
 export function parseBoostData(raw: unknown): ParsedLocationOption["boost"] {
@@ -81,11 +139,41 @@ export function parseBoostData(raw: unknown): ParsedLocationOption["boost"] {
       .map((tier, index) => {
         if (!tier || typeof tier !== "object") return null;
         const tierRecord = tier as Record<string, unknown>;
+        const nestedDurations = Array.isArray(tierRecord.durations) ? tierRecord.durations : [];
+        const tierDurations = nestedDurations
+          .map((duration) => {
+            if (!duration || typeof duration !== "object") return null;
+            const durationRecord = duration as Record<string, unknown>;
+            return {
+              days: toNumber(durationRecord.days ?? durationRecord.duration_days),
+              enabled: Boolean(durationRecord.enabled ?? durationRecord.is_active ?? true),
+              priceAmount: toNumber(
+                durationRecord.price_amount ?? durationRecord.priceAmount ?? durationRecord.price,
+              ),
+            } satisfies BoostDurationView;
+          })
+          .filter((duration): duration is BoostDurationView => duration !== null && duration.days > 0);
+
+        const totalSlots = toNumber(tierRecord.total_slots ?? tierRecord.totalSlots);
+        const slotsOccupied = toNumber(tierRecord.slots_occupied ?? tierRecord.slotsOccupied);
+        const slotsRemainingRaw = tierRecord.slots_remaining ?? tierRecord.slotsRemaining;
+        const slotsRemaining =
+          slotsRemainingRaw !== undefined && slotsRemainingRaw !== null
+            ? toNumber(slotsRemainingRaw)
+            : Math.max(0, totalSlots - slotsOccupied);
+
         return {
           key: readString(tierRecord.key) ?? `tier-${index + 1}`,
           label: readString(tierRecord.label) ?? readString(tierRecord.name) ?? `Tier ${index + 1}`,
-          totalSlots: toNumber(tierRecord.total_slots ?? tierRecord.totalSlots),
+          totalSlots,
+          slotsOccupied,
+          slotsRemaining,
+          isAvailable:
+            tierRecord.is_available !== undefined
+              ? Boolean(tierRecord.is_available ?? tierRecord.isAvailable)
+              : totalSlots > 0 && slotsRemaining > 0,
           priceAmount: toNumber(tierRecord.price_amount ?? tierRecord.priceAmount ?? tierRecord.price),
+          durations: tierDurations.length > 0 ? tierDurations : undefined,
         } satisfies BoostTierView;
       })
       .filter((tier): tier is BoostTierView => tier !== null),

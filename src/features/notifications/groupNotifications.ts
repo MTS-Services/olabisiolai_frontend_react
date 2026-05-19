@@ -28,11 +28,12 @@ function isNewer(a: string | null, b: string | null): boolean {
   return new Date(a).getTime() > new Date(b).getTime()
 }
 
-function buildMessageHref(conversationUuid: string | null): string {
+function buildMessageHref(conversationUuid: string | null, fallbackHref: string): string {
+  const base = fallbackHref.split('?')[0] || '/vendor/leads'
   if (conversationUuid) {
-    return `/messages?c=${encodeURIComponent(conversationUuid)}`
+    return `${base}?c=${encodeURIComponent(conversationUuid)}`
   }
-  return '/messages'
+  return base
 }
 
 /**
@@ -71,7 +72,7 @@ export function groupNotificationsForDisplay(
       messageGroups.set(key, {
         ...item,
         groupKey: key,
-        href: buildMessageHref(conversationUuid),
+        href: buildMessageHref(conversationUuid, item.href),
         unreadCount: item.isRead ? 0 : 1,
         messageCount: 1,
         notificationIds: [item.id],
@@ -96,7 +97,7 @@ export function groupNotificationsForDisplay(
       existing.raw = item.raw
       if (conversationUuid) {
         existing.conversationUuid = conversationUuid
-        existing.href = buildMessageHref(conversationUuid)
+        existing.href = buildMessageHref(conversationUuid, item.href)
       }
     }
   }

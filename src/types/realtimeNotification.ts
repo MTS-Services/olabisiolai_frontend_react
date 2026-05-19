@@ -16,6 +16,7 @@ export type RealtimeNotificationPayload = {
   action_url?: string | null
   data?: Record<string, unknown>
   conversation_uuid?: string
+  sender_id?: number
   sender_name?: string
   preview?: string
   unread_count?: number

@@ -54,10 +54,12 @@ function newMessageActivityCopy(d: Record<string, unknown>): { title: string; me
 }
 
 const VENDOR_ROUTES: Record<string, string> = {
-  new_message: '/messages',
+  new_message: '/vendor/leads',
   verification_approved: '/vendor/verification',
   verification_flagged: '/vendor/verification',
+  verification_submitted: '/vendor/verification',
   payment_completed: '/vendor/payments',
+  system_announcement: '/vendor/notifications',
 }
 
 const USER_ROUTES: Record<string, string> = {

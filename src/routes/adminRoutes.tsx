@@ -25,6 +25,7 @@ const AdminMessages = lazy(() => import("@/pages/admin/AdminMessages"));
 const Reviews = lazy(() => import("@/pages/admin/Reviews"));
 const Payments = lazy(() => import("@/pages/admin/Payments"));
 const BoostSystem = lazy(() => import("@/pages/admin/BoostSystem"));
+const AdminBoostRequestDetail = lazy(() => import("@/pages/admin/AdminBoostRequestDetail"));
 const UserManagement = lazy(() => import("@/pages/admin/UserManagement"));
 const AdminAccounts = lazy(() => import("@/pages/admin/AdminAccounts"));
 const CmsEdit = lazy(() => import("@/pages/admin/CmsEdit"));
@@ -125,5 +126,9 @@ export const adminRoutes: RouteObject = {
       ),
     },
     { path: "/admin/boost-system", element: suspensePage(BoostSystem) },
+    {
+      path: "/admin/boost-system/:requestId",
+      element: suspensePage(AdminBoostRequestDetail),
+    },
   ],
 };

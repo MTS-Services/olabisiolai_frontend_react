@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { cn } from "@/lib/utils";
 import { isActivePath } from "@/lib/nav.utils";
@@ -20,24 +20,31 @@ import {
   X,
 } from "lucide-react";
 import logo from "@/assets/vendor/logo.jpeg";
+import { fetchVendorOnboardingStatus } from "@/features/subscription/vendorOnboardingApi";
 
 const items = [
-  { to: "/vendor/dashboard", label: "Dashboard", icon: LayoutGrid, end: true },
-  { to: "/vendor/profile", label: "Profile", icon: User },
-  { to: "/vendor/leads", label: "Leads", icon: MessageSquare },
-  { to: "/vendor/notifications", label: "Notifications", icon: Bell },
-  { to: "/vendor/verification", label: "Verification", icon: BadgeCheck },
-  { to: "/vendor/boost", label: "Boost", icon: Rocket },
-  { to: "/vendor/analytics", label: "Analytics", icon: BarChart2 },
-  { to: "/vendor/reviews", label: "Reviews", icon: MessageSquareCheck },
-  { to: "/vendor/payments", label: "Payments", icon: Banknote },
-  { to: "/vendor/settings", label: "Settings", icon: Settings },
+  { to: "/vendor/dashboard", label: "Dashboard", icon: LayoutGrid, end: true, premiumOnly: false },
+  { to: "/vendor/profile", label: "Profile", icon: User, premiumOnly: false },
+  { to: "/vendor/leads", label: "Leads", icon: MessageSquare, premiumOnly: false },
+  { to: "/vendor/notifications", label: "Notifications", icon: Bell, premiumOnly: false },
+  { to: "/vendor/verification", label: "Verification", icon: BadgeCheck, premiumOnly: false },
+  { to: "/vendor/boost", label: "Boost", icon: Rocket, premiumOnly: true },
+  { to: "/vendor/analytics", label: "Analytics", icon: BarChart2, premiumOnly: true },
+  { to: "/vendor/reviews", label: "Reviews", icon: MessageSquareCheck, premiumOnly: false },
+  { to: "/vendor/payments", label: "Payments", icon: Banknote, premiumOnly: false },
+  { to: "/vendor/settings", label: "Settings", icon: Settings, premiumOnly: false },
 ];
 
-type VendorPlan = "free" | "premium";
-
-function SidebarCTA({ plan }: { plan: VendorPlan }) {
-  if (plan === "premium") {
+function SidebarCTA({
+  canPayPremium,
+  isPremiumActive,
+  onUpgrade,
+}: {
+  canPayPremium: boolean;
+  isPremiumActive: boolean;
+  onUpgrade: () => void;
+}) {
+  if (isPremiumActive) {
     return (
       <div className="rounded-lg bg-[#003F87] p-4">
         <div className="flex gap-2">
@@ -54,6 +61,10 @@ function SidebarCTA({ plan }: { plan: VendorPlan }) {
         </Button>
       </div>
     );
+  }
+
+  if (!canPayPremium) {
+    return null;
   }
 
   return (
@@ -77,7 +88,8 @@ function SidebarCTA({ plan }: { plan: VendorPlan }) {
 
         {/* Get Premium Access button */}
         <button
-          onClick={() => (window.location.href = "/vendor/choose-your-plan")}
+          type="button"
+          onClick={onUpgrade}
           className="w-full rounded-lg bg-red-500 hover:bg-red-600 active:scale-[0.98] transition-all px-3 py-2.5 text-sm font-semibold text-text-white shadow-md"
         >
           Get Premium Access
@@ -95,21 +107,17 @@ export function VendorSidebar({
   onClose: () => void;
 }) {
   const { pathname } = useActiveUrl();
+  const navigate = useNavigate();
 
-  const [plan, setPlan] = useState<VendorPlan>(() => {
-    const saved = localStorage.getItem("vendorPlan");
-    return saved === "premium" ? "premium" : "free";
+  const { data: onboarding } = useQuery({
+    queryKey: ["vendor", "onboarding", "status"],
+    queryFn: fetchVendorOnboardingStatus,
+    staleTime: 30_000,
   });
 
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "vendorPlan") {
-        setPlan(e.newValue === "premium" ? "premium" : "free");
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  const subscription = onboarding?.subscription;
+  const isPremiumActive = subscription?.is_premium_active === true;
+  const canPayPremium = subscription?.can_pay_premium === true;
 
   return (
     <>
@@ -148,29 +156,35 @@ export function VendorSidebar({
 
         {/* Logo */}
         <Link to="/" className="px-4 pt-2 pb-2 text-center" onClick={onClose}>
-         <img src={logo} alt="Gidira Vendor" className="h-full w-auto" />
+          <img src={logo} alt="Gidira Vendor" className="h-full w-auto" />
         </Link>
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto p-4 mt-2 grid gap-1 content-start">
           {items.map((i) => {
             const Icon = i.icon;
+            const locked = i.premiumOnly && !isPremiumActive;
 
             return (
               <NavLink
                 key={i.to}
-                to={i.to}
+                to={locked ? "/vendor/premium-payment" : i.to}
                 end={i.end}
                 className={() =>
                   cn(
                     "flex items-center gap-2 rounded-md px-3 py-2 text-base font-normal font-inter transition-all",
-                    isActivePath(pathname, i.to, Boolean(i.end))
+                    locked && "opacity-70",
+                    !locked && isActivePath(pathname, i.to, Boolean(i.end))
                       ? "text-base text-vendor-header font-semibold font-inter shadow-[0px_1px_2.4px_0px_rgba(0,0,0,0.24)]"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )
                 }
               >
-                {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                {locked ? (
+                  <Lock className="w-4 h-4 shrink-0" />
+                ) : (
+                  Icon && <Icon className="w-4 h-4 shrink-0" />
+                )}
                 <span>{i.label}</span>
               </NavLink>
             );
@@ -179,7 +193,11 @@ export function VendorSidebar({
 
         {/* Bottom CTA — plan-aware */}
         <div className="p-4">
-          <SidebarCTA plan={plan} />
+          <SidebarCTA
+            canPayPremium={canPayPremium}
+            isPremiumActive={isPremiumActive}
+            onUpgrade={() => navigate("/vendor/premium-payment")}
+          />
         </div>
       </aside>
     </>

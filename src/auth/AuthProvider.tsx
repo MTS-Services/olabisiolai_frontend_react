@@ -109,6 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsUserLoading(false)
         return
       }
+
+      // Premium checkout must render immediately after business create; do not block on /me.
+      if (url.pathname === '/vendor/premium-payment' && (userRef.current ?? getStoredAuthUser())) {
+        setIsUserLoading(false)
+      }
     }
 
     void refreshSession()

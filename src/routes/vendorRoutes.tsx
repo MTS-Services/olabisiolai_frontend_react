@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import type { RouteObject } from "react-router-dom";
+import { Navigate, type RouteObject } from "react-router-dom";
 
 import { VendorLayout } from "@/layouts/vendor/VendorLayout";
 import { RoleGate } from "@/routes/RoleGate";
@@ -16,6 +16,7 @@ const VendorBoostReviewPay = lazy(() => import("@/pages/vendor/VendorBoostReview
 const VendorAnalytics = lazy(() => import("@/pages/vendor/VendorAnalytics"));
 const VendorReviews = lazy(() => import("@/pages/vendor/VendorReviews"));
 const VendorPayments = lazy(() => import("@/pages/vendor/VendorPayments"));
+const VendorPaymentDetail = lazy(() => import("@/pages/vendor/VendorPaymentDetail"));
 const VendorSettings = lazy(() => import("@/pages/vendor/VendorSettings"));
 const VendorNotifications = lazy(() => import("@/pages/vendor/VendorNotifications"));
 const AfterVerification = lazy(() => import("@/pages/vendor/AfterVerification"));
@@ -39,8 +40,13 @@ export const vendorRoutes: RouteObject = {
     { path: "/vendor/boost", element: suspensePage(VendorBoost) },
     { path: "/vendor/boost/configure", element: suspensePage(VendorBoostConfigure) },
     { path: "/vendor/review-pay", element: suspensePage(VendorBoostReviewPay) },
+    {
+      path: "/vendor/subscription/pay",
+      element: <Navigate to="/vendor/premium-payment" replace />,
+    },
     { path: "/vendor/analytics", element: suspensePage(VendorAnalytics) },
     { path: "/vendor/reviews", element: suspensePage(VendorReviews) },
+    { path: "/vendor/payments/:paymentId", element: suspensePage(VendorPaymentDetail) },
     { path: "/vendor/payments", element: suspensePage(VendorPayments) },
     { path: "/vendor/settings", element: suspensePage(VendorSettings) },
     { path: "/vendor/after-verification", element: suspensePage(AfterVerification) },

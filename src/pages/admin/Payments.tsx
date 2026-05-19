@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 
 import type { PaymentRow, PaymentStatus, PaymentStatusFilter } from "@/components/Modal/PaymentDetailsModal.types";
+import { formatNaira } from "@/lib/currency";
 
 const TOTAL_PAYMENTS = 482;
 type TransactionTab = "all" | "subscription" | "boost" | "verification";
@@ -90,7 +91,7 @@ const payments: PaymentWithType[] = [
 ];
 
 function formatNgn(amount: number) {
-  return `₦${amount.toLocaleString("en-NG")}`;
+  return formatNaira(amount, { freeLabel: false });
 }
 
 function methodLabel(method: PaymentRow["method"]) {

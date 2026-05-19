@@ -1,11 +1,11 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Building2,
   ChevronDown,
   DollarSign,
   ExternalLink,
   Globe,
-  Map,
+  Map as MapIcon,
   MapPin,
   Pencil,
   Plus,
@@ -18,18 +18,22 @@ import {
   type AddLocationWizardSubmit,
 } from '@/components/admin/locations/AddLocationWizardModal'
 import { env } from '@/config/env'
+import { formatNaira as formatNairaAmount } from '@/lib/currency'
 import { alert, showError } from '@/lib/sweetAlert'
 import {
   adminStoreLocation,
   adminListLocations,
+  adminUpdateLocation,
   adminUpdateLocationStatus,
-  adminUpdateBoostConfig,
   adminDeleteLocation,
   type AdminSavedLocation,
 } from '@/features/maps/adminLocationsApi'
 import type { LgaMapPickResult } from '@/features/maps/lgaMapPickTypes'
+import { LgaBoostTierConfigCards } from '@/components/admin/locations/LgaBoostTierConfigCards'
 import {
-  type LgaBoostFormState,
+  aggregateDurationsFromTiers,
+  boostFormFromSaved,
+  type LgaBoostTierForm,
 } from '@/features/maps/lgaBoostTypes'
 
 type LGA = AdminSavedLocation['lga']
@@ -100,6 +104,10 @@ function toLgaEntryId(lga: LGA, stateName: string): string {
   return `lga-${lga.slug ?? `${stateName}-${lga.name}`}`
 }
 
+function detailKey(stateId: string, lgaRowId: string) {
+  return `${stateId}::${lgaRowId}`
+}
+
 type AddressComponentLike = {
   longText?: string
   shortText?: string
@@ -149,17 +157,17 @@ function mapsPreviewUrl(lat: number, lng: number): string {
 }
 
 function formatNaira(n: number): string {
-  if (!Number.isFinite(n) || n <= 0) return '—'
-  try {
-    return `₦${new Intl.NumberFormat('en-NG').format(Math.round(n))}`
-  } catch {
-    return `₦${Math.round(n).toLocaleString()}`
-  }
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  return formatNairaAmount(n, { freeLabel: false });
 }
 
 /** Representative boost price for table column (max tier price). */
 function primaryBoostPrice(lga: LGA): number {
   if (!lga.boost.tiers.length) return 0
+  const fromDurations = lga.boost.tiers.flatMap((t) =>
+    (t.durations ?? []).filter((d) => d.enabled).map((d) => d.priceAmount),
+  )
+  if (fromDurations.length) return Math.max(...fromDurations)
   return Math.max(...lga.boost.tiers.map((t) => t.priceAmount))
 }
 
@@ -172,6 +180,8 @@ export default function LocationHierarchy() {
   const [openCountry, setOpenCountry] = useState(true)
   const [openStates, setOpenStates] = useState<Set<string>>(new Set())
   const [detailLgaKey, setDetailLgaKey] = useState<string | null>(null)
+  const [detailSaving, setDetailSaving] = useState(false)
+  const boostSaveTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   // Load locations on component mount
   useEffect(() => {
@@ -207,65 +217,8 @@ export default function LocationHierarchy() {
     })
   }
 
-  const patchLga = useCallback(async (stateId: string, lgaRowId: string, updater: (current: LGA) => LGA) => {
-    // Find the current LGA to get its ID
-    const currentState = locations.find(s => s.id === stateId)
-    if (!currentState) return
-
-    const currentLga = currentState.lgas.find(l => toLgaEntryId(l, currentState.name) === lgaRowId)
-    if (!currentLga || !currentLga.id) return
-
-    // Apply the update locally first for immediate UI feedback
-    setLocations((prev) =>
-      prev.map((s) => {
-        if (s.id !== stateId) return s
-        return {
-          ...s,
-          lgas: s.lgas.map((l) => {
-            const id = toLgaEntryId(l, s.name)
-            if (id !== lgaRowId) return l
-            return updater(l)
-          }),
-        }
-      }),
-    )
-
-    try {
-      // Get the updated LGA after local state change
-      const updatedState = locations.find(s => s.id === stateId)
-      const updatedLga = updatedState?.lgas.find(l => toLgaEntryId(l, updatedState.name) === lgaRowId)
-      if (!updatedLga) return
-
-      // Check if this is a boost status change
-      const originalBoostEnabled = currentLga.boost.enabled
-      const updatedBoostEnabled = updatedLga.boost.enabled
-
-      if (originalBoostEnabled !== updatedBoostEnabled) {
-        // Update boost status via API
-        await adminUpdateLocationStatus({
-          lgaId: currentLga.id,
-          boostEnabled: updatedBoostEnabled,
-        })
-        setLastSavedMessage(`Updated boost status for ${updatedLga.name}`)
-      } else {
-        // Update boost config (tiers/pricing) via API
-        const boostConfig: LgaBoostFormState = {
-          enabled: updatedLga.boost.enabled,
-          tiers: updatedLga.boost.tiers,
-          durations: updatedLga.boost.durations.map(d => ({
-            ...d,
-            days: d.days as 7 | 14 | 30, // Cast to the expected type
-          })),
-        }
-        await adminUpdateBoostConfig({
-          lgaId: currentLga.id,
-          boostConfig,
-        })
-        setLastSavedMessage(`Updated boost configuration for ${updatedLga.name}`)
-      }
-      alert.crud.updated('Location boost settings')
-    } catch (error) {
-      // Revert the local change on API failure
+  const applyLgaPatch = useCallback(
+    (stateId: string, lgaRowId: string, updater: (current: LGA) => LGA) => {
       setLocations((prev) =>
         prev.map((s) => {
           if (s.id !== stateId) return s
@@ -274,16 +227,163 @@ export default function LocationHierarchy() {
             lgas: s.lgas.map((l) => {
               const id = toLgaEntryId(l, s.name)
               if (id !== lgaRowId) return l
-              return currentLga // Revert to original
+              return updater(l)
             }),
           }
         }),
       )
-      const message = error instanceof Error ? error.message : 'Failed to update location.'
-      setSaveError(message)
-      showError(message)
-    }
-  }, [locations])
+    },
+    [],
+  )
+
+  const persistLgaUpdate = useCallback(
+    async (
+      stateId: string,
+      lgaRowId: string,
+      updatedLga: LGA,
+      options?: { message?: string; silentToast?: boolean },
+    ) => {
+      const currentState = locations.find((s) => s.id === stateId)
+      if (!currentState) return
+
+      const currentLga = currentState.lgas.find((l) => toLgaEntryId(l, currentState.name) === lgaRowId)
+      if (!currentLga?.id) {
+        const msg = 'Cannot update: location ID missing. Refresh the page and try again.'
+        setSaveError(msg)
+        showError(msg)
+        return
+      }
+
+      setDetailSaving(true)
+      setSaveError(null)
+
+      try {
+        const saved = await adminUpdateLocation({
+          locationId: currentLga.id,
+          countryName: COUNTRY_NAME,
+          stateName: currentState.name,
+          lgaName: updatedLga.name,
+          fullAddress: updatedLga.formattedAddress ?? undefined,
+          latitude: updatedLga.latitude,
+          longitude: updatedLga.longitude,
+          googlePlaceId: updatedLga.googlePlaceId,
+          boostConfig: boostFormFromSaved(updatedLga.boost),
+        })
+        setLocations((prev) => upsertStateLocation(prev, saved))
+        setLastSavedMessage(options?.message ?? `Updated ${saved.lga.name}`)
+        if (!options?.silentToast) {
+          alert.crud.updated('Location')
+        }
+      } catch (error) {
+        applyLgaPatch(stateId, lgaRowId, () => currentLga)
+        const message = error instanceof Error ? error.message : 'Failed to update location.'
+        setSaveError(message)
+        showError(message)
+        throw error
+      } finally {
+        setDetailSaving(false)
+      }
+    },
+    [locations, applyLgaPatch],
+  )
+
+  const patchLga = useCallback(
+    async (
+      stateId: string,
+      lgaRowId: string,
+      updater: (current: LGA) => LGA,
+      options?: { debounceMs?: number; boostToggleOnly?: boolean },
+    ) => {
+      const currentState = locations.find((s) => s.id === stateId)
+      if (!currentState) return
+
+      const currentLga = currentState.lgas.find((l) => toLgaEntryId(l, currentState.name) === lgaRowId)
+      if (!currentLga?.id) {
+        const msg = 'Cannot update: location ID missing. Refresh the page and try again.'
+        setSaveError(msg)
+        showError(msg)
+        return
+      }
+
+      const updatedLga = updater(currentLga)
+      applyLgaPatch(stateId, lgaRowId, () => updatedLga)
+
+      const saveKey = detailKey(stateId, lgaRowId)
+      const existingTimer = boostSaveTimersRef.current.get(saveKey)
+      if (existingTimer) clearTimeout(existingTimer)
+
+      const runSave = async () => {
+        boostSaveTimersRef.current.delete(saveKey)
+        const boostToggled = currentLga.boost.enabled !== updatedLga.boost.enabled
+
+        if (boostToggled) {
+          setDetailSaving(true)
+          setSaveError(null)
+          try {
+            await adminUpdateLocationStatus({
+              lgaId: currentLga.id,
+              boostEnabled: updatedLga.boost.enabled,
+            })
+            setLastSavedMessage(
+              `Boost ${updatedLga.boost.enabled ? 'enabled' : 'disabled'} for ${updatedLga.name}`,
+            )
+            alert.crud.updated('Location boost status')
+          } catch (error) {
+            applyLgaPatch(stateId, lgaRowId, () => currentLga)
+            const message = error instanceof Error ? error.message : 'Failed to update location.'
+            setSaveError(message)
+            showError(message)
+          } finally {
+            setDetailSaving(false)
+          }
+          return
+        }
+
+        await persistLgaUpdate(stateId, lgaRowId, updatedLga, {
+          message: `Updated boost configuration for ${updatedLga.name}`,
+        })
+      }
+
+      const debounceMs = options?.debounceMs ?? 700
+      if (debounceMs > 0 && !options?.boostToggleOnly) {
+        boostSaveTimersRef.current.set(saveKey, setTimeout(() => void runSave(), debounceMs))
+      } else {
+        await runSave()
+      }
+    },
+    [locations, applyLgaPatch, persistLgaUpdate],
+  )
+
+  const saveLocationDetails = useCallback(
+    async (
+      stateId: string,
+      lgaRowId: string,
+      patch: { lgaName: string; formattedAddress: string },
+    ) => {
+      const currentState = locations.find((s) => s.id === stateId)
+      if (!currentState) return
+
+      const currentLga = currentState.lgas.find((l) => toLgaEntryId(l, currentState.name) === lgaRowId)
+      if (!currentLga?.id) {
+        const msg = 'Cannot update: location ID missing. Refresh the page and try again.'
+        setSaveError(msg)
+        showError(msg)
+        return
+      }
+
+      const updatedLga: LGA = {
+        ...currentLga,
+        name: patch.lgaName.trim() || currentLga.name,
+        formattedAddress: patch.formattedAddress.trim() || null,
+      }
+
+      applyLgaPatch(stateId, lgaRowId, () => updatedLga)
+      await persistLgaUpdate(stateId, lgaRowId, updatedLga, {
+        message: `Updated location details for ${updatedLga.name}`,
+      })
+    },
+    [locations, applyLgaPatch, persistLgaUpdate],
+  )
 
   const stats = useMemo(() => {
     const totalStates = locations.length
@@ -390,8 +490,6 @@ export default function LocationHierarchy() {
     }
   }
 
-  const detailKey = (stateId: string, lgaRowId: string) => `${stateId}::${lgaRowId}`
-
   return (
     <div className="min-h-screen bg-[#f4f6f9] font-sans text-sm text-slate-800">
       <div className="mx-auto container  py-6">
@@ -407,7 +505,7 @@ export default function LocationHierarchy() {
               onClick={() => window.open('https://www.google.com/maps', '_blank', 'noopener,noreferrer')}
               className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
-              <Map className="size-4 text-slate-600" />
+              <MapIcon className="size-4 text-slate-600" />
               Google Maps
             </button>
             <button
@@ -726,6 +824,8 @@ export default function LocationHierarchy() {
                                                   lgaRowId={lgaRowId}
                                                   detailId={`pricing-${dk}`}
                                                   patchLga={patchLga}
+                                                  onSaveDetails={saveLocationDetails}
+                                                  saving={detailSaving}
                                                   mapsPreviewUrl={mapsPreviewUrl}
                                                 />
                                               </td>
@@ -771,21 +871,66 @@ type DetailProps = {
   stateId: string
   lgaRowId: string
   detailId: string
-  patchLga: (stateId: string, lgaRowId: string, u: (c: LGA) => LGA) => void
+  patchLga: (
+    stateId: string,
+    lgaRowId: string,
+    u: (c: LGA) => LGA,
+    options?: { debounceMs?: number; boostToggleOnly?: boolean },
+  ) => void | Promise<void>
+  onSaveDetails: (
+    stateId: string,
+    lgaRowId: string,
+    patch: { lgaName: string; formattedAddress: string },
+  ) => Promise<void>
+  saving: boolean
   mapsPreviewUrl: (lat: number, lng: number) => string
 }
 
-function LgaDetailPanel({ lga, stateName, stateId, lgaRowId, detailId, patchLga, mapsPreviewUrl }: DetailProps) {
+function LgaDetailPanel({
+  lga,
+  stateName,
+  stateId,
+  lgaRowId,
+  detailId,
+  patchLga,
+  onSaveDetails,
+  saving,
+  mapsPreviewUrl,
+}: DetailProps) {
+  const [lgaNameDraft, setLgaNameDraft] = useState(lga.name)
+  const [addressDraft, setAddressDraft] = useState(lga.formattedAddress ?? '')
+
+  useEffect(() => {
+    setLgaNameDraft(lga.name)
+    setAddressDraft(lga.formattedAddress ?? '')
+  }, [lga.name, lga.formattedAddress])
+
+  const detailsDirty =
+    lgaNameDraft.trim() !== lga.name.trim() ||
+    addressDraft.trim() !== (lga.formattedAddress ?? '').trim()
+
   return (
     <div className="space-y-4 text-slate-800">
+      {saving && (
+        <p className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">Saving changes…</p>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <p className="text-[11px] font-semibold uppercase text-slate-500">State</p>
           <p className="text-sm font-medium">{stateName}</p>
         </div>
         <div>
-          <p className="text-[11px] font-semibold uppercase text-slate-500">LGA</p>
-          <p className="text-sm font-medium">{lga.name}</p>
+          <label className="mb-1 block text-[11px] font-semibold uppercase text-slate-500" htmlFor={`lga-name-${lgaRowId}`}>
+            LGA name
+          </label>
+          <input
+            id={`lga-name-${lgaRowId}`}
+            className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm"
+            value={lgaNameDraft}
+            disabled={saving || !lga.id}
+            onChange={(e) => setLgaNameDraft(e.target.value)}
+          />
         </div>
       </div>
 
@@ -799,7 +944,32 @@ function LgaDetailPanel({ lga, stateName, stateId, lgaRowId, detailId, patchLga,
             <span className="font-medium text-slate-700">Place ID:</span> {lga.googlePlaceId}
           </p>
         )}
-        {lga.formattedAddress && <p className="mt-1 text-xs text-slate-600">{lga.formattedAddress}</p>}
+        <label className="mb-1 mt-3 block text-[11px] font-semibold uppercase text-slate-500" htmlFor={`lga-address-${lgaRowId}`}>
+          Formatted address
+        </label>
+        <textarea
+          id={`lga-address-${lgaRowId}`}
+          rows={2}
+          className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-xs"
+          value={addressDraft}
+          disabled={saving || !lga.id}
+          onChange={(e) => setAddressDraft(e.target.value)}
+        />
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={!detailsDirty || saving || !lga.id}
+            onClick={() =>
+              void onSaveDetails(stateId, lgaRowId, {
+                lgaName: lgaNameDraft,
+                formattedAddress: addressDraft,
+              })
+            }
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Save location details
+          </button>
+        </div>
         <a
           href={mapsPreviewUrl(lga.latitude, lga.longitude)}
           target="_blank"
@@ -822,101 +992,47 @@ function LgaDetailPanel({ lga, stateName, stateId, lgaRowId, detailId, patchLga,
             type="checkbox"
             className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             checked={lga.boost.enabled}
+            disabled={saving}
             onChange={(e) =>
-              patchLga(stateId, lgaRowId, (cur) => ({
-                ...cur,
-                boost: { ...cur.boost, enabled: e.target.checked },
-              }))
+              void patchLga(
+                stateId,
+                lgaRowId,
+                (cur) => ({
+                  ...cur,
+                  boost: { ...cur.boost, enabled: e.target.checked },
+                }),
+                { debounceMs: 0, boostToggleOnly: true },
+              )
             }
           />
         </label>
       </div>
 
-      <div>
-        <p className="mb-2 text-[11px] font-semibold uppercase text-slate-500">Boost durations</p>
-        <ul className="flex flex-wrap gap-2">
-          {lga.boost.durations.map((d) => (
-            <li
-              key={d.days}
-              className={`rounded-md px-2.5 py-1 text-xs ${d.enabled ? 'bg-sky-50 text-sky-900' : 'bg-slate-100 text-slate-500 line-through'
-                }`}
-            >
-              {d.days}d
-              {d.enabled && d.priceAmount > 0 ? ` · ₦${d.priceAmount.toLocaleString()}` : ''}
-            </li>
-          ))}
-        </ul>
-      </div>
-
       <div id={detailId}>
-        <p className="mb-2 text-[11px] font-semibold uppercase text-slate-500">Slots & pricing</p>
-        <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
-          <table className="w-full min-w-[360px] text-left text-xs">
-            <thead className="bg-slate-50 text-[10px] font-semibold uppercase text-slate-600">
-              <tr>
-                <th className="px-3 py-2">Tier</th>
-                <th className="px-3 py-2">Slots</th>
-                <th className="px-3 py-2">Price (₦)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lga.boost.tiers.map((t) => (
-                <tr key={t.key} className="border-t border-slate-100">
-                  <td className="px-3 py-2">
-                    <span className="font-medium">{t.label}</span>
-                    <span className="ml-1 font-mono text-[10px] text-slate-400">({t.key})</span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      className="w-16 rounded border border-slate-200 px-1 py-0.5"
-                      value={t.totalSlots}
-                      onChange={(e) => {
-                        const n = Math.max(0, Number(e.target.value) || 0)
-                        patchLga(stateId, lgaRowId, (cur) => {
-                          const tiers = cur.boost.tiers.map((x) => (x.key === t.key ? { ...x, totalSlots: n } : x))
-                          const totalSlots = tiers.reduce((s, x) => s + x.totalSlots, 0)
-                          const sold = cur.boost.stats.slotsSold
-                          return {
-                            ...cur,
-                            boost: {
-                              ...cur.boost,
-                              tiers,
-                              stats: {
-                                ...cur.boost.stats,
-                                totalSlots,
-                                slotsRemaining: Math.max(0, totalSlots - sold),
-                              },
-                            },
-                          }
-                        })
-                      }}
-                    />
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      className="w-24 rounded border border-slate-200 px-1 py-0.5"
-                      value={t.priceAmount || ''}
-                      onChange={(e) => {
-                        const n = Math.max(0, Number(e.target.value) || 0)
-                        patchLga(stateId, lgaRowId, (cur) => ({
-                          ...cur,
-                          boost: {
-                            ...cur.boost,
-                            tiers: cur.boost.tiers.map((x) => (x.key === t.key ? { ...x, priceAmount: n } : x)),
-                          },
-                        }))
-                      }}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p className="mb-3 text-[11px] font-semibold uppercase text-slate-500">Boost plans & pricing</p>
+        <LgaBoostTierConfigCards
+          tiers={lga.boost.tiers}
+          disabled={!lga.boost.enabled}
+          onChange={(tiers) => {
+            patchLga(stateId, lgaRowId, (cur) => {
+              const totalSlots = tiers.reduce((sum, x) => sum + x.totalSlots, 0)
+              const sold = cur.boost.stats.slotsSold
+              return {
+                ...cur,
+                boost: {
+                  ...cur.boost,
+                  tiers,
+                  durations: aggregateDurationsFromTiers(tiers),
+                  stats: {
+                    ...cur.boost.stats,
+                    totalSlots,
+                    slotsRemaining: Math.max(0, totalSlots - sold),
+                  },
+                },
+              }
+            })
+          }}
+        />
       </div>
 
       <div className="rounded-lg border border-violet-100 bg-violet-50/40 p-4">

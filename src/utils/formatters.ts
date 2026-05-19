@@ -3,6 +3,8 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 
 dayjs.extend(relativeTime)
 
+export { formatNaira, formatMoney, formatNairaRange, CURRENCY_CODE, CURRENCY_SYMBOL } from '@/lib/currency'
+
 export function formatMessageTime(iso: string): string {
   return dayjs(iso).format('h:mm A')
 }

@@ -120,7 +120,7 @@ export default function VendorBoostReviewPayPage() {
     ? (checkoutPayment?.amount ?? boostSelection?.amount ?? 0)
     : (checkoutPayment?.amount ??
       apiPackage?.amount ??
-      Number(selectedPlan.amount.replace(/,/g, "")) ??
+      selectedPlan.amount ??
       5000);
 
   const boostPlanTitle = boostSelection

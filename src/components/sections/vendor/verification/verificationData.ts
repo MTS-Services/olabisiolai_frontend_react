@@ -1,12 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, CircleUserRound, FileText, Lock, ShieldCheck, Store } from "lucide-react";
 
+import type { VerificationPackage } from "@/features/verification/vendorVerificationApi";
+
 export type PlanId = "individual" | "business" | "ltd";
 
 export type Plan = {
     id: PlanId;
     title: string;
-    amount: string;
+    amount: number;
     description: string;
     /** Shown under the plan grid when this tier is selected — what happens after payment. */
     afterPurchaseNote: string;
@@ -22,7 +24,7 @@ export const plans: Plan[] = [
     {
         id: "individual",
         title: "Individual",
-        amount: "2,500",
+        amount: 2500,
         description:
             "Best for solo entrepreneurs and independent contractors. Requires government ID and personal biometric verification.",
         afterPurchaseNote:
@@ -35,7 +37,7 @@ export const plans: Plan[] = [
     {
         id: "business",
         title: "Business Name",
-        amount: "5,000",
+        amount: 5000,
         description:
             "For registered sole proprietorships. Includes CAC document validation and business account linkage.",
         afterPurchaseNote:
@@ -48,7 +50,7 @@ export const plans: Plan[] = [
     {
         id: "ltd",
         title: "Limited Company (LTD)",
-        amount: "10,000",
+        amount: 10000,
         description:
             "The gold standard for corporate entities. Comprehensive verification of directors, shareholders, and legal status.",
         afterPurchaseNote:
@@ -82,6 +84,25 @@ export const whyVerifyItems = [
         icon: Store,
     },
 ];
+
+/** Overlay API prices onto static plan cards (admin-configurable). */
+export function plansWithApiPricing(
+    staticPlans: Plan[],
+    apiPackages: VerificationPackage[] | undefined,
+): Plan[] {
+    if (!apiPackages?.length) return staticPlans;
+    return staticPlans.map((plan) => {
+        const fromApi = apiPackages.find((p) => p.id === plan.id);
+        if (!fromApi) return plan;
+        return {
+            ...plan,
+            title: fromApi.title?.trim() || plan.title,
+            amount: fromApi.amount,
+            description: fromApi.description?.trim() || plan.description,
+            perks: fromApi.perks?.length ? fromApi.perks : plan.perks,
+        };
+    });
+}
 
 export const processSteps = [
     {

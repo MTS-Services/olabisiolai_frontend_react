@@ -1,7 +1,10 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Check } from "lucide-react";
+import { fetchVerificationPackages } from "@/features/verification/vendorVerificationApi";
 import { formatNaira } from "@/lib/currency";
 import { cn } from "@/lib/utils";
-import { plans, type PlanId } from "./verificationData";
+import { plans, plansWithApiPricing, type PlanId } from "./verificationData";
 import { TierRadio } from "./TierRadio";
 
 export function VerificationPlansGrid({
@@ -11,13 +14,24 @@ export function VerificationPlansGrid({
   selectedId: PlanId;
   onPlanSelect: (id: PlanId) => void;
 }) {
+  const { data: packagesData } = useQuery({
+    queryKey: ["vendor", "verification", "packages"],
+    queryFn: fetchVerificationPackages,
+    staleTime: 60_000,
+  });
+
+  const displayPlans = useMemo(
+    () => plansWithApiPricing(plans, packagesData?.packages),
+    [packagesData?.packages],
+  );
+
   return (
     <div
       className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3"
       role="radiogroup"
       aria-label="Verification tier"
     >
-      {plans.map((plan) => {
+      {displayPlans.map((plan) => {
         const selected = selectedId === plan.id;
         const Icon = plan.icon;
         return (
@@ -41,7 +55,7 @@ export function VerificationPlansGrid({
               </div>
               <div className="flex flex-1 items-start justify-end gap-3">
                 <p className="text-2xl font-bold leading-none tracking-tight text-slate-900 md:text-[26px]">
-                  {formatNaira(Number(plan.amount), { freeLabel: false })}
+                  {formatNaira(plan.amount, { freeLabel: false })}
                 </p>
                 <TierRadio selected={selected} />
               </div>

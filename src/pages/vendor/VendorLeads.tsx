@@ -7,12 +7,14 @@ import { showError } from "@/lib/sweetAlert";
 
 import { fetchVendorAdminConversation } from "@/api/vendorAdminChat";
 import { getConversations } from "@/api/conversations";
+import { sendMessageWithAttachments } from "@/api/messages";
 import { useAuth } from "@/auth/useAuth";
 import type { MessagingUser } from "@/types/user";
 import { useMessagingRealtime } from "@/hooks/useMessagingRealtime";
 import { useInfiniteMessages } from "@/hooks/useInfiniteMessages";
 import { useMessageActions } from "@/hooks/useMessageActions";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { useAttachmentUpload } from "@/hooks/useAttachmentUpload";
 import type { Conversation } from "@/types/conversation";
 import { DirectLeadsTable } from "@/components/sections/vendor/leads/DirectLeadsTable";
 import { LeadDetailsModal } from "@/components/sections/vendor/leads/LeadDetailsModal";
@@ -23,6 +25,8 @@ import { WhatsAppChatInterface } from "@/components/sections/vendor/leads/WhatsA
 import { type Lead, type LeadChannel } from "@/components/sections/vendor/leads/leadsData";
 import { flattenMessagesChronological } from "@/utils/flattenMessages";
 import { conversationToLead, messageToChatMessage } from "@/utils/vendorLeads";
+import { appendOrMergeMessageInCache } from "@/features/messaging/messageCache";
+import { applyNewMessagePreview } from "@/features/messaging/conversationCache";
 
 export default function VendorLeads() {
   const [searchParams] = useSearchParams();
@@ -55,6 +59,8 @@ export default function VendorLeads() {
   const [chatSearch, setChatSearch] = useState("");
   const [messageDraft, setMessageDraft] = useState("");
   const [newConversationOpen, setNewConversationOpen] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const { files, addFiles, removeFile, clearFiles } = useAttachmentUpload();
 
   const conversationsQuery = useQuery({
     queryKey: ["vendor-conversations"],
@@ -200,7 +206,39 @@ export default function VendorLeads() {
 
   const handleSend = async () => {
     const t = messageDraft.trim();
-    if (!t || !selectedLeadId || isSending) return;
+    if ((!t && files.length === 0) || !selectedLeadId || isSending || fileBusy) return;
+
+    if (files.length > 0) {
+      const draftSnapshot = t;
+      const filesSnapshot = [...files];
+      setMessageDraft("");
+      clearFiles();
+      try {
+        setFileBusy(true);
+        const sent = await sendMessageWithAttachments(
+          selectedLeadId,
+          draftSnapshot || null,
+          filesSnapshot,
+        );
+        appendOrMergeMessageInCache(queryClient, selectedLeadId, sent);
+        if (me) {
+          applyNewMessagePreview(queryClient, selectedLeadId, sent, {
+            selfUserId: me.id,
+            isActiveConversation: true,
+          });
+        }
+        void queryClient.invalidateQueries({ queryKey: ["vendor-conversations"] });
+        void queryClient.invalidateQueries({ queryKey: ["vendor-admin-chat"] });
+      } catch {
+        showError("Failed to send attachment");
+        setMessageDraft(draftSnapshot);
+        addFiles(filesSnapshot);
+      } finally {
+        setFileBusy(false);
+      }
+      return;
+    }
+
     setMessageDraft("");
     try {
       await sendMessageAction(t);
@@ -229,6 +267,8 @@ export default function VendorLeads() {
           onChange={(c) => {
             setChannelFilter(c);
             if (c === "direct") setChatSearch("");
+            clearFiles();
+            setMessageDraft("");
           }}
           directCount={directCount}
           whatsappCount={whatsappCount}
@@ -245,6 +285,7 @@ export default function VendorLeads() {
               onSelectLead={(id) => {
                 setSelectedLeadId(id);
                 setMessageDraft("");
+                clearFiles();
               }}
               searchQuery={chatSearch}
               onSearchChange={setChatSearch}
@@ -261,7 +302,11 @@ export default function VendorLeads() {
               onMessageDraftChange={setMessageDraft}
               onComposerTyping={signalTyping}
               onSend={handleSend}
+              onFiles={addFiles}
+              pendingFiles={files}
+              onRemoveFile={removeFile}
               isSending={isSending}
+              fileBusy={fileBusy}
               messagesLoading={messagesInf.isLoading}
               typingPeers={peerTyping}
             />
@@ -280,6 +325,7 @@ export default function VendorLeads() {
             setChannelFilter("whatsapp");
             setSelectedLeadId(uuid);
             setMessageDraft("");
+            clearFiles();
             void queryClient.invalidateQueries({ queryKey: ["vendor-conversations"] });
             void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.messages(uuid) });
           }}

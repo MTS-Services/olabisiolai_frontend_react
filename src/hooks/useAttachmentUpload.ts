@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import { uploadAttachment } from '@/api/attachments'
+import { MESSAGING_ATTACHMENT_MAX_COUNT } from '@/constants/config'
 import type { Attachment } from '@/types/attachment'
 
 export function useAttachmentUpload() {
@@ -9,7 +10,11 @@ export function useAttachmentUpload() {
   const [isUploading, setIsUploading] = React.useState(false)
 
   const addFiles = React.useCallback((list: FileList | File[]) => {
-    setFiles((f) => [...f, ...Array.from(list)])
+    setFiles((f) => {
+      const incoming = Array.from(list)
+      const merged = [...f, ...incoming].slice(0, MESSAGING_ATTACHMENT_MAX_COUNT)
+      return merged
+    })
   }, [])
 
   const removeFile = React.useCallback((index: number) => {

@@ -82,7 +82,7 @@ export const MessageBubble = React.memo(function MessageBubble({
       >
         <div
           className={cn(
-            'w-full rounded-2xl px-3 py-2.5 shadow-sm sm:px-4 sm:py-3',
+            'w-full rounded-2xl p-2 shadow-sm sm:p-3',
             isOwn
               ? 'rounded-br-md bg-chat-accent text-text-white sm:rounded-br-2xl'
               : 'rounded-bl-md bg-chat-bubble-them text-ink sm:rounded-bl-2xl',

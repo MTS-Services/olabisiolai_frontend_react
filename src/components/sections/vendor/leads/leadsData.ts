@@ -1,3 +1,5 @@
+import type { Attachment } from "@/types/attachment";
+
 export type LeadChannel = "direct" | "whatsapp" | "admin";
 export type LeadStatus = "new" | "contacted";
 
@@ -22,6 +24,7 @@ export type ChatMessage = {
   from: "lead" | "vendor";
   text: string;
   time: string;
+  attachments?: Attachment[];
 };
 
 export const leads: Lead[] = [

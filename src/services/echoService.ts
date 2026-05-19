@@ -44,6 +44,7 @@ interface MessageSentPayload {
     parent_id: number | null
     parent_uuid?: string | null
     parent?: Record<string, unknown> | null
+    attachments?: Record<string, unknown>[]
     created_at: string
   }
   sender: { id: number; name: string }
@@ -76,7 +77,7 @@ export class EchoService {
         parent_uuid: payload.message.parent_uuid ?? null,
         parent: payload.message.parent ?? null,
         created_at: payload.message.created_at,
-        attachments: [],
+        attachments: payload.message.attachments ?? [],
         read_by: [],
       } as unknown as Record<string, unknown>)
       conv.onMessageSent(msg)

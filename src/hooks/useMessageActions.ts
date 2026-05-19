@@ -31,7 +31,7 @@ export function useMessageActions(
 
   const sendMutation = useMutation({
     mutationFn: async (vars: {
-      body: string
+      body: string | null
       attachmentIds?: number[]
       parentUuid?: string | null
       parentMessage?: Message | null
@@ -48,12 +48,13 @@ export function useMessageActions(
 
   const sendMessage = React.useCallback(
     async (
-      body: string,
+      body: string | null,
       attachmentIds?: number[],
       parentUuid?: string | null,
       parentMessage?: Message | null,
     ) => {
       if (!conversationUuid || !currentUser) return
+      const trimmed = body?.trim() ?? ''
       const tempId = crypto.randomUUID()
       const optimistic: Message = {
         uuid: tempId,
@@ -61,7 +62,7 @@ export function useMessageActions(
         sender: currentUser,
         parent: parentMessage ?? null,
         parent_uuid: parentUuid ?? null,
-        body,
+        body: trimmed || null,
         type: attachmentIds?.length ? 'attachment' : 'text',
         status: 'sending',
         attachments: [],
@@ -90,7 +91,7 @@ export function useMessageActions(
       )
       try {
         const real = await sendMutation.mutateAsync({
-          body,
+          body: trimmed || null,
           attachmentIds,
           parentUuid,
           parentMessage,

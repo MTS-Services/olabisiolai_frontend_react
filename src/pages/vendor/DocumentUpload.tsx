@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import {
   fetchVerificationStatus,
   primeVerificationDocumentSession,
-  type VerificationStatusPayload,
 } from "@/features/verification/vendorVerificationApi";
 
 export default function DocumentUpload() {

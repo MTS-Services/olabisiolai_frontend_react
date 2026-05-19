@@ -125,6 +125,9 @@ export async function loginUserWithRole(
       'Unable to restore your session after login.',
       'Login response is missing access token.',
     )
+    if (!user) {
+      throw new Error('Unable to restore your session after login.')
+    }
     ensureRoleMatchesExpected(user, payload.role)
     return { kind: 'authenticated', user }
   } catch (error) {
@@ -145,6 +148,9 @@ export async function verifyLoginTwoFactor(
       'Unable to restore your session after two-factor verification.',
       'Login response is missing access token.',
     )
+    if (!user) {
+      throw new Error('Unable to restore your session after two-factor verification.')
+    }
     ensureRoleMatchesExpected(user, payload.role)
     return user
   } catch (error) {

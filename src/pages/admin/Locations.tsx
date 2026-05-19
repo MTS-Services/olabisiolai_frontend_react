@@ -33,7 +33,6 @@ import { LgaBoostTierConfigCards } from '@/components/admin/locations/LgaBoostTi
 import {
   aggregateDurationsFromTiers,
   boostFormFromSaved,
-  type LgaBoostTierForm,
 } from '@/features/maps/lgaBoostTypes'
 
 type LGA = AdminSavedLocation['lga']
@@ -317,6 +316,11 @@ export default function LocationHierarchy() {
         const boostToggled = currentLga.boost.enabled !== updatedLga.boost.enabled
 
         if (boostToggled) {
+          if (currentLga.id == null) {
+            setSaveError('Save the location before changing boost status.')
+            applyLgaPatch(stateId, lgaRowId, () => currentLga)
+            return
+          }
           setDetailSaving(true)
           setSaveError(null)
           try {

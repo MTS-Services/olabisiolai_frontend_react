@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { NewConversationModal } from "@/features/messaging/NewConversationModal";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { showError } from "@/lib/sweetAlert";
 
+import { fetchVendorAdminConversation } from "@/api/vendorAdminChat";
 import { getConversations } from "@/api/conversations";
 import { useAuth } from "@/auth/useAuth";
 import type { MessagingUser } from "@/types/user";
@@ -23,6 +25,7 @@ import { flattenMessagesChronological } from "@/utils/flattenMessages";
 import { conversationToLead, messageToChatMessage } from "@/utils/vendorLeads";
 
 export default function VendorLeads() {
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const selfId = Number(user?.id ?? 0);
@@ -37,7 +40,16 @@ export default function VendorLeads() {
     };
   }, [user]);
 
-  const [channelFilter, setChannelFilter] = useState<LeadChannel>("whatsapp");
+  const [channelFilter, setChannelFilter] = useState<LeadChannel>(() => {
+    const channel = searchParams.get("channel");
+    return channel === "admin" ? "admin" : "whatsapp";
+  });
+
+  useEffect(() => {
+    if (searchParams.get("channel") === "admin") {
+      setChannelFilter("admin");
+    }
+  }, [searchParams]);
   const [selectedLeadId, setSelectedLeadId] = useState("");
   const [openLeadDetails, setOpenLeadDetails] = useState<Lead | null>(null);
   const [chatSearch, setChatSearch] = useState("");
@@ -53,10 +65,25 @@ export default function VendorLeads() {
     enabled: isAuthenticated && selfId > 0,
   });
 
+  const adminChatQuery = useQuery({
+    queryKey: ["vendor-admin-chat"],
+    queryFn: fetchVendorAdminConversation,
+    enabled: isAuthenticated && selfId > 0,
+  });
+
+  const adminLead = useMemo(() => {
+    if (!adminChatQuery.data) return null;
+    return conversationToLead(adminChatQuery.data, selfId, "admin");
+  }, [adminChatQuery.data, selfId]);
+
+  const adminChatUuid = adminChatQuery.data?.uuid;
+
   const chatLeads = useMemo(() => {
     const list = conversationsQuery.data ?? [];
-    return list.map((c) => conversationToLead(c, selfId, "whatsapp"));
-  }, [conversationsQuery.data, selfId]);
+    return list
+      .filter((c) => c.uuid !== adminChatUuid)
+      .map((c) => conversationToLead(c, selfId, "whatsapp"));
+  }, [conversationsQuery.data, selfId, adminChatUuid]);
 
   const tableLeads = useMemo(() => {
     const list = conversationsQuery.data ?? [];
@@ -64,6 +91,9 @@ export default function VendorLeads() {
   }, [conversationsQuery.data, selfId]);
 
   const filteredLeads = useMemo(() => {
+    if (channelFilter === "admin") {
+      return adminLead ? [adminLead] : [];
+    }
     const base = channelFilter === "whatsapp" ? chatLeads : tableLeads;
     if (channelFilter !== "whatsapp") return base;
     const q = chatSearch.trim().toLowerCase();
@@ -71,10 +101,13 @@ export default function VendorLeads() {
     return base.filter(
       (l) => l.name.toLowerCase().includes(q) || l.message.toLowerCase().includes(q),
     );
-  }, [channelFilter, chatLeads, tableLeads, chatSearch]);
+  }, [channelFilter, chatLeads, tableLeads, chatSearch, adminLead]);
 
   const directCount = tableLeads.length;
   const whatsappCount = chatLeads.length;
+  const adminCount = adminChatQuery.data?.unread_count ?? 0;
+
+  const isChatChannel = channelFilter === "whatsapp" || channelFilter === "admin";
 
   useEffect(() => {
     if (conversationsQuery.isError) {
@@ -83,7 +116,13 @@ export default function VendorLeads() {
   }, [conversationsQuery.isError]);
 
   useEffect(() => {
-    if (channelFilter !== "whatsapp") return;
+    if (adminChatQuery.isError) {
+      showError("Could not load admin messages");
+    }
+  }, [adminChatQuery.isError]);
+
+  useEffect(() => {
+    if (!isChatChannel) return;
     if (!filteredLeads.length) {
       if (selectedLeadId) setSelectedLeadId("");
       return;
@@ -91,21 +130,28 @@ export default function VendorLeads() {
     if (!filteredLeads.some((l) => l.id === selectedLeadId)) {
       setSelectedLeadId(filteredLeads[0].id);
     }
-  }, [channelFilter, filteredLeads, selectedLeadId]);
+  }, [isChatChannel, filteredLeads, selectedLeadId]);
+
+  useEffect(() => {
+    if (channelFilter === "admin" && adminLead) {
+      setSelectedLeadId(adminLead.id);
+    }
+  }, [channelFilter, adminLead]);
 
   const activeRealtimeConversation = useMemo((): Conversation | null => {
-    if (channelFilter !== "whatsapp" || !selectedLeadId) return null;
+    if (!isChatChannel || !selectedLeadId) return null;
+    if (channelFilter === "admin") {
+      return adminChatQuery.data ?? null;
+    }
     return conversationsQuery.data?.find((c) => c.uuid === selectedLeadId) ?? null;
-  }, [channelFilter, selectedLeadId, conversationsQuery.data]);
+  }, [isChatChannel, channelFilter, selectedLeadId, conversationsQuery.data, adminChatQuery.data]);
 
   useMessagingRealtime(activeRealtimeConversation, selfId);
 
-  const messagesInf = useInfiniteMessages(
-    channelFilter === "whatsapp" ? selectedLeadId : null,
-  );
+  const messagesInf = useInfiniteMessages(isChatChannel ? selectedLeadId : null);
 
   const { sendMessage: sendMessageAction, isSending } = useMessageActions(
-    channelFilter === "whatsapp" ? selectedLeadId : null,
+    isChatChannel ? selectedLeadId : null,
     me,
   );
 
@@ -149,17 +195,22 @@ export default function VendorLeads() {
     try {
       await sendMessageAction(t);
       void queryClient.invalidateQueries({ queryKey: ["vendor-conversations"] });
+      void queryClient.invalidateQueries({ queryKey: ["vendor-admin-chat"] });
     } catch {
       setMessageDraft(t);
     }
   };
+
+  const chatLoading =
+    (channelFilter === "admin" && adminChatQuery.isLoading) ||
+    (channelFilter === "whatsapp" && conversationsQuery.isLoading);
 
   return (
     <div className="p-4 md:p-6">
       <div className="space-y-5 md:space-y-6">
         <LeadsHeader />
 
-        {conversationsQuery.isLoading ? (
+        {chatLoading ? (
           <p className="text-sm text-muted-foreground">Loading your inbox…</p>
         ) : null}
 
@@ -171,6 +222,7 @@ export default function VendorLeads() {
           }}
           directCount={directCount}
           whatsappCount={whatsappCount}
+          adminCount={adminCount}
         />
 
         {isDirectChannel ? (
@@ -186,7 +238,9 @@ export default function VendorLeads() {
               }}
               searchQuery={chatSearch}
               onSearchChange={setChatSearch}
-              onNewConversation={() => setNewConversationOpen(true)}
+              onNewConversation={
+                channelFilter === "admin" ? undefined : () => setNewConversationOpen(true)
+              }
             />
             <WhatsAppChatInterface
               selectedLead={selectedLead}

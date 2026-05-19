@@ -21,6 +21,7 @@ const Notifications = lazy(() => import("@/pages/admin/Notifications"));
 const Verifications = lazy(() => import("@/pages/admin/Verifications"));
 const AdminVerificationDetail = lazy(() => import("@/pages/admin/AdminVerificationDetail"));
 const Leads = lazy(() => import("@/pages/admin/Leads"));
+const AdminMessages = lazy(() => import("@/pages/admin/AdminMessages"));
 const Reviews = lazy(() => import("@/pages/admin/Reviews"));
 const Payments = lazy(() => import("@/pages/admin/Payments"));
 const BoostSystem = lazy(() => import("@/pages/admin/BoostSystem"));
@@ -103,6 +104,14 @@ export const adminRoutes: RouteObject = {
       element: (
         <PermissionGate permission="view orders" fallback={adminDenied}>
           {suspensePage(Leads)}
+        </PermissionGate>
+      ),
+    },
+    {
+      path: "/admin/messages",
+      element: (
+        <PermissionGate permission="view orders" fallback={adminDenied}>
+          {suspensePage(AdminMessages)}
         </PermissionGate>
       ),
     },

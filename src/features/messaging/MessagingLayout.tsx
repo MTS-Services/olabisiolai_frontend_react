@@ -135,7 +135,7 @@ export function MessagingLayout({
   )
 
   const sidebar = (
-    <div className="flex h-full min-h-0 flex-col gap-2 p-2 lg:p-4">
+    <div className="flex h-full min-h-[calc(100vh-5rem)] flex-col gap-2 p-2 lg:p-4">
       <div className="flex shrink-0 items-center justify-between gap-2 px-2">
         <h1 className="font-heading text-xl font-black tracking-tight text-ink sm:text-2xl">
           Messages

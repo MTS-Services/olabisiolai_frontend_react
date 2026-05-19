@@ -66,6 +66,10 @@ function handleNewMessage(
     void ctx.queryClient.invalidateQueries({ queryKey: QUERY_KEYS.conversations })
   }
 
+  if (payload.from_platform_admin === true) {
+    void ctx.queryClient.invalidateQueries({ queryKey: ['vendor-admin-chat'] })
+  }
+
   const sender = String(payload.sender_name ?? payload.title ?? 'Message')
   const preview = String(payload.preview ?? payload.message ?? '')
   notifyNewMessage(sender, preview)

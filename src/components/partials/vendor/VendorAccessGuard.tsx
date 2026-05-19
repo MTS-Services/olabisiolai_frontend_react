@@ -13,14 +13,17 @@ export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const hasToken = Boolean(getAccessToken());
 
-  const { data, isLoading, isError, isFetched } = useQuery({
+  const { data, isLoading, isError, isFetched, isFetching } = useQuery({
     queryKey: ['vendor', 'onboarding', 'status'],
     queryFn: fetchVendorOnboardingStatus,
     enabled: hasToken,
     retry: 1,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 30_000,
+    refetchOnMount: true,
   });
+
+  const subscriptionReady =
+    data?.subscription?.is_premium_active === true || data?.subscription?.requires_payment === false;
 
   useEffect(() => {
     if (!hasToken || isLoading || !isFetched || isError || !data) {
@@ -32,16 +35,16 @@ export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (data.subscription?.requires_payment) {
+    if (data.subscription?.requires_payment && !subscriptionReady) {
       navigate('/vendor/premium-payment', { replace: true });
     }
-  }, [data, hasToken, isError, isFetched, isLoading, navigate]);
+  }, [data, hasToken, isError, isFetched, isLoading, navigate, subscriptionReady]);
 
   if (!hasToken) {
     return <>{children}</>;
   }
 
-  if (isLoading || !isFetched) {
+  if ((isLoading || !isFetched) && !subscriptionReady) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="size-8 animate-spin text-brand-red" aria-label="Loading vendor account" />
@@ -53,7 +56,11 @@ export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  if (data && (!data.has_business || data.subscription?.requires_payment)) {
+  if (data && !data.has_business) {
+    return null;
+  }
+
+  if (data && data.subscription?.requires_payment && !subscriptionReady && isFetching) {
     return null;
   }
 

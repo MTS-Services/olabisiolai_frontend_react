@@ -27,6 +27,7 @@ import {
   readPremiumBundledBoostSelection,
   clearBoostCheckoutSelection,
 } from "@/features/boost/boostCheckoutSession";
+import { primeVendorSubscriptionCaches } from "@/features/subscription/primeVendorSubscriptionCaches";
 import {
   confirmSubscriptionPayment,
   fetchSubscriptionPackages,
@@ -364,22 +365,27 @@ export default function VendorSubscriptionPayPage() {
           }
 
           const result = await confirmSubscriptionPayment(paymentId, String(txId));
-          await trySaveProfileFromResponse(response);
+
           closePaymentModal();
           persistCheckout(null);
           clearBoostCheckoutSelection();
+
           if (result.subscription.is_premium_active) {
             localStorage.setItem("vendorPlan", "premium");
           } else {
             localStorage.removeItem("vendorPlan");
           }
           localStorage.setItem("vendorBusinessCreated", "true");
+          primeVendorSubscriptionCaches(queryClient, result.subscription);
+
+          navigate("/vendor/dashboard", { replace: true });
+          showSuccess(result.message || "Premium subscription activated successfully.");
+
+          void trySaveProfileFromResponse(response);
           void queryClient.invalidateQueries({ queryKey: ["vendor"] });
           void queryClient.invalidateQueries({ queryKey: ["vendor", "onboarding", "status"] });
           void queryClient.invalidateQueries({ queryKey: ["vendor", "subscription", "status"] });
           void queryClient.invalidateQueries({ queryKey: ["vendor", "payments"] });
-          showSuccess(result.message || "Premium subscription activated successfully.");
-          navigate("/vendor/dashboard", { replace: true });
         } catch (error) {
           persistCheckout(null);
           showError(

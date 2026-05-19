@@ -1,4 +1,8 @@
 export const TYPING_DEBOUNCE_MS = 300
+/** Matches Laravel UploadAttachmentRequest / SendMessageRequest mimes rule. */
+export const MESSAGING_ATTACHMENT_ACCEPT =
+  '.jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.mp4,.mp3,.wav'
+export const MESSAGING_ATTACHMENT_MAX_COUNT = 10
 /** Messages fetched per cursor page (must match backend MessageService page size). */
 export const MESSAGES_PAGE_SIZE = 30
 /** Distance from bottom (px) treated as "at bottom" for auto-scroll on new messages. */

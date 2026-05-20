@@ -12,9 +12,27 @@ export type EchoContextValue = {
 
 const EchoContext = React.createContext<EchoContextValue | null>(null)
 
+let warnedMissingReverbEnv = false
+
 export function EchoProvider({ children }: { children: React.ReactNode }) {
   const { accessToken, isAuthenticated } = useAuth()
   const [echo, setEcho] = React.useState<ReverbEcho | null>(() => getEcho())
+
+  React.useEffect(() => {
+    if (
+      import.meta.env.PROD &&
+      !messagingEnv.isReverbConfigured() &&
+      !warnedMissingReverbEnv
+    ) {
+      warnedMissingReverbEnv = true
+      console.warn(
+        '[Realtime] Laravel Echo is disabled: production bundle is missing VITE_REVERB_APP_KEY and/or VITE_REVERB_HOST. ' +
+          'Set them as Docker build-args (or Coolify build environment) so Vite can embed them, then rebuild the frontend. ' +
+          'VITE_REVERB_HOST must be the API hostname (same host as VITE_API_BASE_URL) where /app is proxied to Reverb. ' +
+          'See olabisiolai_frontend_react/.env.example and Olabisiolai_Laravel12/docs/COOLIFY_REVERB.md.',
+      )
+    }
+  }, [])
 
   React.useEffect(() => {
     if (!messagingEnv.isReverbConfigured()) {

@@ -39,6 +39,7 @@ export type PatchUserSettingsBody = {
   first_name?: string
   last_name?: string
   phone?: string | null
+  location?: string | null
   wants_marketing_emails?: boolean
   /** Shallow-deep merge via `array_replace_recursive` on the server. */
   settings?: Record<string, unknown>
@@ -48,6 +49,7 @@ function appendPatchUserSettingsFormData(form: FormData, body: PatchUserSettings
   if (body.first_name !== undefined) form.append('first_name', body.first_name)
   if (body.last_name !== undefined) form.append('last_name', body.last_name)
   if (body.phone !== undefined) form.append('phone', body.phone ?? '')
+  if (body.location !== undefined) form.append('location', body.location ?? '')
   if (body.wants_marketing_emails !== undefined) {
     form.append('wants_marketing_emails', body.wants_marketing_emails ? '1' : '0')
   }
@@ -84,9 +86,8 @@ export async function patchUserSettings(
     const form = new FormData()
     appendPatchUserSettingsFormData(form, body)
     form.append('image', image)
-    const response = await request.patch<UserSettingsApiEnvelope>('/user/settings', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    // PHP/nginx on production only parse multipart file uploads on POST, not PATCH.
+    const response = await request.post<UserSettingsApiEnvelope>('/user/settings', form)
     const resBody = response.data
     if (!resBody?.success || !resBody.data) {
       throw new Error(resBody?.message || 'Could not save settings')

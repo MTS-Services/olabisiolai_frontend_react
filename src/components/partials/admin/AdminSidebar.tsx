@@ -17,19 +17,24 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import type { ComponentType } from "react";
 import { isSpatieSuperAdmin } from "@/auth/adminSpatie";
 import { useAuth } from "@/auth/useAuth";
 import { CMS_PAGES } from "@/features/cms/cmsConfig";
+import { fetchAdminSidebarCounts } from "@/features/dashboard/adminSidebarApi";
 import { cn } from "@/lib/utils";
+
+type SidebarBadgeKey = "pending_verifications" | "pending_boosts";
 
 type SidebarItem = {
   label: string;
   to: string;
   icon: ComponentType<{ className?: string }>;
   permission?: string;
+  badgeKey?: SidebarBadgeKey;
 };
 
 const staticItems: SidebarItem[] = [
@@ -38,12 +43,12 @@ const staticItems: SidebarItem[] = [
   { label: "Admins", to: "/admin/user-management/admin", icon: ShieldUser, permission: "view admins" },
   { label: "Users", to: "/admin/user-management/user", icon: Users },
   { label: "Businesses", to: "/admin/businesses", icon: Building2, permission: "view products" },
-  { label: "Verifications", to: "/admin/verifications", icon: ClipboardCheck },
+  { label: "Verifications", to: "/admin/verifications", icon: ClipboardCheck, badgeKey: "pending_verifications" },
   { label: "Leads", to: "/admin/leads", icon: ListChecks, permission: "view orders" },
   { label: "Messages", to: "/admin/messages", icon: MessageSquare, permission: "view orders" },
   { label: "Reviews", to: "/admin/reviews", icon: Star },
   { label: "Payments", to: "/admin/payments", icon: CircleDollarSign, permission: "view orders" },
-  { label: "Boost System", to: "/admin/boost-system", icon: Wrench },
+  { label: "Boost System", to: "/admin/boost-system", icon: Wrench, badgeKey: "pending_boosts" },
   { label: "Categories", to: "/admin/categories", icon: Tags, permission: "view products" },
   { label: "Career", to: "/admin/career", icon: UserRound },
   { label: "Locations", to: "/admin/locations", icon: MapPin },
@@ -58,12 +63,43 @@ type AdminSidebarProps = {
   onNavigate?: () => void;
 };
 
+function formatBadgeCount(count: number): string {
+  if (count > 99) return "99+";
+  return String(count);
+}
+
+function SidebarBadge({ count, loading }: { count: number; loading?: boolean }) {
+  if (loading) {
+    return (
+      <span
+        className="ml-auto h-5 w-5 shrink-0 animate-pulse rounded-full bg-chat-border-subtle"
+        aria-hidden
+      />
+    );
+  }
+
+  if (count <= 0) return null;
+
+  return (
+    <span
+      className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-brand-red px-1.5 text-[10px] font-semibold leading-none text-ice"
+      aria-label={`${count} pending`}
+    >
+      {formatBadgeCount(count)}
+    </span>
+  );
+}
+
 function SidebarLink({
   item,
   onNavigate,
+  badgeCount,
+  badgeLoading,
 }: {
   item: SidebarItem;
   onNavigate?: () => void;
+  badgeCount?: number;
+  badgeLoading?: boolean;
 }) {
   const Icon = item.icon;
   return (
@@ -78,7 +114,8 @@ function SidebarLink({
       }
     >
       <Icon className="size-4 shrink-0" aria-hidden />
-      <span className="truncate">{item.label}</span>
+      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      {item.badgeKey ? <SidebarBadge count={badgeCount ?? 0} loading={badgeLoading} /> : null}
     </NavLink>
   );
 }
@@ -87,6 +124,21 @@ export function AdminSidebar({ mobileOpen = false, onNavigate }: AdminSidebarPro
   const { can, user } = useAuth();
   const location = useLocation();
   const superAdmin = isSpatieSuperAdmin(user);
+
+  const sidebarCountsQuery = useQuery({
+    queryKey: ["admin", "sidebar-counts"],
+    queryFn: fetchAdminSidebarCounts,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
+  const sidebarCounts = sidebarCountsQuery.data;
+  const countsLoading = sidebarCountsQuery.isPending;
+
+  const resolveBadgeCount = (key?: SidebarBadgeKey): number | undefined => {
+    if (!key || !sidebarCounts) return undefined;
+    return sidebarCounts[key];
+  };
 
   const isVisible = (item: SidebarItem) =>
     !item.permission || superAdmin || can(item.permission);
@@ -121,7 +173,13 @@ export function AdminSidebar({ mobileOpen = false, onNavigate }: AdminSidebarPro
 
       <nav className="space-y-1 px-2 pb-4">
         {itemsBeforeSettings.map((item) => (
-          <SidebarLink key={item.to} item={item} onNavigate={onNavigate} />
+          <SidebarLink
+            key={item.to}
+            item={item}
+            onNavigate={onNavigate}
+            badgeCount={resolveBadgeCount(item.badgeKey)}
+            badgeLoading={countsLoading && Boolean(item.badgeKey)}
+          />
         ))}
 
         <div className="pt-1">

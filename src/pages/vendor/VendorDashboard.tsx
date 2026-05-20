@@ -1,5 +1,3 @@
-import { Loader2 } from "lucide-react";
-
 import { DashboardAnalyticsCard } from "@/components/sections/vendor/dashboard/planFree/DashboardAnalyticsCard";
 import { DashboardPortfolioCard } from "@/components/sections/vendor/dashboard/planFree/DashboardPortfolioCard";
 import { DashboardPremiumCtaBar } from "@/components/sections/vendor/dashboard/planFree/DashboardPremiumCtaBar";
@@ -23,15 +21,7 @@ import { AccountChecklistCard } from "@/components/sections/vendor/dashboard/pla
 import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
 export default function VendorDashboard() {
-  const { isPremiumActive, isLoading } = useVendorSubscriptionAccess();
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center p-6">
-        <Loader2 className="size-8 animate-spin text-brand-red" aria-label="Loading dashboard" />
-      </div>
-    );
-  }
+  const { isPremiumActive } = useVendorSubscriptionAccess();
 
   return (
     <div className="p-4 md:p-6">

@@ -42,6 +42,10 @@ export async function fetchVendorOnboardingStatus(): Promise<VendorOnboardingSta
 }
 
 export function onboardingRedirectPath(status: VendorOnboardingStatus): string {
+  if (status.redirect_to) {
+    return status.redirect_to;
+  }
+
   if (!status.has_business) {
     return '/vendor/choose-your-plan';
   }
@@ -51,4 +55,11 @@ export function onboardingRedirectPath(status: VendorOnboardingStatus): string {
   }
 
   return '/vendor/dashboard';
+}
+
+/** After vendor login — skip `/vendor` shell; go straight to plan, payment, or dashboard. */
+export async function resolveVendorPostLoginPath(): Promise<string> {
+  const status = await fetchVendorOnboardingStatus();
+
+  return onboardingRedirectPath(status);
 }

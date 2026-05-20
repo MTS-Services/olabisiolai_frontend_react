@@ -6,7 +6,9 @@ import { useAuth } from '@/auth/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getAuthErrorMessage, getAuthFieldErrors } from '@/features/auth/errorMessage'
-import { resolveDashboardPath, verifyLoginTwoFactor } from '@/features/auth/service'
+import { extractUserFromAuthPayload } from '@/api/laravelResponse'
+import { getUserRoles } from '@/auth/roles'
+import { resolvePostLoginPath, verifyLoginTwoFactor } from '@/features/auth/service'
 import { type AuthRole } from '@/features/auth/types'
 
 const CODE_LENGTH = 6
@@ -79,13 +81,21 @@ export default function LoginTwoFactor() {
         { authStrategy, setToken, setUser, refreshSession, resetAuthState },
       )
 
+      const roles = getUserRoles(extractUserFromAuthPayload(loggedInUser))
+      const isVendor = roles.includes('vendor') || role === 'vendor'
+
+      if (isVendor) {
+        navigate(await resolvePostLoginPath(loggedInUser, role), { replace: true })
+        return
+      }
+
       const returnTo = state.from
       if (returnTo?.pathname && !isUnsafePostLoginPath(returnTo.pathname)) {
         navigate(returnTo.pathname, { replace: true, state: returnTo.state })
         return
       }
 
-      navigate(resolveDashboardPath(loggedInUser, role), { replace: true })
+      navigate(await resolvePostLoginPath(loggedInUser, role), { replace: true })
     } catch (err) {
       const errors = getAuthFieldErrors(err)
       setFieldErrors(errors)

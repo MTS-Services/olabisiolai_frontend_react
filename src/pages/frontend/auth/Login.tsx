@@ -10,8 +10,8 @@ import { useAuth } from '@/auth/useAuth'
 import { request } from '@/api/request'
 import { env } from '@/config/env'
 import { setRefreshToken } from '@/auth/token'
-import { rolePolicy } from '@/auth/rolePolicy'
 import { getUserRoles } from '@/auth/roles'
+import { resolvePostLoginPath } from '@/features/auth/service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -92,6 +92,18 @@ export default function Login() {
         effectiveUser = refreshed ?? loggedInUser
       }
 
+      const roles = getUserRoles(effectiveUser)
+      if (roles.length === 0) {
+        throw new Error('Login succeeded, but no valid role was found for this account.')
+      }
+
+      const isVendor = roles.includes('vendor')
+
+      if (isVendor) {
+        navigate(await resolvePostLoginPath(effectiveUser, 'vendor'), { replace: true })
+        return
+      }
+
       const returnTo = (location.state as { from?: { pathname?: string; state?: unknown } } | null)
         ?.from
       if (returnTo?.pathname && !isUnsafePostLoginPath(returnTo.pathname)) {
@@ -102,20 +114,7 @@ export default function Login() {
         return
       }
 
-      const roles = getUserRoles(effectiveUser)
-      if (roles.length === 0) {
-        throw new Error('Login succeeded, but no valid role was found for this account.')
-      }
-
-      // Role-aware post-login landing (policy-driven)
-      for (const r of roles) {
-        const dash = rolePolicy[r]?.dashboard
-        if (dash) {
-          navigate(dash, { replace: true })
-          return
-        }
-      }
-      navigate('/user/dashboard', { replace: true })
+      navigate(await resolvePostLoginPath(effectiveUser, 'user'), { replace: true })
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Login failed. Please try again.'

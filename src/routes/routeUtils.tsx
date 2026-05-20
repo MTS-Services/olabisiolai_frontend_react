@@ -15,6 +15,15 @@ export function suspensePage(Comp: LazyExoticComponent<ComponentType>) {
   );
 }
 
+/** Vendor shell is already visible — avoid a full-page Suspense flash in main. */
+export function vendorSuspensePage(Comp: LazyExoticComponent<ComponentType>) {
+  return (
+    <Suspense fallback={null}>
+      <Comp />
+    </Suspense>
+  );
+}
+
 export function ScrollToTopLayout() {
   const { pathname } = useLocation();
 

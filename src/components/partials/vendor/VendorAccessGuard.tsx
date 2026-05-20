@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 
@@ -15,25 +15,20 @@ export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const hasToken = Boolean(getAccessToken());
 
-  const { data, isLoading, isError, isFetched } = useQuery({
+  const { data, isPending, isError } = useQuery({
     queryKey: ['vendor', 'onboarding', 'status'],
     queryFn: fetchVendorOnboardingStatus,
     enabled: hasToken,
     retry: 1,
-    staleTime: 30_000,
-    refetchOnMount: true,
+    staleTime: 60_000,
+    refetchOnMount: false,
   });
 
   const subscriptionReady =
     data?.subscription?.is_premium_active === true || data?.subscription?.requires_payment === false;
 
   useEffect(() => {
-    if (!hasToken || isLoading || !isFetched || isError || !data) {
-      return;
-    }
-
-    if (!data.has_business) {
-      navigate('/vendor/choose-your-plan', { replace: true });
+    if (!hasToken || isPending || isError || !data) {
       return;
     }
 
@@ -43,13 +38,13 @@ export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
       }
       navigate('/vendor/premium-payment', { replace: true });
     }
-  }, [data, hasToken, isError, isFetched, isLoading, navigate, pathname, subscriptionReady]);
+  }, [data, hasToken, isError, isPending, navigate, pathname, subscriptionReady]);
 
   if (!hasToken) {
     return <>{children}</>;
   }
 
-  if ((isLoading || !isFetched) && !subscriptionReady) {
+  if (!data && isPending) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="size-8 animate-spin text-brand-red" aria-label="Loading vendor account" />
@@ -62,7 +57,7 @@ export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (data && !data.has_business) {
-    return null;
+    return <Navigate to="/vendor/choose-your-plan" replace />;
   }
 
   return <>{children}</>;

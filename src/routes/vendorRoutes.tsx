@@ -3,7 +3,7 @@ import { Navigate, type RouteObject } from "react-router-dom";
 
 import { VendorLayout } from "@/layouts/vendor/VendorLayout";
 import { RoleGate } from "@/routes/RoleGate";
-import { suspensePage } from "@/routes/routeUtils";
+import { suspensePage, vendorSuspensePage } from "@/routes/routeUtils";
 
 const VendorDashboardWrapper = lazy(() => import("@/pages/vendor/VendorDashboardWrapper"));
 const VendorDashboard = lazy(() => import("@/pages/vendor/VendorDashboard"));
@@ -23,6 +23,16 @@ const AfterVerification = lazy(() => import("@/pages/vendor/AfterVerification"))
 const DocumentUpload = lazy(() => import("@/pages/vendor/DocumentUpload"));
 
 
+/** `/vendor` entry — onboarding redirect only (no dashboard shell). */
+export const vendorEntryRoute: RouteObject = {
+  path: "/vendor",
+  element: (
+    <RoleGate allow="vendor" fallback="/unauthorized">
+      {suspensePage(VendorDashboardWrapper)}
+    </RoleGate>
+  ),
+};
+
 /** Authenticated `vendor` role area (vendor shell + nested vendor pages). */
 export const vendorRoutes: RouteObject = {
   element: (
@@ -31,25 +41,24 @@ export const vendorRoutes: RouteObject = {
     </RoleGate>
   ),
   children: [
-    { path: "/vendor", element: suspensePage(VendorDashboardWrapper) },
-    { path: "/vendor/dashboard", element: suspensePage(VendorDashboard) },
-    { path: "/vendor/profile", element: suspensePage(VendorProfile) },
-    { path: "/vendor/leads", element: suspensePage(VendorLeads) },
-    { path: "/vendor/notifications", element: suspensePage(VendorNotifications) },
-    { path: "/vendor/verification", element: suspensePage(VendorVerification) },
-    { path: "/vendor/boost", element: suspensePage(VendorBoost) },
-    { path: "/vendor/boost/configure", element: suspensePage(VendorBoostConfigure) },
-    { path: "/vendor/review-pay", element: suspensePage(VendorBoostReviewPay) },
+    { path: "/vendor/dashboard", element: vendorSuspensePage(VendorDashboard) },
+    { path: "/vendor/profile", element: vendorSuspensePage(VendorProfile) },
+    { path: "/vendor/leads", element: vendorSuspensePage(VendorLeads) },
+    { path: "/vendor/notifications", element: vendorSuspensePage(VendorNotifications) },
+    { path: "/vendor/verification", element: vendorSuspensePage(VendorVerification) },
+    { path: "/vendor/boost", element: vendorSuspensePage(VendorBoost) },
+    { path: "/vendor/boost/configure", element: vendorSuspensePage(VendorBoostConfigure) },
+    { path: "/vendor/review-pay", element: vendorSuspensePage(VendorBoostReviewPay) },
     {
       path: "/vendor/subscription/pay",
       element: <Navigate to="/vendor/premium-payment" replace />,
     },
-    { path: "/vendor/analytics", element: suspensePage(VendorAnalytics) },
-    { path: "/vendor/reviews", element: suspensePage(VendorReviews) },
-    { path: "/vendor/payments/:paymentId", element: suspensePage(VendorPaymentDetail) },
-    { path: "/vendor/payments", element: suspensePage(VendorPayments) },
-    { path: "/vendor/settings", element: suspensePage(VendorSettings) },
-    { path: "/vendor/after-verification", element: suspensePage(AfterVerification) },
-    { path: "/vendor/document-upload", element: suspensePage(DocumentUpload) },
+    { path: "/vendor/analytics", element: vendorSuspensePage(VendorAnalytics) },
+    { path: "/vendor/reviews", element: vendorSuspensePage(VendorReviews) },
+    { path: "/vendor/payments/:paymentId", element: vendorSuspensePage(VendorPaymentDetail) },
+    { path: "/vendor/payments", element: vendorSuspensePage(VendorPayments) },
+    { path: "/vendor/settings", element: vendorSuspensePage(VendorSettings) },
+    { path: "/vendor/after-verification", element: vendorSuspensePage(AfterVerification) },
+    { path: "/vendor/document-upload", element: vendorSuspensePage(DocumentUpload) },
   ],
 };

@@ -68,6 +68,8 @@ export default function Featured() {
                   name={business.name}
                   category={business.category}
                   location={business.location}
+                  latitude={business.latitude}
+                  longitude={business.longitude}
                   rating={business.rating}
                   reviews={business.reviews}
                   description={business.description}

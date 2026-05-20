@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { VendorAuthRedirect } from '@/components/partials/vendor/VendorAuthRedirect'
 import { rolePolicy } from '@/auth/rolePolicy'
 import { getUserRoles, hasAnyRole } from '@/auth/roles'
 import { useAuth } from '@/auth/useAuth'
@@ -55,6 +56,11 @@ export function GuestGate({
   if (isRegisterOtpPage) return children
 
   const roles = getUserRoles(user)
+
+  if (roles.includes('vendor')) {
+    return <VendorAuthRedirect />
+  }
+
   const recommended = redirectTo ?? pickDashboardForUserRoles(roles)
 
   if (env.loginMode === 'single') {

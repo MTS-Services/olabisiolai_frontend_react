@@ -9,7 +9,7 @@ import { getAccessToken, getStoredAuthUser } from "@/auth/token";
 import {
   requestPasswordResetOtp,
   resendRegistrationOtp,
-  resolveDashboardPath,
+  resolvePostLoginPath,
   verifyRegistrationOtp,
 } from "@/features/auth/service";
 import { type AuthRole } from "@/features/auth/types";
@@ -190,7 +190,7 @@ export default function OTPVerification() {
         { authStrategy, setToken, setUser, refreshSession, resetAuthState },
         role,
       );
-      navigate(resolveDashboardPath(loggedInUser, role), { replace: true });
+      navigate(await resolvePostLoginPath(loggedInUser, role), { replace: true });
     } catch (err) {
       setError(getAuthErrorMessage(err, "OTP verification failed. Please try again."));
     } finally {

@@ -42,7 +42,7 @@ export default function VendorDashboardWrapper() {
       return;
     }
 
-    navigate(onboardingRedirectPath(data), { replace: true });
+    navigate(data.redirect_to || onboardingRedirectPath(data), { replace: true });
   }, [data, error, hasToken, isError, isFetched, isLoading, navigate]);
 
   if (!hasToken || isLoading || !isFetched) {

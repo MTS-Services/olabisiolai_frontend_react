@@ -18,6 +18,8 @@ interface FeaturedCardProps {
   name: string;
   category: string;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   rating: number;
   reviews: number;
   description: string;
@@ -33,6 +35,8 @@ export function FeaturedCard({
   name,
   category,
   location,
+  latitude,
+  longitude,
   rating,
   reviews,
   description,
@@ -61,6 +65,8 @@ export function FeaturedCard({
           name,
           category,
           location,
+          latitude: latitude ?? null,
+          longitude: longitude ?? null,
           rating,
           reviews,
           description,

@@ -21,21 +21,22 @@ export function useVendorSubscriptionAccess() {
   const navigate = useNavigate();
   const hasToken = Boolean(getAccessToken());
 
-  const subscriptionQuery = useQuery({
-    queryKey: ["vendor", "subscription", "status"],
-    queryFn: fetchSubscriptionStatus,
-    enabled: hasToken,
-    staleTime: 30_000,
-  });
-
   const onboardingQuery = useQuery({
     queryKey: ["vendor", "onboarding", "status"],
     queryFn: fetchVendorOnboardingStatus,
     enabled: hasToken,
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
-  const subscription = subscriptionQuery.data?.subscription;
+  const subscriptionQuery = useQuery({
+    queryKey: ["vendor", "subscription", "status"],
+    queryFn: fetchSubscriptionStatus,
+    enabled: hasToken && onboardingQuery.isSuccess,
+    staleTime: 60_000,
+  });
+
+  const subscription =
+    subscriptionQuery.data?.subscription ?? onboardingQuery.data?.subscription ?? null;
   const isPremiumActive = subscription?.is_premium_active === true;
   const canPayPremium = subscription?.can_pay_premium === true;
   const requiresPayment = subscription?.requires_payment === true;
@@ -60,11 +61,7 @@ export function useVendorSubscriptionAccess() {
     navigate("/vendor/boost");
   }, [navigate]);
 
-  const isLoading =
-    hasToken &&
-    !subscriptionQuery.isError &&
-    !onboardingQuery.isError &&
-    (subscriptionQuery.isPending || onboardingQuery.isPending);
+  const isLoading = hasToken && !subscription && onboardingQuery.isPending;
 
   return {
     subscription,

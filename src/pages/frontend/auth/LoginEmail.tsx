@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getAuthErrorMessage, getAuthFieldErrors } from "@/features/auth/errorMessage";
 import { resolveAuthRole, saveAuthRole } from "@/features/auth/roleSelection";
-import { resolveDashboardPath, loginUserWithRole } from "@/features/auth/service";
+import { getUserRoles } from "@/auth/roles";
+import { extractUserFromAuthPayload } from "@/api/laravelResponse";
+import { loginUserWithRole, resolvePostLoginPath } from "@/features/auth/service";
 import { type AuthRole } from "@/features/auth/types";
 
 function isUnsafePostLoginPath(pathname: string | undefined) {
@@ -73,6 +75,16 @@ export default function LoginEmail() {
         return;
       }
 
+      const roles = getUserRoles(extractUserFromAuthPayload(loginResult.user));
+      const isVendor = roles.includes("vendor") || role === "vendor";
+
+      if (isVendor) {
+        navigate(await resolvePostLoginPath(loginResult.user, role), {
+          replace: true,
+        });
+        return;
+      }
+
       if (returnTo?.pathname && !isUnsafePostLoginPath(returnTo.pathname)) {
         navigate(returnTo.pathname, {
           replace: true,
@@ -81,7 +93,7 @@ export default function LoginEmail() {
         return;
       }
 
-      navigate(resolveDashboardPath(loginResult.user, role), {
+      navigate(await resolvePostLoginPath(loginResult.user, role), {
         replace: true,
       });
     } catch (err) {

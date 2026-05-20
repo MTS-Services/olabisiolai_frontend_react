@@ -24,14 +24,15 @@ import {
 } from "lucide-react";
 
 import { ServicePhotosModal } from "@/components/Modal/ServicePhotosModal";
+import { BusinessServiceAreaMap } from "@/components/maps/BusinessServiceAreaMap";
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 import { Button } from "@/components/ui/button";
+import { env } from "@/config/env";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
 const FALLBACK_COVER = "/images/service/hero.jpg";
 const FALLBACK_LOGO = "/images/service/avatar.jpg";
-const FALLBACK_MAP = "/images/service/map.jpg";
 
 const SERVICES = [
   "Pipe Installation",
@@ -96,6 +97,8 @@ interface StateBusinessData {
   name: string;
   category: string;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   rating: number;
   reviews: number;
   description: string;
@@ -113,6 +116,8 @@ function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
     name: data.name,
     category: data.category,
     location: data.location,
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
     rating: data.rating,
     reviews: data.reviews,
     description: data.description,
@@ -168,6 +173,8 @@ export default function Service() {
         ? `${reviewCount} ${reviewCount === 1 ? "Review" : "Reviews"}`
         : "No reviews yet";
   const locationText = business?.location ?? stateData?.location ?? "";
+  const latitude = business?.latitude ?? stateData?.latitude ?? null;
+  const longitude = business?.longitude ?? stateData?.longitude ?? null;
   const verified = business?.verified ?? stateData?.verified ?? false;
 
   const coverPhotos = useMemo(() => {
@@ -437,14 +444,13 @@ export default function Service() {
               {locationText}
             </button>
           </div>
-          <div className="relative h-80 overflow-hidden rounded-2xl border border-stat-muted shadow-inner md:h-96">
-            <img src={FALLBACK_MAP} alt="" className="absolute inset-0 block size-full object-cover" loading="lazy" decoding="async" />
-            <div className="pointer-events-none absolute inset-0 bg-white/40 mix-blend-saturation" aria-hidden />
-            <MapPin className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2 text-brand drop-shadow-md" strokeWidth={1.5} aria-hidden />
-            <div className="absolute bottom-4 left-4 rounded-lg bg-white/90 px-4 py-2 shadow-md backdrop-blur-sm">
-              <p className="text-xs font-semibold text-ink">Click to expand detailed map</p>
-            </div>
-          </div>
+          <BusinessServiceAreaMap
+            apiKey={env.googleMapsApiKey}
+            businessName={name}
+            locationLabel={locationText}
+            latitude={latitude}
+            longitude={longitude}
+          />
         </section>
 
         <section ref={reviewsRef} className="mt-12 space-y-8">

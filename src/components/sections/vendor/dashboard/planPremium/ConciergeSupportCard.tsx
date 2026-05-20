@@ -1,4 +1,5 @@
 import { Headset, MessageSquare } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,8 +21,11 @@ export function ConciergeSupportCard() {
           </div>
         </div>
         <div className="flex gap-2 items-center mt-10">
-          <Button className="flex-1 bg-brand-red font-inter font-semibold text-white hover:bg-brand-red/90 sm:flex-auto">
-            Contact support
+          <Button
+            className="flex-1 bg-brand-red font-inter font-semibold text-white hover:bg-brand-red/90 sm:flex-auto"
+            asChild
+          >
+            <Link to="/vendor/leads">Contact support</Link>
           </Button>
           <Button
             type="button"
@@ -29,8 +33,11 @@ export function ConciergeSupportCard() {
             variant="outline"
             className="h-11 w-11 shrink-0 border-border"
             aria-label="Open messages"
+            asChild
           >
-            <MessageSquare className="size-5" />
+            <Link to="/vendor/leads">
+              <MessageSquare className="size-5" />
+            </Link>
           </Button>
         </div>
       </CardContent>

@@ -28,7 +28,7 @@ export default function VendorBoostConfigurePage() {
 
   if (isLoading) {
     return (
-      <motionBoostConfigureLoaderInner />
+      <BoostConfigureLoader />
     );
   }
 
@@ -53,7 +53,7 @@ export default function VendorBoostConfigurePage() {
   );
 }
 
-function motionBoostConfigureLoaderInner() {
+function BoostConfigureLoader() {
   return (
     <div className="flex min-h-[40vh] items-center justify-center p-6">
       <Loader2 className="size-8 animate-spin text-brand-red" aria-label="Loading boost setup" />

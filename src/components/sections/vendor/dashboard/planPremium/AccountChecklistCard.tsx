@@ -2,15 +2,11 @@ import { Check } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { VendorDashboardCardProps } from "../dashboardTypes";
 
-const checklist: { label: string; done: boolean }[] = [
-  { label: "Verified business license", done: true },
-  { label: "Premium subscription active", done: true },
-  { label: "Update profile video (recommended)", done: false },
-  { label: "Set up auto-response messages", done: false },
-];
+export function AccountChecklistCard({ dashboard }: VendorDashboardCardProps) {
+  const checklist = dashboard.checklist;
 
-export function AccountChecklistCard() {
   return (
     <Card className="rounded-2xl border-border-light bg-card shadow-sm">
       <CardContent className="space-y-5 p-6 md:p-8">

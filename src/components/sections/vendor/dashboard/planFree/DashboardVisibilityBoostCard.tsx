@@ -4,9 +4,18 @@ import { PremiumAccessButton } from "@/components/partials/vendor/PremiumAccessB
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
+import { cn } from "@/lib/utils";
+import type { VendorDashboardCardProps } from "../dashboardTypes";
 
-export function DashboardVisibilityBoostCard() {
+const boostBadgeClass: Record<string, string> = {
+  active: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  pending: "border-amber-200 bg-amber-50 text-amber-800",
+  inactive: "border-border text-muted-foreground",
+};
+
+export function DashboardVisibilityBoostCard({ dashboard }: VendorDashboardCardProps) {
   const { isPremiumActive } = useVendorSubscriptionAccess();
+  const { boost } = dashboard;
 
   return (
     <Card className="w-full">
@@ -18,8 +27,14 @@ export function DashboardVisibilityBoostCard() {
         <div>
           <h2 className="text-lg font-bold text-foreground font-manrope sm:text-xl">Visibility Boost</h2>
         </div>
-        <Badge variant="outline" className="text-[9px] uppercase sm:text-[10px]">
-          Inactive
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-[9px] uppercase sm:text-[10px]",
+            boostBadgeClass[boost.status] ?? boostBadgeClass.inactive,
+          )}
+        >
+          {boost.statusLabel}
         </Badge>
         <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
           Boosted vendors appear 5x more often in search results.

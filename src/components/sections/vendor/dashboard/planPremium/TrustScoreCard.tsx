@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import type { VendorDashboardCardProps } from "../dashboardTypes";
 
-export function TrustScoreCard() {
+export function TrustScoreCard({ dashboard }: VendorDashboardCardProps) {
+  const { stats } = dashboard;
+
   return (
     <Card className="rounded-2xl border-border-light bg-card shadow-sm">
       <CardContent className="space-y-5 p-6 md:p-8">
@@ -19,19 +22,17 @@ export function TrustScoreCard() {
             Trust status
           </Link>
         </div>
-        <div>
-          <p className="font-manrope text-4xl font-bold tracking-tight text-foreground">
-            98<span className="text-lg font-semibold text-muted-foreground"> / 100</span>
-          </p>
-        </div>
+        <TrustScoreValue score={stats.trustScore} />
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl bg-sky-50/90 px-4 py-3 dark:bg-sky-950/30">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Profile strength</p>
-            <p className="mt-1 text-sm font-semibold text-foreground font-inter">High</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Profile strength
+            </p>
+            <p className="mt-1 text-sm font-semibold text-foreground font-inter">{stats.profileStrength}</p>
           </div>
           <div className="rounded-xl bg-sky-50/90 px-4 py-3 dark:bg-sky-950/30">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Vendor tier</p>
-            <p className="mt-1 text-sm font-semibold text-foreground font-inter">Premium</p>
+            <p className="mt-1 text-sm font-semibold text-foreground font-inter">{stats.vendorTier}</p>
           </div>
         </div>
         <Button className="w-full bg-primary font-inter font-semibold text-primary-foreground hover:bg-primary/90" asChild>
@@ -39,5 +40,16 @@ export function TrustScoreCard() {
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+function TrustScoreValue({ score }: { score: number }) {
+  return (
+    <div>
+      <p className="font-manrope text-4xl font-bold tracking-tight text-foreground">
+        {score}
+        <span className="text-lg font-semibold text-muted-foreground"> / 100</span>
+      </p>
+    </div>
   );
 }

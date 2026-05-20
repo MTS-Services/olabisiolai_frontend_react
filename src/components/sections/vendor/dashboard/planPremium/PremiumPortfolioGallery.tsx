@@ -2,19 +2,26 @@ import { ImageIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { resolveMediaUrl } from "@/lib/mediaUrl";
+import type { VendorDashboardCardProps } from "../dashboardTypes";
 
-import img1 from "@/assets/protfolio_image/Property Image 1.png";
-import img2 from "@/assets/protfolio_image/Property Image 2.png";
-import img3 from "@/assets/protfolio_image/Property Image 3.png";
+import fallbackImg from "@/assets/protfolio_image/Property Image 1.png";
 
-const galleryImages: { id: string; src: string; alt: string }[] = [
-  { id: "1", src: img1, alt: "Living space" },
-  { id: "2", src: img2, alt: "Kitchen" },
-  { id: "3", src: img3, alt: "Bedroom" },
-  { id: "4", src: img1, alt: "Interior detail" },
-];
+export function PremiumPortfolioGallery({ dashboard }: VendorDashboardCardProps) {
+  const sources = dashboard.business.coverPhotoUrls.length
+    ? dashboard.business.coverPhotoUrls
+    : dashboard.business.logoUrl
+      ? [dashboard.business.logoUrl]
+      : [];
 
-export function PremiumPortfolioGallery() {
+  const galleryImages = sources.length
+    ? sources.slice(0, 4).map((src, index) => ({
+      id: `${index}`,
+      src,
+      alt: `Portfolio ${index + 1}`,
+    }))
+    : [{ id: "0", src: fallbackImg, alt: "Portfolio placeholder" }];
+
   return (
     <Card className="rounded-2xl border-border-light bg-card shadow-sm">
       <CardContent className="space-y-6 p-6 md:p-8">
@@ -34,7 +41,12 @@ export function PremiumPortfolioGallery() {
               key={`${img.id}-${index}`}
               className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border-light bg-muted"
             >
-              <img src={img.src} alt={img.alt} className="h-full w-full object-cover" loading="lazy" />
+              <img
+                src={resolveMediaUrl(img.src, fallbackImg)}
+                alt={img.alt}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
             </div>
           ))}
         </div>

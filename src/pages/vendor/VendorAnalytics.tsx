@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
 import { AnalyticsHeader } from "@/components/sections/vendor/analytics/AnalyticsHeader";
@@ -8,12 +10,30 @@ import { ReachAreasCard } from "@/components/sections/vendor/analytics/ReachArea
 import { StatsGrid } from "@/components/sections/vendor/analytics/StatsGrid";
 import { TopListingsTable } from "@/components/sections/vendor/analytics/TopListingsTable";
 import { TrafficTrendCard } from "@/components/sections/vendor/analytics/TrafficTrendCard";
+import {
+  fetchVendorAnalytics,
+  type VendorAnalyticsData,
+  type VendorAnalyticsRange,
+} from "@/features/analytics/vendorAnalyticsApi";
 import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
 export default function VendorAnalytics() {
-  const { isPremiumActive, isLoading } = useVendorSubscriptionAccess();
+  const { isPremiumActive, isLoading: subscriptionLoading } = useVendorSubscriptionAccess();
+  const [range, setRange] = useState<VendorAnalyticsRange>("30d");
 
-  if (isLoading) {
+  const {
+    data: analytics,
+    isPending,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["vendor", "analytics", range],
+    queryFn: () => fetchVendorAnalytics(range),
+    staleTime: 60_000,
+    enabled: !subscriptionLoading,
+  });
+
+  if (subscriptionLoading || (isPending && !analytics)) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center p-6">
         <Loader2 className="size-8 animate-spin text-brand-red" aria-label="Loading analytics" />
@@ -21,31 +41,72 @@ export default function VendorAnalytics() {
     );
   }
 
+  if (isError || !analytics) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center p-6">
+        <p className="text-center text-sm text-muted-foreground">
+          {(error as Error)?.message ?? "Unable to load analytics."}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 md:p-6">
-      <div className="space-y-4">
-        {isPremiumActive ? (
-          <>
-            <AnalyticsHeader />
-
-            <StatsGrid />
-
-            <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-              <TrafficTrendCard />
-              <LeadsByChannelCard />
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-2">
-              <ReachAreasCard />
-              <EngagementHeatmapCard />
-            </div>
-
-            <TopListingsTable />
-          </>
-        ) : (
-          <BasicAnalytics />
-        )}
-      </div>
+      <AnalyticsPageContent
+        isPremiumActive={isPremiumActive}
+        analytics={analytics}
+        range={range}
+        onRangeChange={setRange}
+      />
     </div>
+  );
+}
+
+function AnalyticsPageContent({
+  isPremiumActive,
+  analytics,
+  range,
+  onRangeChange,
+}: {
+  isPremiumActive: boolean;
+  analytics: VendorAnalyticsData;
+  range: VendorAnalyticsRange;
+  onRangeChange: (range: VendorAnalyticsRange) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {isPremiumActive ? (
+        <PremiumAnalytics analytics={analytics} range={range} onRangeChange={onRangeChange} />
+      ) : (
+        <BasicAnalytics preview={analytics.preview} />
+      )}
+    </div>
+  );
+}
+
+function PremiumAnalytics({
+  analytics,
+  range,
+  onRangeChange,
+}: {
+  analytics: VendorAnalyticsData;
+  range: VendorAnalyticsRange;
+  onRangeChange: (range: VendorAnalyticsRange) => void;
+}) {
+  return (
+    <>
+      <AnalyticsHeader range={range} onRangeChange={onRangeChange} />
+      <StatsGrid stats={analytics.stats} />
+      <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+        <TrafficTrendCard trafficTrend={analytics.trafficTrend} />
+        <LeadsByChannelCard leadsByChannel={analytics.leadsByChannel} />
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ReachAreasCard reachAreas={analytics.reachAreas} />
+        <EngagementHeatmapCard heatmap={analytics.engagementHeatmap} />
+      </div>
+      <TopListingsTable listings={analytics.topListings} />
+    </>
   );
 }

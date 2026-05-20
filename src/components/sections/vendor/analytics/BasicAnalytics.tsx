@@ -1,19 +1,22 @@
 import { Lock } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import type { VendorAnalyticsData } from "@/features/analytics/vendorAnalyticsApi";
 import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
-const stats = [
-  { label: "Total Views", value: "1,248" },
-  { label: "Total Bookings", value: "162" },
-  { label: "Reviews", value: "28" },
-  { label: "Conversion", value: "3.4%" },
-];
-
-const barHeights = [45, 60, 55, 70, 50, 90, 80, 65, 75, 85, 55, 40];
-
-export function BasicAnalytics() {
+export function BasicAnalytics({
+  preview,
+}: {
+  preview: VendorAnalyticsData["preview"];
+}) {
   const { goToPremiumPayment } = useVendorSubscriptionAccess();
+
+  const stats = [
+    { label: "Total Views", value: preview.totalViews },
+    { label: "Total Bookings", value: preview.totalBookings },
+    { label: "Reviews", value: preview.reviews },
+    { label: "Conversion", value: preview.conversion },
+  ];
 
   return (
     <div className="relative">
@@ -41,7 +44,9 @@ export function BasicAnalytics() {
           <div className="mb-5 grid grid-cols-4 gap-3">
             {stats.map((s) => (
               <div key={s.label} className="rounded-lg bg-muted p-4">
-                <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">{s.label}</p>
+                <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+                  {s.label}
+                </p>
                 <p className="text-2xl font-semibold">{s.value}</p>
               </div>
             ))}
@@ -49,7 +54,7 @@ export function BasicAnalytics() {
 
           <div className="relative min-h-[240px] overflow-hidden rounded-lg border">
             <div className="pointer-events-none flex h-48 items-end gap-2 p-4 opacity-30 blur-sm">
-              {barHeights.map((h, i) => (
+              {preview.chartHeights.map((h, i) => (
                 <div key={i} className="flex-1 rounded-t bg-red-500" style={{ height: `${h}%` }} />
               ))}
             </div>

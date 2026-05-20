@@ -1,11 +1,7 @@
-import { useNavigate } from "react-router-dom";
-
-import { Button } from "@/components/ui/button";
+import { PremiumAccessButton } from "@/components/partials/vendor/PremiumAccessButton";
 import { cn } from "@/lib/utils";
 
 export function PlanPromoBanner() {
-  const navigate = useNavigate();
-
   return (
     <div
       className={cn(
@@ -17,13 +13,9 @@ export function PlanPromoBanner() {
         Unlock premium visibility… Join 2,000+ top-tier vendors who have increased their sales by up to 40% with our
         Premium growth tools.
       </p>
-      <Button
-        type="button"
-        className="shrink-0 rounded-full bg-white px-8 py-6 text-base font-inter font-semibold text-brand-red hover:bg-white/90"
-        onClick={() => navigate("/vendor/boost")}
-      >
+      <PremiumAccessButton className="shrink-0 rounded-full bg-white px-8 py-6 text-base font-inter font-semibold text-brand-red hover:bg-white/90">
         Get premium now
-      </Button>
+      </PremiumAccessButton>
     </div>
   );
 }

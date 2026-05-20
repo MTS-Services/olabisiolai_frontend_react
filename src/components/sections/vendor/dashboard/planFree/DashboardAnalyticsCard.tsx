@@ -1,6 +1,6 @@
 import { Crown } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { PremiumAccessButton } from "@/components/partials/vendor/PremiumAccessButton";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { StatPill } from "./StatPill";
@@ -25,7 +25,9 @@ export function DashboardAnalyticsCard() {
             <p className="mt-1 text-sm text-muted-foreground">
               Unlock analytics, competitor tracking, and priority placement.
             </p>
-            <Button className="mt-3 bg-brand-red text-white hover:bg-brand-red/90">Get Premium Access</Button>
+            <PremiumAccessButton className="mt-3 bg-brand-red text-white hover:bg-brand-red/90">
+              Get Premium Access
+            </PremiumAccessButton>
           </div>
         </div>
       </CardContent>

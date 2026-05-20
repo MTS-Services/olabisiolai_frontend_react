@@ -1,5 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link, NavLink } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
 import { isActivePath } from "@/lib/nav.utils";
@@ -20,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import logo from "@/assets/vendor/logo.jpeg";
-import { fetchVendorOnboardingStatus } from "@/features/subscription/vendorOnboardingApi";
+import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
 const items = [
   { to: "/vendor/dashboard", label: "Dashboard", icon: LayoutGrid, end: true, premiumOnly: false },
@@ -39,10 +38,12 @@ function SidebarCTA({
   canPayPremium,
   isPremiumActive,
   onUpgrade,
+  onExploreBoosts,
 }: {
   canPayPremium: boolean;
   isPremiumActive: boolean;
   onUpgrade: () => void;
+  onExploreBoosts: () => void;
 }) {
   if (isPremiumActive) {
     return (
@@ -56,7 +57,7 @@ function SidebarCTA({
         <p className="text-xs text-text-white/80 mb-3">
           Increase your visibility by up to 40%.
         </p>
-        <Button className="w-full" variant="outline" size="sm">
+        <Button className="w-full" variant="outline" size="sm" type="button" onClick={onExploreBoosts}>
           Get Started
         </Button>
       </div>
@@ -90,7 +91,7 @@ function SidebarCTA({
         <button
           type="button"
           onClick={onUpgrade}
-          className="w-full rounded-lg bg-red-500 hover:bg-red-600 active:scale-[0.98] transition-all px-3 py-2.5 text-sm font-semibold text-text-white shadow-md"
+          className="w-full cursor-pointer rounded-lg bg-red-500 px-3 py-2.5 text-sm font-semibold text-text-white shadow-md transition-all hover:bg-red-600 active:scale-[0.98]"
         >
           Get Premium Access
         </button>
@@ -107,17 +108,8 @@ export function VendorSidebar({
   onClose: () => void;
 }) {
   const { pathname } = useActiveUrl();
-  const navigate = useNavigate();
 
-  const { data: onboarding } = useQuery({
-    queryKey: ["vendor", "onboarding", "status"],
-    queryFn: fetchVendorOnboardingStatus,
-    staleTime: 30_000,
-  });
-
-  const subscription = onboarding?.subscription;
-  const isPremiumActive = subscription?.is_premium_active === true;
-  const canPayPremium = subscription?.can_pay_premium === true;
+  const { isPremiumActive, canPayPremium, goToPremiumPayment, goToBoost } = useVendorSubscriptionAccess();
 
   return (
     <>
@@ -148,7 +140,7 @@ export function VendorSidebar({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -168,7 +160,7 @@ export function VendorSidebar({
             return (
               <NavLink
                 key={i.to}
-                to={locked ? "/vendor/premium-payment" : i.to}
+                to={i.to}
                 end={i.end}
                 className={() =>
                   cn(
@@ -196,7 +188,8 @@ export function VendorSidebar({
           <SidebarCTA
             canPayPremium={canPayPremium}
             isPremiumActive={isPremiumActive}
-            onUpgrade={() => navigate("/vendor/premium-payment")}
+            onUpgrade={goToPremiumPayment}
+            onExploreBoosts={goToBoost}
           />
         </div>
       </aside>

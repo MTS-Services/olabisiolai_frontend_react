@@ -1,5 +1,5 @@
+import { Loader2 } from "lucide-react";
 
-import { useState, useEffect } from "react";
 import { DashboardAnalyticsCard } from "@/components/sections/vendor/dashboard/planFree/DashboardAnalyticsCard";
 import { DashboardPortfolioCard } from "@/components/sections/vendor/dashboard/planFree/DashboardPortfolioCard";
 import { DashboardPremiumCtaBar } from "@/components/sections/vendor/dashboard/planFree/DashboardPremiumCtaBar";
@@ -19,67 +19,57 @@ import { PremiumRecentActivity } from "@/components/sections/vendor/dashboard/pl
 import { ActiveBoostsCard } from "@/components/sections/vendor/dashboard/planPremium/ActiveBoostsCard";
 import { PremiumPortfolioGallery } from "@/components/sections/vendor/dashboard/planPremium/PremiumPortfolioGallery";
 import { ConciergeSupportCard } from "@/components/sections/vendor/dashboard/planPremium/ConciergeSupportCard";
-import { AccountChecklistCard } from "@/components/sections/vendor/dashboard/planPremium/AccountChecklistCard"; 
-
-type VendorPlan = "free" | "premium";
+import { AccountChecklistCard } from "@/components/sections/vendor/dashboard/planPremium/AccountChecklistCard";
+import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
 export default function VendorDashboard() {
-  const [plan, setPlan] = useState<VendorPlan>(() => {
-    const savedPlan = localStorage.getItem("vendorPlan");
-    return savedPlan === "premium" ? "premium" : "free";
-  });
+  const { isPremiumActive, isLoading } = useVendorSubscriptionAccess();
 
-  const isPremium = plan === "premium";
-
-  // Listen for storage changes from other tabs
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "vendorPlan") {
-        setPlan(e.newValue === "premium" ? "premium" : "free");
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center p-6">
+        <Loader2 className="size-8 animate-spin text-brand-red" aria-label="Loading dashboard" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6">
-      {isPremium ? (
-       <div className="space-y-4 md:space-y-5">
-             <PremiumDashboardHeader />
-       
-             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-               <TrustScoreCard />
-               <EnquiriesStatsCard />
-               <ProfileViewsStatsCard />
-               <InteractionsListCard />
-             </div>
-       
-             <WeeklyEngagementChart />
-       
-             <div className="grid gap-4 xl:grid-cols-2">
-               <PremiumRecentActivity />
-               <ActiveBoostsCard />
-             </div>
-       
-             <PremiumPortfolioGallery />
-       
-             <div className="grid gap-4 xl:grid-cols-2">
-               <ConciergeSupportCard />
-               <AccountChecklistCard />
-             </div>
-           </div>
+      {isPremiumActive ? (
+        <div className="space-y-4 md:space-y-5">
+          <PremiumDashboardHeader />
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <TrustScoreCard />
+            <EnquiriesStatsCard />
+            <ProfileViewsStatsCard />
+            <InteractionsListCard />
+          </div>
+
+          <WeeklyEngagementChart />
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <PremiumRecentActivity />
+            <ActiveBoostsCard />
+          </div>
+
+          <PremiumPortfolioGallery />
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <ConciergeSupportCard />
+            <AccountChecklistCard />
+          </div>
+        </div>
       ) : (
         <div className="space-y-4 md:space-y-5">
           <DashboardWelcomeCard />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 md:grid-cols-1 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <DashboardProfileCompletionCard />
             <DashboardPortfolioCard />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 md:grid-cols-1 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <DashboardVisibilityBoostCard />
             <DashboardVerificationCard />
           </div>
@@ -95,6 +85,5 @@ export default function VendorDashboard() {
         </div>
       )}
     </div>
-  )
+  );
 }
-

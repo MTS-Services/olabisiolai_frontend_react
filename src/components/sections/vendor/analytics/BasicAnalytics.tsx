@@ -1,6 +1,7 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
 const stats = [
   { label: "Total Views", value: "1,248" },
@@ -12,55 +13,44 @@ const stats = [
 const barHeights = [45, 60, 55, 70, 50, 90, 80, 65, 75, 85, 55, 40];
 
 export function BasicAnalytics() {
-  const navigate = useNavigate();
-
-  const handleUpgradeClick = () => {
-    navigate("/vendor/premium-payment");
-  };
+  const { goToPremiumPayment } = useVendorSubscriptionAccess();
 
   return (
     <div className="relative">
-      {/* Full Page Overlay */}
-      <div className="absolute inset-0 bg-white/40 z-20 flex flex-col items-center justify-center gap-3 p-8">
-        <div className="w-13 h-13 rounded-full bg-brand-red flex items-center justify-center p-3">
-          <Lock className="text-popover-foreground w-6 h-6" />
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white/40 p-8">
+        <div className="flex h-13 w-13 items-center justify-center rounded-full bg-brand-red p-3">
+          <Lock className="h-6 w-6 text-popover-foreground" />
         </div>
         <p className="text-lg font-semibold text-popover-foreground">Upgrade to Premium</p>
-        <p className="text-sm text-popover-foreground text-center max-w-[260px]">
+        <p className="max-w-[260px] text-center text-sm text-popover-foreground">
           Unlock deep analytics, conversion tracking, and competitor benchmarks.
         </p>
         <button
-          onClick={handleUpgradeClick}
-          className="bg-red-600 hover:bg-brand-red text-text-white rounded-full px-6 py-3 text-sm font-medium"
+          type="button"
+          onClick={goToPremiumPayment}
+          className="cursor-pointer rounded-full bg-red-600 px-6 py-3 text-sm font-medium text-text-white hover:bg-brand-red"
         >
           Get Premium Access
         </button>
       </div>
 
-      <Card className="opacity-40 h-screen">
+      <Card className="h-screen opacity-40">
         <CardContent className="p-6">
-          <h2 className="text-xl font-bold font-inter mb-5">Analytics Dashboard</h2>
+          <h2 className="mb-5 font-inter text-xl font-bold">Analytics Dashboard</h2>
 
-          {/* Stat Cards */}
-          <div className="grid grid-cols-4 gap-3 mb-5">
+          <div className="mb-5 grid grid-cols-4 gap-3">
             {stats.map((s) => (
-              <div key={s.label} className="bg-muted rounded-lg p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{s.label}</p>
+              <div key={s.label} className="rounded-lg bg-muted p-4">
+                <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">{s.label}</p>
                 <p className="text-2xl font-semibold">{s.value}</p>
               </div>
             ))}
           </div>
 
-          {/* Locked Chart */}
-          <div className="relative border rounded-lg overflow-hidden min-h-[240px]">
-            {/* Blurred Bar Chart */}
-            <div className="flex items-end gap-2 h-48 p-4 blur-sm opacity-30 pointer-events-none">
+          <div className="relative min-h-[240px] overflow-hidden rounded-lg border">
+            <div className="pointer-events-none flex h-48 items-end gap-2 p-4 opacity-30 blur-sm">
               {barHeights.map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-red-500 rounded-t"
-                  style={{ height: `${h}%` }}
-                />
+                <div key={i} className="flex-1 rounded-t bg-red-500" style={{ height: `${h}%` }} />
               ))}
             </div>
           </div>

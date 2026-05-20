@@ -1,19 +1,21 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 
 import { getAccessToken } from '@/auth/token';
 import { fetchVendorOnboardingStatus } from '@/features/subscription/vendorOnboardingApi';
+import { isVendorPremiumPreviewPath } from '@/hooks/useVendorSubscriptionAccess';
 
 /**
  * Guards vendor shell routes: no business → onboarding; unpaid premium → checkout.
  */
 export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const hasToken = Boolean(getAccessToken());
 
-  const { data, isLoading, isError, isFetched, isFetching } = useQuery({
+  const { data, isLoading, isError, isFetched } = useQuery({
     queryKey: ['vendor', 'onboarding', 'status'],
     queryFn: fetchVendorOnboardingStatus,
     enabled: hasToken,
@@ -36,9 +38,12 @@ export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
     }
 
     if (data.subscription?.requires_payment && !subscriptionReady) {
+      if (isVendorPremiumPreviewPath(pathname)) {
+        return;
+      }
       navigate('/vendor/premium-payment', { replace: true });
     }
-  }, [data, hasToken, isError, isFetched, isLoading, navigate, subscriptionReady]);
+  }, [data, hasToken, isError, isFetched, isLoading, navigate, pathname, subscriptionReady]);
 
   if (!hasToken) {
     return <>{children}</>;
@@ -57,10 +62,6 @@ export function VendorAccessGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (data && !data.has_business) {
-    return null;
-  }
-
-  if (data && data.subscription?.requires_payment && !subscriptionReady && isFetching) {
     return null;
   }
 

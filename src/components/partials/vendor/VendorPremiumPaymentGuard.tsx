@@ -3,8 +3,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchSubscriptionStatus } from "@/features/subscription/vendorSubscriptionApi";
+import {
+  isVendorPremiumPreviewPath,
+  VENDOR_PREMIUM_PREVIEW_PATHS,
+} from "@/hooks/useVendorSubscriptionAccess";
 
-const ALLOWED_PATHS = ["/vendor/premium-payment", "/vendor/subscription/pay", "/vendor/settings"];
+const ALLOWED_PATHS = [
+  "/vendor/premium-payment",
+  "/vendor/subscription/pay",
+  "/vendor/settings",
+  ...VENDOR_PREMIUM_PREVIEW_PATHS,
+];
 
 export function VendorPremiumPaymentGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -17,7 +26,9 @@ export function VendorPremiumPaymentGuard({ children }: { children: React.ReactN
   });
 
   const requiresPayment = data?.subscription?.requires_payment === true;
-  const isAllowedPath = ALLOWED_PATHS.some((path) => location.pathname.startsWith(path));
+  const isAllowedPath =
+    ALLOWED_PATHS.some((path) => location.pathname.startsWith(path)) ||
+    isVendorPremiumPreviewPath(location.pathname);
 
   useEffect(() => {
     if (isLoading || !requiresPayment || isAllowedPath) {

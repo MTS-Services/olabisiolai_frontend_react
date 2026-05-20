@@ -1,23 +1,19 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 import { buildPlansFromLocationBoost } from "@/features/boost/locationBoostPlans";
 import type { ParsedLocationOption } from "@/features/locations/vendorLocationOptions";
 import { formatNaira } from "@/features/locations/vendorLocationOptions";
+import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
 export function BasicBoost({ previewLocation = null }: { previewLocation?: ParsedLocationOption | null }) {
-  const navigate = useNavigate();
+  const { goToPremiumPayment } = useVendorSubscriptionAccess();
 
   const previewPlans = useMemo(() => {
     if (!previewLocation?.boost?.enabled) return [];
     return buildPlansFromLocationBoost(previewLocation).slice(0, 3);
   }, [previewLocation]);
-
-  const handleUpgradeClick = () => {
-    navigate("/vendor/premium-payment");
-  };
 
   return (
     <div className="relative">
@@ -31,8 +27,9 @@ export function BasicBoost({ previewLocation = null }: { previewLocation?: Parse
           Unlock premium boost plans, enhanced visibility, and advanced promotional features.
         </p>
         <button
-          onClick={handleUpgradeClick}
-          className="bg-red-600 hover:bg-brand-red text-text-white rounded-full px-6 py-3 text-sm font-medium"
+          type="button"
+          onClick={goToPremiumPayment}
+          className="cursor-pointer rounded-full bg-red-600 px-6 py-3 text-sm font-medium text-text-white hover:bg-brand-red"
         >
           Get Premium Access
         </button>

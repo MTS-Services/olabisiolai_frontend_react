@@ -1,5 +1,5 @@
 import { Award } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useVendorSubscriptionAccess } from '@/hooks/useVendorSubscriptionAccess'
 
 import type { VendorSettingsSubscription } from '@/api/vendorSettings'
 import { Badge } from '@/components/ui/badge'
@@ -11,7 +11,7 @@ type Props = {
 }
 
 export function CurrentPlanCard({ subscription }: Props) {
-  const navigate = useNavigate()
+  const { goToPremiumPayment, goToBoost } = useVendorSubscriptionAccess()
   const isPremium = subscription.is_premium_active === true
   const canPayPremium = subscription.can_pay_premium === true
 
@@ -41,7 +41,7 @@ export function CurrentPlanCard({ subscription }: Props) {
         {canPayPremium ? (
           <Button
             type="button"
-            onClick={() => navigate('/vendor/premium-payment')}
+            onClick={goToPremiumPayment}
             className="mt-6 w-full cursor-pointer bg-brand-red font-inter font-semibold text-white shadow-none hover:bg-brand-red/90"
           >
             Upgrade to Premium
@@ -49,7 +49,7 @@ export function CurrentPlanCard({ subscription }: Props) {
         ) : isPremium ? (
           <Button
             type="button"
-            onClick={() => navigate('/vendor/boost')}
+            onClick={goToBoost}
             className="mt-6 w-full cursor-pointer bg-sky-100 font-inter font-semibold text-foreground shadow-none hover:bg-sky-100/80"
           >
             Manage subscription

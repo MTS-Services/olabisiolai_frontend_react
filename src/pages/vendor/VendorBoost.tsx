@@ -29,7 +29,8 @@ import {
   type BoostRenewType,
 } from "@/features/boost/vendorBoostApi";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
-import { fetchVendorOnboardingStatus } from "@/features/subscription/vendorOnboardingApi";
+import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
+import { VENDOR_PREMIUM_PAYMENT_PATH } from "@/hooks/useVendorSubscriptionAccess";
 import { parseVendorLocationOptions } from "@/features/locations/vendorLocationOptions";
 import { showError } from "@/lib/sweetAlert";
 import { cn } from "@/lib/utils";
@@ -37,13 +38,7 @@ import { cn } from "@/lib/utils";
 export default function VendorBoost() {
   const navigate = useNavigate();
 
-  const { data: onboarding } = useQuery({
-    queryKey: ["vendor", "onboarding", "status"],
-    queryFn: fetchVendorOnboardingStatus,
-    staleTime: 30_000,
-  });
-
-  const isPremium = onboarding?.subscription?.is_premium_active === true;
+  const { isPremiumActive: isPremium } = useVendorSubscriptionAccess();
 
   const { data: catalog, isPending: catalogLoading } = useQuery({
     queryKey: ["vendor", "boost", "catalog"],
@@ -259,7 +254,7 @@ export default function VendorBoost() {
         },
         { bundledWithPremium: true },
       );
-      navigate("/vendor/premium-payment");
+      navigate(VENDOR_PREMIUM_PAYMENT_PATH);
       return;
     }
 

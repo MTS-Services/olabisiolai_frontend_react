@@ -2,11 +2,13 @@ import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
 import { PlanFeatureCheck, PlanFeatureLocked } from "./PlanFeature";
 
 export function PlanPricingCards() {
   const navigate = useNavigate();
+  const { goToPremiumPayment } = useVendorSubscriptionAccess();
 
   return (
     <div className="grid gap-6 md:grid-cols-2 md:gap-8">
@@ -73,8 +75,8 @@ export function PlanPricingCards() {
             type="button"
             className="w-full bg-brand-red py-6 text-base font-inter font-semibold text-white shadow-sm hover:bg-brand-red/90"
             onClick={() => {
-              localStorage.setItem("vendorPlan", "premium"); // ✅ save plan
-              navigate("/vendor/plan-form");
+              localStorage.setItem("vendorPlan", "premium");
+              goToPremiumPayment();
             }}
           >
             Start premium

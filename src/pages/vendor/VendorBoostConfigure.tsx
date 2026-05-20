@@ -1,46 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 
+import { BasicBoost } from "@/components/sections/vendor/boost/BasicBoost";
 import { BoostConfigureHeader } from "@/components/sections/vendor/boost/boostConfigure/BoostConfigureHeader";
 import { BoostScheduleCard } from "@/components/sections/vendor/boost/boostConfigure/BoostScheduleCard";
 import { EstimatedReachCard } from "@/components/sections/vendor/boost/boostConfigure/EstimatedReachCard";
 import { TargetLocationCard } from "@/components/sections/vendor/boost/boostConfigure/TargetLocationCard";
 import { fetchVendorBoostCatalog } from "@/features/boost/vendorBoostApi";
-import VendorBoostReviewPayPage from "./VendorBoostReviewPay";
-
-type VendorPlan = "free" | "premium";
+import type { ParsedLocationOption } from "@/features/locations/vendorLocationOptions";
+import { useVendorSubscriptionAccess } from "@/hooks/useVendorSubscriptionAccess";
 
 export default function VendorBoostConfigurePage() {
-  const [plan, setPlan] = useState<VendorPlan>(() => {
-    const savedPlan = localStorage.getItem("vendorPlan");
-    return savedPlan === "premium" ? "premium" : "free";
-  });
-
-  const isPremium = plan === "premium";
+  const { isPremiumActive, isLoading } = useVendorSubscriptionAccess();
 
   const { data: catalog } = useQuery({
     queryKey: ["vendor", "boost", "catalog"],
     queryFn: fetchVendorBoostCatalog,
-    enabled: isPremium,
+    enabled: isPremiumActive,
     staleTime: 30_000,
   });
 
-  const activeLocation = useMemo(() => catalog?.location ?? null, [catalog?.location]);
+  const activeLocation = useMemo(
+    () => (catalog?.location ?? null) as ParsedLocationOption | null,
+    [catalog?.location],
+  );
 
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "vendorPlan") {
-        setPlan(e.newValue === "premium" ? "premium" : "free");
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  if (isLoading) {
+    return (
+      <motionBoostConfigureLoaderInner />
+    );
+  }
 
   return (
     <div className="p-4 md:p-6">
-      {isPremium ? (
+      {isPremiumActive ? (
         <div className="space-y-4">
           <BoostConfigureHeader />
 
@@ -49,15 +43,20 @@ export default function VendorBoostConfigurePage() {
               <TargetLocationCard location={activeLocation} readOnly />
               <BoostScheduleCard />
             </div>
-
-            <div className="space-y-4">
-              <EstimatedReachCard />
-            </div>
+            <EstimatedReachCard />
           </div>
         </div>
       ) : (
-        <VendorBoostReviewPayPage />
+        <BasicBoost />
       )}
+    </div>
+  );
+}
+
+function motionBoostConfigureLoaderInner() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center p-6">
+      <Loader2 className="size-8 animate-spin text-brand-red" aria-label="Loading boost setup" />
     </div>
   );
 }

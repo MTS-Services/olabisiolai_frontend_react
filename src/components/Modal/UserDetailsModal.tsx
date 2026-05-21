@@ -232,8 +232,9 @@ export function UserDetailsModal({ open, onClose, user, loading = false }: UserD
                   label="Location"
                   value={
                     vendor.location?.full_name ??
-                    [vendor.location?.name, vendor.location?.state].filter(Boolean).join(", ") ||
-                    "—"
+                    ([vendor.location?.name, vendor.location?.state]
+                      .filter(Boolean)
+                      .join(", ") || "—")
                   }
                 />
                 <DetailField label="Business Phone" value={vendor.phone} />

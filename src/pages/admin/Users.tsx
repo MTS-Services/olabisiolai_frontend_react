@@ -15,7 +15,13 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { UserDetailsModal, type UserDetailsRow, type UserRole } from "@/components/Modal/UserDetailsModal";
+import {
+  UserDetailsModal,
+  type UserAccountProfile,
+  type UserDetailsRow,
+  type UserRole,
+  type VendorBusinessProfile,
+} from "@/components/Modal/UserDetailsModal";
 import { request } from "@/api/request";
 import { alert, showError, showSuccess } from "@/lib/sweetAlert";
 
@@ -107,19 +113,79 @@ function toRole(value: unknown): UserRole {
   return "user";
 }
 
+function mapUserProfile(raw: Record<string, unknown> | null): UserAccountProfile | null {
+  if (!raw) return null;
+  return {
+    first_name: raw.first_name != null ? String(raw.first_name) : undefined,
+    last_name: raw.last_name != null ? String(raw.last_name) : undefined,
+    name: raw.name != null ? String(raw.name) : undefined,
+    email: raw.email != null ? String(raw.email) : undefined,
+    phone: raw.phone != null ? String(raw.phone) : null,
+    location: raw.location != null ? String(raw.location) : null,
+    image_url: raw.image_url != null ? String(raw.image_url) : null,
+    wants_marketing_emails:
+      raw.wants_marketing_emails === true || raw.wants_marketing_emails === 1,
+    email_verified_at:
+      raw.email_verified_at != null ? String(raw.email_verified_at) : null,
+    created_at: raw.created_at != null ? String(raw.created_at) : null,
+    updated_at: raw.updated_at != null ? String(raw.updated_at) : null,
+  };
+}
+
+function mapVendorProfile(raw: unknown): VendorBusinessProfile | null {
+  const item = toRecord(raw);
+  if (!item) return null;
+  const category = toRecord(item.category);
+  const location = toRecord(item.location);
+  return {
+    id: toNumber(item.id) ?? undefined,
+    business_name: item.business_name != null ? String(item.business_name) : undefined,
+    business_description:
+      item.business_description != null ? String(item.business_description) : null,
+    phone: item.phone != null ? String(item.phone) : null,
+    whatsapp: item.whatsapp != null ? String(item.whatsapp) : null,
+    website: item.website != null ? String(item.website) : null,
+    verification_status:
+      item.verification_status != null ? String(item.verification_status) : undefined,
+    business_status:
+      item.business_status != null ? String(item.business_status) : undefined,
+    is_premium: item.is_premium === true,
+    subscription_plan:
+      item.subscription_plan != null ? String(item.subscription_plan) : null,
+    average_rating: toNumber(item.average_rating) ?? undefined,
+    reviews_count: toNumber(item.reviews_count) ?? undefined,
+    logo_url: item.logo_url != null ? String(item.logo_url) : null,
+    category: category ? { name: category.name != null ? String(category.name) : undefined } : null,
+    location: location
+      ? {
+          full_name: location.full_name != null ? String(location.full_name) : undefined,
+          name: location.name != null ? String(location.name) : undefined,
+          state: location.state != null ? String(location.state) : undefined,
+        }
+      : null,
+    created_at: item.created_at != null ? String(item.created_at) : null,
+  };
+}
+
 function mapApiUser(raw: unknown, index: number): UserRow {
   const rawRecord = toRecord(raw) ?? {};
   const item = toRecord(rawRecord.user) ?? rawRecord;
   const id = toNumber(item.user_id ?? item.id) ?? index + 1;
+  const userProfileNested = mapUserProfile(toRecord(item.user_profile));
+  const userProfileFromRoot = mapUserProfile(item);
+  const vendorRaw = item.vendor_profile ?? item.vendorProfile;
 
   return {
     id,
+    uuid: item.uuid != null ? String(item.uuid) : undefined,
     name: String(item.name ?? item.full_name ?? item.username ?? "-"),
     phone: String(item.phone ?? item.mobile ?? item.phone_number ?? "-"),
     email: String(item.email ?? "-"),
     role: toRole(item.role ?? item.user_role),
     status: toStatus(item.status),
     joinDate: toDateLabel(item.created_at ?? item.join_date ?? item.joinDate),
+    userProfile: userProfileNested ?? userProfileFromRoot,
+    vendorProfile: mapVendorProfile(vendorRaw),
   };
 }
 
@@ -193,6 +259,7 @@ export default function Users() {
   const [actionType, setActionType] = useState<"view" | "status" | "delete" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
   const [summaryCounts, setSummaryCounts] = useState<UsersSummaryCounts | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   const fetchSummary = async () => {
     try {
@@ -303,6 +370,9 @@ export default function Users() {
   const handleView = async (user: UserRow) => {
     setActionUserId(user.id);
     setActionType("view");
+    setSelectedUser(user);
+    setIsModalOpen(true);
+    setDetailsLoading(true);
     try {
       const res = await postToAnyAdminUsersEndpoint<UsersApiEnvelope>(
         ["/api/v1/admin/users/view", "/admin/users/view"],
@@ -311,13 +381,14 @@ export default function Users() {
         },
       );
       const viewPayload = getNestedData(res.data);
-      const fullUser = mapApiUser(viewPayload, 0);
-      setSelectedUser({ ...user, ...fullUser });
-      setIsModalOpen(true);
+      const payloadRecord = toRecord(viewPayload);
+      const userRecord = toRecord(payloadRecord?.user) ?? payloadRecord;
+      const fullUser = mapApiUser(userRecord ?? viewPayload, 0);
+      setSelectedUser({ ...user, ...fullUser, id: user.id });
     } catch {
       setSelectedUser(user);
-      setIsModalOpen(true);
     } finally {
+      setDetailsLoading(false);
       setActionUserId(null);
       setActionType(null);
     }
@@ -664,8 +735,12 @@ export default function Users() {
 
       <UserDetailsModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setDetailsLoading(false);
+        }}
         user={selectedUser}
+        loading={detailsLoading}
       />
 
       {deleteTarget ? (

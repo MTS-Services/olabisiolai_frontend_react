@@ -6,7 +6,7 @@ import {
   type PublicBusiness,
 } from "@/features/business/publicBusinessApi";
 import { fetchBusinessReviews } from "@/features/reviews/publicReviewApi";
-import { decryptId } from "@/lib/encryptId";
+import { resolveBusinessIdFromSlug } from "@/lib/encryptId";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -23,6 +23,7 @@ import {
   Star,
 } from "lucide-react";
 
+import { BusinessHoursDisplay } from "@/components/business/BusinessHoursDisplay";
 import { ServicePhotosModal } from "@/components/Modal/ServicePhotosModal";
 import { BusinessServiceAreaMap } from "@/components/maps/BusinessServiceAreaMap";
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
@@ -127,6 +128,8 @@ function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
     servicesOffered: data.servicesOffered ?? [],
     verified: data.verified,
     isFavorite: data.isFavorite ?? false,
+    businessHours: [],
+    businessHoursDisplay: [],
   };
 }
 
@@ -138,11 +141,15 @@ export default function Service() {
   const { pathname } = location;
   const { slug } = useParams<{ slug: string }>();
 
-  const businessId = slug ? decryptId(slug) : null;
+  const businessId = slug ? resolveBusinessIdFromSlug(slug) : null;
   const stateData = (location.state as { from?: string; business?: StateBusinessData } | null)
     ?.business ?? null;
 
-  const { data: business } = useQuery<PublicBusiness | null>({
+  const {
+    data: business,
+    isFetching: businessFetching,
+    isFetched: businessFetched,
+  } = useQuery<PublicBusiness | null>({
     queryKey: ["business", businessId],
     queryFn: () => fetchPublicBusinessById(businessId!),
     enabled: businessId !== null,
@@ -356,25 +363,26 @@ export default function Service() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-surface-soft p-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-widest text-stat-muted">
-                    Business Hours
-                  </h3>
-                  <ul className="mt-4 space-y-2 text-sm">
-                    <li className="flex justify-between gap-4">
-                      <span className="text-body-secondary">Mon — Fri</span>
-                      <span className="font-semibold text-ink">08:00 AM - 07:00 PM</span>
-                    </li>
-                    <li className="flex justify-between gap-4">
-                      <span className="text-body-secondary">Saturday</span>
-                      <span className="font-semibold text-ink">09:00 AM - 04:00 PM</span>
-                    </li>
-                    <li className="flex justify-between gap-4 font-medium text-brand-red">
-                      <span>Sunday</span>
-                      <span>Closed</span>
-                    </li>
-                  </ul>
-                </div>
+                {businessFetching && !businessFetched ? (
+                  <div className="rounded-2xl bg-surface-soft p-6">
+                    <p className="text-sm font-semibold uppercase tracking-widest text-stat-muted">
+                      Business Hours
+                    </p>
+                    <ul className="mt-4 space-y-2">
+                      {[1, 2, 3].map((row) => (
+                        <li key={row} className="flex justify-between gap-4">
+                          <span className="h-4 w-24 animate-pulse rounded bg-border-light" />
+                          <span className="h-4 w-32 animate-pulse rounded bg-border-light" />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : businessFetched && business ? (
+                  <BusinessHoursDisplay
+                    hours={business.businessHours}
+                    displayRows={business.businessHoursDisplay}
+                  />
+                ) : null}
               </aside>
             </div>
 

@@ -43,6 +43,8 @@ const fallbackBusiness = (
   servicesOffered: [],
   verified: true,
   isFavorite: false,
+  businessHours: [],
+  businessHoursDisplay: [],
 });
 
 const FALLBACK_BUSINESSES: PublicBusiness[] = [

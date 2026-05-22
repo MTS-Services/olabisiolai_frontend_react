@@ -1,6 +1,12 @@
 import { isAxiosError } from "axios";
 
 import { request } from "@/api/request";
+import {
+  parseBusinessHours,
+  parseBusinessHoursDisplay,
+  type BusinessHourEntry,
+  type BusinessHoursDisplayRow,
+} from "@/features/business/businessHours";
 import { resolveMediaUrl, resolveMediaUrls } from "@/lib/mediaUrl";
 
 type RawRecord = Record<string, unknown>;
@@ -27,6 +33,8 @@ export type VendorBusinessProfile = {
   isFlagged: boolean;
   businessStatus: string;
   boostStatus: "active" | "none";
+  businessHours: BusinessHourEntry[];
+  businessHoursDisplay: BusinessHoursDisplayRow[];
 };
 
 function asRecord(value: unknown): RawRecord | null {
@@ -118,6 +126,10 @@ export function parseVendorBusinessProfile(raw: unknown): VendorBusinessProfile 
     isFlagged: item.is_flagged === true || item.is_flagged === 1 || item.is_flagged === "1",
     businessStatus: pickString(item, ["business_status"], "active").toLowerCase(),
     boostStatus: boostRaw === "active" ? "active" : "none",
+    businessHours: parseBusinessHours(item.business_hours ?? item.businessHours),
+    businessHoursDisplay: parseBusinessHoursDisplay(
+      item.business_hours_display ?? item.businessHoursDisplay,
+    ),
   };
 }
 

@@ -1,3 +1,5 @@
+import { cloneBusinessHours } from "@/features/business/businessHours";
+import type { BusinessHourEntry } from "@/features/business/businessHours";
 import type { VendorBusinessProfile } from "@/features/business/vendorBusinessProfileApi";
 
 export type VendorProfileDraft = {
@@ -14,6 +16,7 @@ export type VendorProfileDraft = {
   existingCoverUrls: string[];
   newCoverFiles: File[];
   newCoverPreviews: string[];
+  businessHours: BusinessHourEntry[];
 };
 
 export function profileToDraft(profile: VendorBusinessProfile): VendorProfileDraft {
@@ -31,6 +34,7 @@ export function profileToDraft(profile: VendorBusinessProfile): VendorProfileDra
     existingCoverUrls: [...profile.coverPhotoUrls],
     newCoverFiles: [],
     newCoverPreviews: [],
+    businessHours: cloneBusinessHours(profile.businessHours),
   };
 }
 

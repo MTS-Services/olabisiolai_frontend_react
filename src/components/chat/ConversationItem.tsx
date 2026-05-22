@@ -4,7 +4,7 @@ import { OnlineStatus } from '@/components/chat/OnlineStatus'
 import { Avatar } from '@/components/ui/Avatar'
 import { UnreadCountBadge } from '@/components/chat/UnreadCountBadge'
 import type { Conversation } from '@/types/conversation'
-import { getConversationTitle } from '@/utils/messageUtils'
+import { conversationPeerAvatar, getConversationTitle } from '@/utils/messageUtils'
 import { formatRelative } from '@/utils/formatters'
 import { cn } from '@/lib/utils'
 import { messagingUserFromParticipant } from '@/types/conversation'
@@ -31,6 +31,7 @@ export const ConversationItem = React.memo(function ConversationItem({
       ? conversation.participants.find((p) => p.user_id !== selfUserId)
       : undefined
   const mu = messagingUserFromParticipant(peer)
+  const avatarUrl = conversationPeerAvatar(conversation, selfUserId) ?? mu?.avatar ?? null
   const typing = typingUsers.filter((t) => t.is_typing)
   const preview =
     typing.length > 0
@@ -52,7 +53,7 @@ export const ConversationItem = React.memo(function ConversationItem({
       )}
     >
       <div className="relative shrink-0">
-        <Avatar src={mu?.avatar ?? null} name={title} className="size-12 rounded-xl" />
+        <Avatar src={avatarUrl} name={title} className="size-12 rounded-xl" />
         {mu?.status === 'online' ? (
           <OnlineStatus status="online" size="lg" />
         ) : null}

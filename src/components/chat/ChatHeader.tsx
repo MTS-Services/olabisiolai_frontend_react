@@ -3,7 +3,7 @@ import { Menu, MessageCircle } from 'lucide-react'
 import { OnlineStatus } from '@/components/chat/OnlineStatus'
 import { Avatar } from '@/components/ui/Avatar'
 import type { Conversation } from '@/types/conversation'
-import { getConversationTitle } from '@/utils/messageUtils'
+import { conversationPeerAvatar, getConversationTitle } from '@/utils/messageUtils'
 import { cn } from '@/lib/utils'
 import { messagingUserFromParticipant } from '@/types/conversation'
 
@@ -24,7 +24,8 @@ export function ChatHeader({
       ? conversation.participants.find((p) => p.user_id !== selfUserId)
       : undefined
   const mu = messagingUserFromParticipant(peer)
-  const status = mu?.status ?? 'offline'
+  const avatarUrl = conversationPeerAvatar(conversation, selfUserId) ?? mu?.avatar ?? null
+  const status = conversation.peer?.presence?.status ?? mu?.status ?? 'offline'
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-chat-border bg-chat-surface-header px-4 backdrop-blur-sm sm:h-20 sm:px-6 md:px-8">
@@ -41,7 +42,7 @@ export function ChatHeader({
         ) : null}
         <div className="relative">
           <Avatar
-            src={mu?.avatar ?? null}
+            src={avatarUrl}
             name={title}
             className="size-9 shrink-0 sm:size-10"
           />

@@ -15,6 +15,7 @@ import {
   type VendorBusinessProfile,
 } from "@/features/business/vendorBusinessProfileApi";
 import { updateVendorBusiness } from "@/features/business/vendorBusinessApi";
+import { validateBusinessHours } from "@/features/business/businessHours";
 import { parseVendorBusinessApiFailure } from "@/features/business/vendorBusinessFormErrors";
 import {
   profileToDraft,
@@ -179,6 +180,13 @@ export function VendorProfileProvider({ children }: { children: ReactNode }) {
       if (!draft.phone.trim()) throw new Error("Phone number is required.");
       if (services.length === 0) throw new Error("Please add at least one service.");
 
+      const hourErrors = validateBusinessHours(draft.businessHours);
+      if (Object.keys(hourErrors).length > 0) {
+        const err = new Error("Please fix business hours.");
+        (err as Error & { hourErrors: Record<string, string> }).hourErrors = hourErrors;
+        throw err;
+      }
+
       const selectedLocation = parsedLocations.find((l) => l.id === draft.locationId);
       if (!selectedLocation) throw new Error("Invalid location selected.");
 
@@ -199,6 +207,7 @@ export function VendorProfileProvider({ children }: { children: ReactNode }) {
         website: draft.website || undefined,
         logo: draft.logoFile,
         cover_photos: coverPhotos,
+        business_hours: draft.businessHours,
       });
     },
     onSuccess: async () => {
@@ -209,6 +218,14 @@ export function VendorProfileProvider({ children }: { children: ReactNode }) {
       await queryClient.invalidateQueries({ queryKey: ["vendor", "business", "profile"] });
     },
     onError: (error: unknown) => {
+      if (error instanceof Error && "hourErrors" in error) {
+        const hourErrors = (error as Error & { hourErrors?: Record<string, string> }).hourErrors;
+        if (hourErrors) {
+          setFieldErrors(hourErrors);
+          setSaveError(error.message);
+          return;
+        }
+      }
       if (error instanceof Error && !("response" in (error as object))) {
         setSaveError(error.message);
         return;

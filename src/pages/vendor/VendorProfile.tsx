@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 
 import { BusinessGallerySection } from "@/components/sections/vendor/profile/BusinessGallerySection";
 import { BusinessInfoCard } from "@/components/sections/vendor/profile/BusinessInfoCard";
+import { BusinessHoursCard } from "@/components/sections/vendor/profile/BusinessHoursCard";
 import { ContactLinksCard } from "@/components/sections/vendor/profile/ContactLinksCard";
 import { ProfileManagementHeader } from "@/components/sections/vendor/profile/ProfileManagementHeader";
 import { ProfileVisibilityCard } from "@/components/sections/vendor/profile/ProfileVisibilityCard";
@@ -30,6 +31,7 @@ function VendorProfileContent() {
         </div>
 
         <div className="flex w-full min-w-0 flex-col gap-5 self-start">
+          <BusinessHoursCard />
           <ProfileVisibilityCard />
           <ContactLinksCard />
         </div>

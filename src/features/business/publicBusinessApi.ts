@@ -1,4 +1,10 @@
 import { request } from '@/api/request';
+import {
+  parseBusinessHours,
+  parseBusinessHoursDisplay,
+  type BusinessHourEntry,
+  type BusinessHoursDisplayRow,
+} from '@/features/business/businessHours';
 import { resolveMediaUrl } from '@/lib/mediaUrl';
 
 export type PublicBusiness = {
@@ -22,6 +28,8 @@ export type PublicBusiness = {
   verified: boolean;
   /** From API e.g. `is_favorite` on GET /businesses/home when authenticated. */
   isFavorite: boolean;
+  businessHours: BusinessHourEntry[];
+  businessHoursDisplay: BusinessHoursDisplayRow[];
 };
 
 export type PublicBusinessesPage = {
@@ -117,6 +125,11 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const image = coverPhotoUrls[0] ?? logoUrl;
   const servicesOffered = parseStringList(r.services_offered);
 
+  const businessHours = parseBusinessHours(r.business_hours ?? r.businessHours);
+  const businessHoursDisplay = parseBusinessHoursDisplay(
+    r.business_hours_display ?? r.businessHoursDisplay,
+  );
+
   const verified =
     r.shows_verified_badge === true ||
     r.is_verified === true ||
@@ -146,6 +159,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     servicesOffered,
     verified,
     isFavorite,
+    businessHours,
+    businessHoursDisplay,
   };
 }
 

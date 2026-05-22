@@ -1,4 +1,8 @@
 import { request } from "@/api/request";
+import {
+  appendBusinessHoursToFormData,
+  type BusinessHourEntry,
+} from "@/features/business/businessHours";
 
 export type CreateVendorBusinessPayload = {
   subscription_plan?: "free" | "premium";
@@ -18,6 +22,7 @@ export type CreateVendorBusinessPayload = {
   website?: string;
   logo?: File | null;
   cover_photos?: File[];
+  business_hours?: BusinessHourEntry[];
 };
 
 function appendIfTruthy(formData: FormData, key: string, value: string | undefined) {
@@ -74,6 +79,10 @@ export async function createVendorBusiness(
     formData.append(`cover_photos[${index}]`, photo);
   });
 
+  if (payload.business_hours?.length) {
+    appendBusinessHoursToFormData(formData, payload.business_hours);
+  }
+
   const res = await request.post<CreateVendorBusinessResponse>("/vendor/business/create", formData);
   return res.data;
 }
@@ -108,6 +117,7 @@ export type UpdateVendorBusinessPayload = {
   website?: string;
   logo?: File | null;
   cover_photos?: File[];
+  business_hours?: BusinessHourEntry[];
 };
 
 export async function updateVendorBusiness(payload: UpdateVendorBusinessPayload): Promise<unknown> {
@@ -140,6 +150,10 @@ export async function updateVendorBusiness(payload: UpdateVendorBusinessPayload)
   (payload.cover_photos ?? []).forEach((photo, index) => {
     formData.append(`cover_photos[${index}]`, photo);
   });
+
+  if (payload.business_hours?.length) {
+    appendBusinessHoursToFormData(formData, payload.business_hours);
+  }
 
   const res = await request.put("/vendor/business/update", formData);
   return res.data;

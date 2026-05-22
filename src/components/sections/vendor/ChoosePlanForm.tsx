@@ -5,6 +5,7 @@ import { ChevronRight, MapPin, Plus, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { BusinessHoursEditor } from "@/components/business/BusinessHoursEditor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,11 @@ import {
   tierSlotStatusLabel,
 } from "@/features/boost/boostSlotAvailability";
 import { resolveBoostSelectionPrice } from "@/features/boost/locationBoostPlans";
+import {
+  cloneBusinessHours,
+  defaultBusinessHours,
+  validateBusinessHours,
+} from "@/features/business/businessHours";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
 import {
   formatNaira,
@@ -184,6 +190,7 @@ export default function ChoosePlanForm() {
   const [services, setServices] = useState<string[]>([""]);
   const [logo, setLogo] = useState<File | null>(null);
   const [coverPhotos, setCoverPhotos] = useState<File[]>([]);
+  const [businessHours, setBusinessHours] = useState(defaultBusinessHours);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [coverPreviewUrls, setCoverPreviewUrls] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -336,6 +343,12 @@ export default function ChoosePlanForm() {
       return;
     }
 
+    const hourErrors = validateBusinessHours(businessHours);
+    if (Object.keys(hourErrors).length > 0) {
+      setFieldErrors((prev) => ({ ...prev, ...hourErrors }));
+      return;
+    }
+
     if (selectedLocation?.boost?.enabled) {
       if (selectedTopSlotKey && !selectedDurationDays) {
         setFieldErrors({
@@ -413,6 +426,7 @@ export default function ChoosePlanForm() {
       website: String(formData.get("website") ?? ""),
       logo,
       cover_photos: coverPhotos,
+      business_hours: cloneBusinessHours(businessHours),
     });
   };
 
@@ -1009,6 +1023,16 @@ export default function ChoosePlanForm() {
             }
           />
           <FieldErrorText id="err-cover_photos" message={fieldErrors.cover_photos} />
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
+        <CardContent className="p-6 md:p-8">
+          <BusinessHoursEditor
+            hours={businessHours}
+            errors={fieldErrors}
+            onChange={setBusinessHours}
+          />
         </CardContent>
       </Card>
 

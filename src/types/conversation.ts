@@ -3,6 +3,17 @@ import type { MessagingUser } from '@/types/user'
 
 export type ConversationType = 'direct' | 'group' | 'channel'
 
+export type ConversationPeer = {
+  user_id: number
+  id: number
+  uuid?: string
+  name: string
+  display_name?: string
+  avatar_url?: string | null
+  is_verified?: boolean
+  presence?: ParticipantPresence | null
+}
+
 export interface ParticipantPresence {
   status: string
   last_seen_at: string | null
@@ -18,6 +29,9 @@ export interface ConversationParticipant {
     id: number
     uuid?: string
     name: string
+    display_name?: string
+    avatar_url?: string | null
+    is_verified?: boolean
     presence: ParticipantPresence | null
   } | null
 }
@@ -27,6 +41,11 @@ export interface Conversation {
   uuid: string
   type: ConversationType
   name: string | null
+  /** Viewer-specific title from API (vendor business name or user personal name). */
+  display_name?: string
+  conversation_name?: string
+  conversation_image_url?: string | null
+  peer?: ConversationPeer | null
   participants: ConversationParticipant[]
   last_message: Message | null
   unread_count: number
@@ -45,8 +64,8 @@ export function messagingUserFromParticipant(
     st === 'online' || st === 'away' || st === 'offline' ? st : 'offline'
   return {
     id: p.user.id,
-    name: p.user.name,
-    avatar: null,
+    name: p.user.display_name?.trim() || p.user.name,
+    avatar: p.user.avatar_url ?? null,
     status,
     last_seen_at: p.user.presence?.last_seen_at ?? null,
   }

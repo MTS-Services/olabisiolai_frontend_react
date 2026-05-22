@@ -153,11 +153,19 @@ export function normalizeConversation(raw: Record<string, unknown>): Conversatio
     last_message = normalizeMessage(lastRaw as Record<string, unknown>)
   }
 
+  const displayName =
+    (raw.display_name as string | undefined) ??
+    (raw.conversation_name as string | undefined)
+
   return {
     id: Number(raw.id ?? 0),
     uuid: String(raw.uuid ?? ''),
     type: raw.type as Conversation['type'],
     name: (raw.name as string | null | undefined) ?? null,
+    display_name: displayName,
+    conversation_name: displayName,
+    conversation_image_url: (raw.conversation_image_url as string | null | undefined) ?? null,
+    peer: (raw.peer as Conversation['peer']) ?? null,
     participants: Array.isArray(parts)
       ? (parts as Conversation['participants'])
       : [],
@@ -170,14 +178,27 @@ export function normalizeConversation(raw: Record<string, unknown>): Conversatio
   }
 }
 
+export function conversationPeerAvatar(
+  conv: Conversation,
+  selfUserId: number,
+): string | null {
+  if (conv.conversation_image_url) return conv.conversation_image_url
+  if (conv.peer?.avatar_url) return conv.peer.avatar_url
+  const other = conv.participants.find((p) => p.user_id !== selfUserId)?.user
+  return other?.avatar_url ?? null
+}
+
 export function getConversationTitle(
   conv: Conversation,
   selfUserId: number,
 ): string {
+  if (conv.display_name?.trim()) return conv.display_name.trim()
+  if (conv.conversation_name?.trim()) return conv.conversation_name.trim()
   if (conv.name?.trim()) return conv.name
   if (conv.type === 'direct') {
     const other = conv.participants.find((p) => p.user_id !== selfUserId)?.user
-    return other?.name ?? 'Direct message'
+    const label = other?.display_name?.trim() || other?.name?.trim()
+    return label || 'Direct message'
   }
   return 'Conversation'
 }

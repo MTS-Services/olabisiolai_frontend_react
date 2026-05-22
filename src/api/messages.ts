@@ -5,17 +5,44 @@ import type { ApiResponse } from '@/types/api'
 import type { Message } from '@/types/message'
 import { normalizeMessage, unwrapApi } from '@/utils/messageUtils'
 
+type MessagesListPayload = {
+  conversation_name?: string
+  conversation_uuid?: string
+  conversation_image_url?: string | null
+  display_name?: string
+  peer?: Record<string, unknown>
+  messages?: Record<string, unknown>[]
+}
+
 export async function getMessages(
   conversationUuid: string,
   cursor?: string,
-): Promise<{ messages: Message[]; meta: ApiResponse<Message[]>['meta'] }> {
-  const res = await api.get<ApiResponse<Record<string, unknown>[]>>(
+): Promise<{
+  messages: Message[]
+  conversationName?: string
+  conversationUuid?: string
+  conversationImageUrl?: string | null
+  peer?: Record<string, unknown>
+  meta: ApiResponse<Message[]>['meta']
+}> {
+  const res = await api.get<ApiResponse<MessagesListPayload | Record<string, unknown>[]>>(
     messagingPath(`/conversations/${conversationUuid}/messages`),
     { params: cursor ? { cursor } : {} },
   )
   const { data, meta } = unwrapApi(res.data)
-  const list = Array.isArray(data) ? data.map((r) => normalizeMessage(r)) : []
-  return { messages: list, meta }
+  if (Array.isArray(data)) {
+    return { messages: data.map((r) => normalizeMessage(r)), meta }
+  }
+  const payload = data as MessagesListPayload
+  const rawMessages = Array.isArray(payload.messages) ? payload.messages : []
+  return {
+    messages: rawMessages.map((r) => normalizeMessage(r)),
+    conversationName: payload.conversation_name ?? payload.display_name,
+    conversationUuid: payload.conversation_uuid,
+    conversationImageUrl: payload.conversation_image_url ?? null,
+    peer: payload.peer,
+    meta,
+  }
 }
 
 export async function sendMessage(

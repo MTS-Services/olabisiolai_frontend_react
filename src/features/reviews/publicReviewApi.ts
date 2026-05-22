@@ -103,8 +103,8 @@ export async function submitReview(payload: SubmitReviewPayload): Promise<Review
   formData.append('is_anonymous', payload.is_anonymous ? '1' : '0');
   formData.append('rating', String(payload.rating));
   formData.append('review_text', payload.review_text.trim());
-  (payload.images ?? []).forEach((file, i) => {
-    formData.append(`images[${i}]`, file);
+  (payload.images ?? []).forEach((file) => {
+    formData.append('images[]', file);
   });
   const res = await request.post('/reviews/store', formData, { skipAuthRedirect: true });
   return (res.data as { data: ReviewDto }).data;

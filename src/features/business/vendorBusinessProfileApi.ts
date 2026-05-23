@@ -16,6 +16,7 @@ export type VendorBusinessProfile = {
   businessName: string;
   categoryId: number;
   categoryName: string;
+  subcategory: string;
   locationId: number;
   state: string;
   city: string;
@@ -109,6 +110,7 @@ export function parseVendorBusinessProfile(raw: unknown): VendorBusinessProfile 
     businessName: pickString(item, ["business_name", "name"], ""),
     categoryId,
     categoryName,
+    subcategory: pickString(item, ["subcategory"], ""),
     locationId,
     state,
     city,

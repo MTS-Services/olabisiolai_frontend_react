@@ -7,6 +7,7 @@ import {
 export type CreateVendorBusinessPayload = {
   subscription_plan?: "free" | "premium";
   category_id: string;
+  subcategory?: string;
   /** Must match `locations.id` from form-options (required by API). */
   location_id: string;
   business_name: string;
@@ -51,6 +52,7 @@ export async function createVendorBusiness(
   formData.append("subscription_plan", plan);
 
   formData.append("category_id", payload.category_id);
+  appendIfTruthy(formData, "subcategory", payload.subcategory);
   formData.append("location_id", payload.location_id.trim());
   formData.append("business_name", payload.business_name.trim());
   formData.append("location", payload.location.trim());
@@ -104,6 +106,7 @@ export function businessCreateRequiresPayment(response: CreateVendorBusinessResp
 
 export type UpdateVendorBusinessPayload = {
   category_id: string;
+  subcategory?: string;
   location_id: string;
   business_name: string;
   location: string;
@@ -124,6 +127,7 @@ export async function updateVendorBusiness(payload: UpdateVendorBusinessPayload)
   const formData = new FormData();
 
   formData.append("category_id", payload.category_id);
+  appendIfTruthy(formData, "subcategory", payload.subcategory);
   formData.append("location_id", payload.location_id.trim());
   formData.append("business_name", payload.business_name.trim());
   formData.append("location", payload.location.trim());

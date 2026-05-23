@@ -8,6 +8,9 @@ export type FiltersSectionProps = {
   categories: CategoryDto[];
   selectedCategoryId: number | null;
   onSelectCategory: (categoryId: number | null) => void;
+  subcategoryOptions: string[];
+  selectedSubcategory: string | null;
+  onSelectSubcategory: (subcategory: string | null) => void;
   locationOptions: Array<{ id: number; label: string }>;
   selectedLocationId: number | null;
   onSelectLocation: (id: number | null) => void;
@@ -25,6 +28,9 @@ export default function FiltersSection({
   categories,
   selectedCategoryId,
   onSelectCategory,
+  subcategoryOptions,
+  selectedSubcategory,
+  onSelectSubcategory,
   locationOptions,
   selectedLocationId,
   onSelectLocation,
@@ -135,6 +141,32 @@ export default function FiltersSection({
             ))}
           </div>
         )}
+        {selectedCategoryId !== null && subcategoryOptions.length > 0 ? (
+          <div className="mt-4">
+            <label
+              htmlFor={`${radioGroupId}-subcategory`}
+              className="mb-2 block text-sm font-medium text-text-primary"
+            >
+              Subcategory
+            </label>
+            <select
+              id={`${radioGroupId}-subcategory`}
+              value={selectedSubcategory ?? ""}
+              onChange={(event) => {
+                const value = event.target.value.trim();
+                onSelectSubcategory(value === "" ? null : value);
+              }}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text-primary outline-none focus:border-primary"
+            >
+              <option value="">All subcategories</option>
+              {subcategoryOptions.map((sub) => (
+                <option key={sub} value={sub}>
+                  {sub}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
       </div>
 
       {/* Location Section */}

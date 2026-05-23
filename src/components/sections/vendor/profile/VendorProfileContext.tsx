@@ -194,6 +194,7 @@ export function VendorProfileProvider({ children }: { children: ReactNode }) {
 
       return updateVendorBusiness({
         category_id: draft.categoryId,
+        subcategory: draft.subcategory.trim() || undefined,
         location_id: draft.locationId,
         business_name: draft.businessName,
         location: selectedLocation.location,

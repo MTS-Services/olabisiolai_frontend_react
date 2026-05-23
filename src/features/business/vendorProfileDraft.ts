@@ -5,6 +5,7 @@ import type { VendorBusinessProfile } from "@/features/business/vendorBusinessPr
 export type VendorProfileDraft = {
   businessName: string;
   categoryId: string;
+  subcategory: string;
   locationId: string;
   description: string;
   services: string[];
@@ -23,6 +24,7 @@ export function profileToDraft(profile: VendorBusinessProfile): VendorProfileDra
   return {
     businessName: profile.businessName,
     categoryId: profile.categoryId > 0 ? String(profile.categoryId) : "",
+    subcategory: profile.subcategory ?? "",
     locationId: profile.locationId > 0 ? String(profile.locationId) : "",
     description: profile.description,
     services: profile.services.length > 0 ? [...profile.services] : [""],

@@ -12,6 +12,8 @@ export type PublicBusiness = {
   name: string;
   category: string;
   categoryId?: number | null;
+  subcategory?: string | null;
+  whatsapp?: string | null;
   location: string;
   locationId?: number | null;
   locationName?: string | null;
@@ -91,6 +93,10 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const category = str(catObj?.name ?? r.category_name ?? r.category, 'General');
   const categoryId = num(catObj?.id ?? r.category_id, NaN);
   const categoryIdNorm = Number.isFinite(categoryId) && categoryId > 0 ? categoryId : null;
+  const subcategoryRaw = str(r.subcategory, '').trim();
+  const subcategory = subcategoryRaw || null;
+  const whatsappRaw = str(r.whatsapp, '').trim();
+  const whatsapp = whatsappRaw || null;
 
   const locObj = rec(r.location);
   const city = str(locObj?.city ?? r.city, '');
@@ -145,6 +151,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     name,
     category,
     categoryId: categoryIdNorm,
+    subcategory,
+    whatsapp,
     location,
     locationId,
     locationName,
@@ -254,6 +262,7 @@ function parseBusinessesPage(data: unknown): PublicBusinessesPage {
 export async function fetchPublicBusinesses(params?: {
   category?: string;
   category_id?: number;
+  subcategory?: string;
   location_id?: number;
   lat?: number;
   lng?: number;
@@ -279,6 +288,7 @@ function hasGeoFilter(params?: { lat?: number; lng?: number }): boolean {
 
 function hasServerListFilters(params?: {
   category_id?: number;
+  subcategory?: string;
   location_id?: number;
   lat?: number;
   lng?: number;
@@ -287,6 +297,7 @@ function hasServerListFilters(params?: {
 }): boolean {
   if (!params) return false;
   if (params.category_id != null && params.category_id > 0) return true;
+  if (params.subcategory != null && params.subcategory.trim() !== '') return true;
   if (params.location_id != null && params.location_id > 0) return true;
   if (hasGeoFilter(params)) return true;
   if (params.search != null && params.search.trim() !== '') return true;
@@ -297,6 +308,7 @@ function hasServerListFilters(params?: {
 export async function fetchPublicBusinessesPage(params?: {
   category?: string;
   category_id?: number;
+  subcategory?: string;
   location_id?: number;
   lat?: number;
   lng?: number;

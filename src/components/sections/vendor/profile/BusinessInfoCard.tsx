@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Plus, Upload, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +51,19 @@ export function BusinessInfoCard() {
 
   const businessName = isEditing && draft ? draft.businessName : profile.businessName;
   const categoryId = isEditing && draft ? draft.categoryId : String(profile.categoryId);
+  const subcategory = isEditing && draft ? draft.subcategory : profile.subcategory;
+  const subcategoryOptions = useMemo(() => {
+    const category = categories.find((c) => String(c.id) === categoryId);
+    return category?.subcategories ?? [];
+  }, [categories, categoryId]);
+
+  useEffect(() => {
+    if (!isEditing || !draft) return;
+    if (subcategory && !subcategoryOptions.includes(subcategory)) {
+      setDraftField("subcategory", "");
+    }
+  }, [categoryId, isEditing, draft, subcategory, subcategoryOptions, setDraftField]);
+
   const description = isEditing && draft ? draft.description : profile.description;
   const services = isEditing && draft ? draft.services : profile.services;
   const logoPreview = isEditing && draft ? draft.logoPreview : profile.logoUrl;
@@ -97,6 +110,35 @@ export function BusinessInfoCard() {
             <p className="mt-1 text-xs text-destructive">{fieldErrors.category_id}</p>
           ) : null}
         </div>
+
+        {subcategoryOptions.length > 0 ? (
+          <div>
+            <Label>Subcategory</Label>
+            {isEditing ? (
+              <select
+                value={subcategory}
+                onChange={(e) => setDraftField("subcategory", e.target.value)}
+                className="h-11 w-full rounded-md border border-border-light bg-background px-3 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-sky-500/25"
+              >
+                <option value="">Select subcategory</option>
+                {subcategoryOptions.map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                value={profile.subcategory || "—"}
+                readOnly
+                className="h-11 border-border-light bg-background text-sm shadow-sm"
+              />
+            )}
+            {fieldErrors.subcategory ? (
+              <p className="mt-1 text-xs text-destructive">{fieldErrors.subcategory}</p>
+            ) : null}
+          </div>
+        ) : null}
 
         <VendorProfileLocationSection />
 

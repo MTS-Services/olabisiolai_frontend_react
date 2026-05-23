@@ -181,6 +181,7 @@ export default function ChoosePlanForm() {
     [parsedLocations],
   );
   const [categoryId, setCategoryId] = useState("");
+  const [subcategory, setSubcategory] = useState("");
   const [locationId, setLocationId] = useState("");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
@@ -205,6 +206,11 @@ export default function ChoosePlanForm() {
       next[index] = value;
       return next;
     });
+  const selectedCategory = useMemo(
+    () => categories.find((entry) => String(entry.id) === categoryId) ?? null,
+    [categories, categoryId],
+  );
+  const subcategoryOptions = selectedCategory?.subcategories ?? [];
   const selectedLocation = useMemo(
     () => parsedLocations.find((entry) => entry.id === locationId) ?? null,
     [locationId, parsedLocations],
@@ -245,6 +251,10 @@ export default function ChoosePlanForm() {
     if (parts.length === 0) return null;
     return parts.join(" ");
   }, [fieldErrors]);
+
+  useEffect(() => {
+    setSubcategory("");
+  }, [categoryId]);
 
   useEffect(() => {
     if (!selectedLocation) {
@@ -326,6 +336,10 @@ export default function ChoosePlanForm() {
     }
     if (!categoryId) {
       setFieldErrors({ category_id: "Please select a category." });
+      return;
+    }
+    if (subcategoryOptions.length > 0 && !subcategory.trim()) {
+      setFieldErrors({ subcategory: "Please select a subcategory." });
       return;
     }
     if (!locationId) {
@@ -412,6 +426,7 @@ export default function ChoosePlanForm() {
     createBusinessMutation.mutate({
       subscription_plan: isPremiumPlanSelected() ? "premium" : "free",
       category_id: categoryId,
+      subcategory: subcategory.trim() || undefined,
       location_id: locationId,
       business_name: String(formData.get("businessName") ?? ""),
       location: selectedLocation?.location ?? "",
@@ -504,6 +519,37 @@ export default function ChoosePlanForm() {
               ) : null}
               <FieldErrorText id="err-category_id" message={fieldErrors.category_id} />
             </div>
+
+            {subcategoryOptions.length > 0 ? (
+              <div className="space-y-1.5 sm:col-span-2">
+                <SelectField
+                  label={
+                    <>
+                      Subcategory <span className="text-destructive">*</span>
+                    </>
+                  }
+                  value={subcategory}
+                  onChange={(e) => {
+                    setSubcategory(e.target.value);
+                    setFieldErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.subcategory;
+                      return next;
+                    });
+                  }}
+                  disabled={!categoryId}
+                  required
+                >
+                  <option value="">Select subcategory</option>
+                  {subcategoryOptions.map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
+                </SelectField>
+                <FieldErrorText id="err-subcategory" message={fieldErrors.subcategory} />
+              </div>
+            ) : null}
 
             <div className="space-y-0">
               <SelectField
@@ -1075,6 +1121,7 @@ export default function ChoosePlanForm() {
 const VENDOR_FORM_INLINE_ERROR_KEYS = new Set([
   "business_name",
   "category_id",
+  "subcategory",
   "location_id",
   "lga",
   "business_description",

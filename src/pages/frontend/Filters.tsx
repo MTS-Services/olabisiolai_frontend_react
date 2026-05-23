@@ -63,6 +63,7 @@ export default function Filters() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryIdParam = searchParams.get("category_id");
   const categoryNameParam = (searchParams.get("category") ?? "").trim();
+  const subcategoryParam = (searchParams.get("subcategory") ?? "").trim();
   const searchTerm = (searchParams.get("search") ?? "").trim();
   const verifiedOnly = searchParams.get("verified") === "1";
   const locationRaw = Number(searchParams.get("location_id") ?? "");
@@ -109,10 +110,23 @@ export default function Filters() {
     return apiCategories.find((c) => c.id === filterCategoryId)?.name ?? null;
   }, [apiCategories, filterCategoryId]);
 
+  const subcategoryOptions = useMemo(() => {
+    if (filterCategoryId == null) return [];
+    const category = apiCategories.find((c) => c.id === filterCategoryId);
+    return category?.subcategories ?? [];
+  }, [apiCategories, filterCategoryId]);
+
+  const filterSubcategory = useMemo<string | null>(() => {
+    if (!subcategoryParam) return null;
+    if (subcategoryOptions.length === 0) return subcategoryParam;
+    return subcategoryOptions.includes(subcategoryParam) ? subcategoryParam : null;
+  }, [subcategoryParam, subcategoryOptions]);
+
   const businessesQuery = useQuery({
     queryKey: [
       "filters",
       filterCategoryId,
+      filterSubcategory,
       selectedLocationId,
       searchTerm,
       verifiedOnly,
@@ -125,6 +139,7 @@ export default function Filters() {
     queryFn: () =>
       fetchPublicBusinessesPage({
         category_id: filterCategoryId ?? undefined,
+        subcategory: filterSubcategory ?? undefined,
         location_id: selectedLocationId ?? undefined,
         lat: mapLat ?? undefined,
         lng: mapLng ?? undefined,
@@ -167,6 +182,15 @@ export default function Filters() {
       next.set("category_id", String(categoryId));
       next.delete("category");
     }
+    next.delete("subcategory");
+    next.delete("page");
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleSelectSubcategory = (subcategory: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (!subcategory) next.delete("subcategory");
+    else next.set("subcategory", subcategory);
     next.delete("page");
     setSearchParams(next, { replace: true });
   };
@@ -223,6 +247,10 @@ export default function Filters() {
           return false;
         }
       }
+      if (filterSubcategory != null) {
+        const rowSub = (business.subcategory ?? "").trim();
+        if (rowSub !== filterSubcategory) return false;
+      }
       if (selectedLocationId != null) {
         if (business.locationId != null && business.locationId !== selectedLocationId) {
           return false;
@@ -235,6 +263,7 @@ export default function Filters() {
     businesses,
     filterCategoryId,
     filterCategoryName,
+    filterSubcategory,
     selectedLocationId,
     selectedMinRating,
   ]);
@@ -304,11 +333,13 @@ export default function Filters() {
       selectedLocationId != null ||
       hasGeoSearch ||
       selectedMinRating != null ||
+      filterSubcategory != null ||
       currentPage > 1
     );
   }, [
     categoryIdParam,
     categoryNameParam,
+    filterSubcategory,
     searchTerm,
     verifiedOnly,
     selectedLocationId,
@@ -352,7 +383,9 @@ export default function Filters() {
               : searchTerm
                 ? `Showing businesses matching "${searchTerm}"`
                 : filterCategoryName
-                  ? `Showing businesses in ${filterCategoryName}`
+                  ? filterSubcategory
+                    ? `Showing ${filterSubcategory} in ${filterCategoryName}`
+                    : `Showing businesses in ${filterCategoryName}`
                   : "Browse and filter businesses by category, location, and more"}
           </p>
         </div>
@@ -418,6 +451,9 @@ export default function Filters() {
                 categories={apiCategories}
                 selectedCategoryId={filterCategoryId}
                 onSelectCategory={handleSelectCategory}
+                subcategoryOptions={subcategoryOptions}
+                selectedSubcategory={filterSubcategory}
+                onSelectSubcategory={handleSelectSubcategory}
                 locationOptions={locationOptions}
                 selectedLocationId={selectedLocationId}
                 onSelectLocation={handleSelectLocation}
@@ -501,6 +537,9 @@ export default function Filters() {
             categories={apiCategories}
             selectedCategoryId={filterCategoryId}
             onSelectCategory={handleSelectCategory}
+            subcategoryOptions={subcategoryOptions}
+            selectedSubcategory={filterSubcategory}
+            onSelectSubcategory={handleSelectSubcategory}
             locationOptions={locationOptions}
             selectedLocationId={selectedLocationId}
             onSelectLocation={handleSelectLocation}

@@ -2,7 +2,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, MapPin, Star, CheckCircle, MessageCircle } from "lucide-react";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
+import { useRequireAuthNavigate } from "@/features/auth/useRequireAuthNavigate";
 import { encryptId } from "@/lib/encryptId";
+import { resolveBusinessContactPhone } from "@/lib/whatsappUrl";
 
 interface ServiceCardProps {
   id: number;
@@ -19,6 +21,8 @@ interface ServiceCardProps {
   coverPhotoUrls?: string[];
   verified: boolean;
   favorited?: boolean;
+  phone?: string | null;
+  whatsapp?: string | null;
 }
 
 export default function ServiceCard({
@@ -36,9 +40,14 @@ export default function ServiceCard({
   coverPhotoUrls,
   verified,
   favorited = false,
+  phone,
+  whatsapp,
 }: ServiceCardProps) {
+  const contactPhone = resolveBusinessContactPhone(whatsapp, phone);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { requireAuthNavigate, isAuthReady, isAuthenticated } =
+    useRequireAuthNavigate();
 
   const goToService = () => {
     navigate(`/businesses/${encryptId(id)}`, {
@@ -59,6 +68,8 @@ export default function ServiceCard({
           coverPhotoUrls: coverPhotoUrls ?? (image ? [image] : []),
           verified,
           isFavorite: favorited,
+          phone: phone ?? null,
+          whatsapp: whatsapp ?? null,
         },
       },
     });
@@ -120,6 +131,7 @@ export default function ServiceCard({
         </p>
 
         <ShowPhoneNumberReveal
+          phoneNumber={contactPhone}
           className="mb-3 flex w-full items-center justify-center rounded-lg bg-destructive p-1 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 lg:w-50 lg:p-3"
           iconClassName="size-4 shrink-0"
         />
@@ -127,7 +139,17 @@ export default function ServiceCard({
         <Link
           to="/messages"
           state={{ from: pathname }}
-          onClick={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!isAuthReady) {
+              event.preventDefault();
+              return;
+            }
+            if (!isAuthenticated) {
+              event.preventDefault();
+              requireAuthNavigate("/messages", { state: { from: pathname } });
+            }
+          }}
           className="border border-primary text-primary lg:w-50 w-full lg:p-3 p-1 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors text-sm"
         >
           <MessageCircle className="w-4 h-4 mr-1.5" aria-hidden />

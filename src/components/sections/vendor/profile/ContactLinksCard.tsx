@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/useAuth";
+import { SocialAccountsEditor } from "@/components/business/SocialAccountsEditor";
+import { BusinessSocialLinks } from "@/components/business/BusinessSocialLinks";
 import { useVendorProfileContext } from "@/components/sections/vendor/profile/VendorProfileContext";
 
 function Label({ children }: { children: string }) {
@@ -68,6 +70,7 @@ export function ContactLinksCard() {
   const phone = isEditing && draft ? draft.phone : profile.phone;
   const whatsapp = isEditing && draft ? draft.whatsapp : profile.whatsapp;
   const website = isEditing && draft ? draft.website : profile.website;
+  const socialAccounts = isEditing && draft ? draft.socialAccounts : profile.socialAccounts;
 
   return (
     <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
@@ -108,6 +111,16 @@ export function ContactLinksCard() {
           />
           <IconInput label="Account email" icon={Mail} value={email} readOnly placeholder="Not set" />
         </div>
+
+        {isEditing && draft ? (
+          <SocialAccountsEditor
+            accounts={draft.socialAccounts}
+            onChange={(accounts) => setDraftField("socialAccounts", accounts)}
+            error={fieldErrors.social_accounts}
+          />
+        ) : (
+          <BusinessSocialLinks accounts={socialAccounts} />
+        )}
       </CardContent>
     </Card>
   );

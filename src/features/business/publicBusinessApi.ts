@@ -5,6 +5,7 @@ import {
   type BusinessHourEntry,
   type BusinessHoursDisplayRow,
 } from '@/features/business/businessHours';
+import { parseSocialAccounts, type SocialAccount } from '@/features/business/socialAccounts';
 import { resolveMediaUrl } from '@/lib/mediaUrl';
 
 export type PublicBusiness = {
@@ -13,7 +14,10 @@ export type PublicBusiness = {
   category: string;
   categoryId?: number | null;
   subcategory?: string | null;
+  phone?: string | null;
   whatsapp?: string | null;
+  website?: string | null;
+  socialAccounts: SocialAccount[];
   location: string;
   locationId?: number | null;
   locationName?: string | null;
@@ -28,6 +32,10 @@ export type PublicBusiness = {
   coverPhotoUrls: string[];
   servicesOffered: string[];
   verified: boolean;
+  /** e.g. "March 2026" — from API `member_since`. */
+  memberSince: string | null;
+  /** e.g. "May 2026" — from API `verified_since` when badge is shown. */
+  verifiedSince: string | null;
   /** From API e.g. `is_favorite` on GET /businesses/home when authenticated. */
   isFavorite: boolean;
   businessHours: BusinessHourEntry[];
@@ -95,8 +103,13 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const categoryIdNorm = Number.isFinite(categoryId) && categoryId > 0 ? categoryId : null;
   const subcategoryRaw = str(r.subcategory, '').trim();
   const subcategory = subcategoryRaw || null;
+  const phoneRaw = str(r.phone, '').trim();
+  const phone = phoneRaw || null;
   const whatsappRaw = str(r.whatsapp, '').trim();
   const whatsapp = whatsappRaw || null;
+  const websiteRaw = str(r.website, '').trim();
+  const website = websiteRaw || null;
+  const socialAccounts = parseSocialAccounts(r.social_accounts ?? r.socialAccounts);
 
   const locObj = rec(r.location);
   const city = str(locObj?.city ?? r.city, '');
@@ -144,7 +157,12 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const isFavorite =
     r.is_favorite === true ||
     r.isFavorite === true ||
-    r.favorited === true
+    r.favorited === true;
+
+  const memberSinceRaw = str(r.member_since ?? r.memberSince, "").trim();
+  const memberSince = memberSinceRaw || null;
+  const verifiedSinceRaw = str(r.verified_since ?? r.verifiedSince, "").trim();
+  const verifiedSince = verifiedSinceRaw || null;
 
   return {
     id,
@@ -152,7 +170,10 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     category,
     categoryId: categoryIdNorm,
     subcategory,
+    phone,
     whatsapp,
+    website,
+    socialAccounts,
     location,
     locationId,
     locationName,
@@ -166,6 +187,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     coverPhotoUrls,
     servicesOffered,
     verified,
+    memberSince,
+    verifiedSince,
     isFavorite,
     businessHours,
     businessHoursDisplay,

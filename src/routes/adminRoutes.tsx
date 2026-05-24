@@ -21,6 +21,7 @@ const Notifications = lazy(() => import("@/pages/admin/Notifications"));
 const Verifications = lazy(() => import("@/pages/admin/Verifications"));
 const AdminVerificationDetail = lazy(() => import("@/pages/admin/AdminVerificationDetail"));
 const Leads = lazy(() => import("@/pages/admin/Leads"));
+const ContactMessages = lazy(() => import("@/pages/admin/ContactMessages"));
 const AdminMessages = lazy(() => import("@/pages/admin/AdminMessages"));
 const Reviews = lazy(() => import("@/pages/admin/Reviews"));
 const Payments = lazy(() => import("@/pages/admin/Payments"));
@@ -107,6 +108,11 @@ export const adminRoutes: RouteObject = {
           {suspensePage(Leads)}
         </PermissionGate>
       ),
+    },
+    { path: "/admin/contact-us", element: suspensePage(ContactMessages) },
+    {
+      path: "/admin/contact-messages",
+      element: <Navigate to="/admin/contact-us" replace />,
     },
     {
       path: "/admin/messages",

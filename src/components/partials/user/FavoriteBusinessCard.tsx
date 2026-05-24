@@ -7,6 +7,7 @@ import { removeFavorite } from '@/api/favorites'
 import { ShowPhoneNumberReveal } from '@/components/ShowPhoneNumberReveal'
 import { Button } from '@/components/ui/button'
 import { encryptId } from '@/lib/encryptId'
+import { resolveBusinessContactPhone } from '@/lib/whatsappUrl'
 
 export type FavoriteBusinessCardProps = {
   businessInfoId: number
@@ -19,6 +20,8 @@ export type FavoriteBusinessCardProps = {
   description?: string
   image: string
   verified: boolean
+  phone?: string | null
+  whatsapp?: string | null
 }
 
 export function FavoriteBusinessCard({
@@ -31,7 +34,10 @@ export function FavoriteBusinessCard({
   description,
   image,
   verified,
+  phone,
+  whatsapp,
 }: FavoriteBusinessCardProps) {
+  const contactPhone = resolveBusinessContactPhone(whatsapp, phone)
   const queryClient = useQueryClient()
   const [removing, setRemoving] = useState(false)
   const profileTo = `/businesses/${encryptId(businessInfoId)}`
@@ -101,6 +107,7 @@ export function FavoriteBusinessCard({
           <ShowPhoneNumberReveal
             useShadcnButton
             isolateFromParentClicks={false}
+            phoneNumber={contactPhone}
             className="h-11 w-full rounded-xl bg-brand-red text-base font-medium text-ice hover:bg-brand-red/90"
             iconClassName="size-4 shrink-0"
           />

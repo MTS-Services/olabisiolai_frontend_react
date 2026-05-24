@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { BusinessHoursEditor } from "@/components/business/BusinessHoursEditor";
+import { SocialAccountsEditor } from "@/components/business/SocialAccountsEditor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,11 @@ import {
   defaultBusinessHours,
   validateBusinessHours,
 } from "@/features/business/businessHours";
+import {
+  normalizeSocialUrl,
+  type SocialAccount,
+  validateSocialAccounts,
+} from "@/features/business/socialAccounts";
 import { useVendorBusinessFormOptions } from "@/features/categories/useVendorBusinessFormOptions";
 import {
   formatNaira,
@@ -191,6 +197,7 @@ export default function ChoosePlanForm() {
   const [services, setServices] = useState<string[]>([""]);
   const [logo, setLogo] = useState<File | null>(null);
   const [coverPhotos, setCoverPhotos] = useState<File[]>([]);
+  const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([]);
   const [businessHours, setBusinessHours] = useState(defaultBusinessHours);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [coverPreviewUrls, setCoverPreviewUrls] = useState<string[]>([]);
@@ -363,6 +370,15 @@ export default function ChoosePlanForm() {
       return;
     }
 
+    const activeSocialAccounts = socialAccounts
+      .map((account) => ({ ...account, url: normalizeSocialUrl(account.url) }))
+      .filter((account) => account.url);
+    const socialError = validateSocialAccounts(activeSocialAccounts);
+    if (socialError) {
+      setFieldErrors({ social_accounts: socialError });
+      return;
+    }
+
     if (selectedLocation?.boost?.enabled) {
       if (selectedTopSlotKey && !selectedDurationDays) {
         setFieldErrors({
@@ -439,6 +455,7 @@ export default function ChoosePlanForm() {
       phone: String(formData.get("phone") ?? ""),
       whatsapp: String(formData.get("whatsapp") ?? ""),
       website: String(formData.get("website") ?? ""),
+      social_accounts: activeSocialAccounts,
       logo,
       cover_photos: coverPhotos,
       business_hours: cloneBusinessHours(businessHours),
@@ -906,6 +923,21 @@ export default function ChoosePlanForm() {
       <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
         <CardHeader className="border-b border-border-light px-6 py-5">
           <CardTitle className="text-lg font-bold text-foreground font-manrope">
+            Social accounts
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <SocialAccountsEditor
+            accounts={socialAccounts}
+            onChange={setSocialAccounts}
+            error={fieldErrors.social_accounts}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden rounded-xl border-border-light shadow-sm">
+        <CardHeader className="border-b border-border-light px-6 py-5">
+          <CardTitle className="text-lg font-bold text-foreground font-manrope">
             Business logo
           </CardTitle>
         </CardHeader>
@@ -1129,6 +1161,7 @@ const VENDOR_FORM_INLINE_ERROR_KEYS = new Set([
   "phone",
   "whatsapp",
   "website",
+  "social_accounts",
   "logo",
   "cover_photos",
   "boost_tier",

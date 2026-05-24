@@ -5,6 +5,7 @@ import {
   fetchPublicBusinessById,
   type PublicBusiness,
 } from "@/features/business/publicBusinessApi";
+import type { SocialAccount } from "@/features/business/socialAccounts";
 import { fetchBusinessReviews } from "@/features/reviews/publicReviewApi";
 import { resolveBusinessIdFromSlug } from "@/lib/encryptId";
 import {
@@ -12,26 +13,29 @@ import {
   BadgeCheck,
   CheckCircle2,
   Clock,
-  ExternalLink,
-  Heart,
   Leaf,
   MapPin,
   MessageCircle,
-  Share2,
   Shield,
   Sparkles,
   Star,
 } from "lucide-react";
 
+import { BusinessListingSecondaryActions } from "@/components/business/BusinessListingSecondaryActions";
+import { BusinessSocialLinks } from "@/components/business/BusinessSocialLinks";
 import { BusinessHoursDisplay } from "@/components/business/BusinessHoursDisplay";
 import { ServicePhotosModal } from "@/components/Modal/ServicePhotosModal";
 import { BusinessServiceAreaMap } from "@/components/maps/BusinessServiceAreaMap";
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
+import { useRequireAuthNavigate } from "@/features/auth/useRequireAuthNavigate";
 import { Button } from "@/components/ui/button";
 import { env } from "@/config/env";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
-import { buildWhatsAppUrl } from "@/lib/whatsappUrl";
+import {
+  buildBusinessWhatsAppUrl,
+  resolveBusinessContactPhone,
+} from "@/lib/whatsappUrl";
 
 const FALLBACK_COVER = "/images/service/hero.jpg";
 const FALLBACK_LOGO = "/images/service/avatar.jpg";
@@ -109,7 +113,13 @@ interface StateBusinessData {
   coverPhotoUrls?: string[];
   servicesOffered?: string[];
   verified: boolean;
+  memberSince?: string | null;
+  verifiedSince?: string | null;
   isFavorite?: boolean;
+  phone?: string | null;
+  whatsapp?: string | null;
+  website?: string | null;
+  socialAccounts?: SocialAccount[];
 }
 
 function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
@@ -128,11 +138,22 @@ function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
     coverPhotoUrls: data.coverPhotoUrls ?? (data.image ? [data.image] : []),
     servicesOffered: data.servicesOffered ?? [],
     verified: data.verified,
+    memberSince: data.memberSince ?? null,
+    verifiedSince: data.verifiedSince ?? null,
     isFavorite: data.isFavorite ?? false,
+    phone: data.phone ?? null,
+    whatsapp: data.whatsapp ?? null,
+    website: data.website ?? null,
+    socialAccounts: data.socialAccounts ?? [],
     businessHours: [],
     businessHoursDisplay: [],
   };
 }
+
+type ServiceLocationState = {
+  from?: string;
+  business?: StateBusinessData;
+};
 
 export default function Service() {
   const [photosOpen, setPhotosOpen] = useState(false);
@@ -140,11 +161,13 @@ export default function Service() {
   const reviewsRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const { pathname } = location;
+  const routeState = (location.state as ServiceLocationState | null) ?? null;
   const { slug } = useParams<{ slug: string }>();
+  const { requireAuthNavigate, isAuthReady, isAuthenticated } =
+    useRequireAuthNavigate();
 
   const businessId = slug ? resolveBusinessIdFromSlug(slug) : null;
-  const stateData = (location.state as { from?: string; business?: StateBusinessData } | null)
-    ?.business ?? null;
+  const stateData = routeState?.business ?? null;
 
   const {
     data: business,
@@ -184,7 +207,22 @@ export default function Service() {
   const latitude = business?.latitude ?? stateData?.latitude ?? null;
   const longitude = business?.longitude ?? stateData?.longitude ?? null;
   const verified = business?.verified ?? stateData?.verified ?? false;
-  const whatsappUrl = buildWhatsAppUrl(business?.whatsapp);
+  const memberSince =
+    business?.memberSince ?? stateData?.memberSince ?? null;
+  const verifiedSince =
+    business?.verifiedSince ?? stateData?.verifiedSince ?? null;
+  const contactPhone = resolveBusinessContactPhone(
+    business?.whatsapp ?? stateData?.whatsapp,
+    business?.phone ?? stateData?.phone,
+  );
+  const whatsappUrl = buildBusinessWhatsAppUrl(
+    business?.whatsapp ?? stateData?.whatsapp,
+    business?.phone ?? stateData?.phone,
+  );
+  const socialAccounts =
+    business?.socialAccounts?.length
+      ? business.socialAccounts
+      : stateData?.socialAccounts ?? [];
 
   const coverPhotos = useMemo(() => {
     const fromApi = business?.coverPhotoUrls ?? [];
@@ -206,6 +244,13 @@ export default function Service() {
   const servicesList =
     (business?.servicesOffered?.length ? business.servicesOffered : stateData?.servicesOffered) ??
     SERVICES;
+
+  const handleWriteReview = () => {
+    if (!isAuthReady) return;
+    requireAuthNavigate("/reviews", {
+      state: { from: pathname, business_id: businessId, business_name: name },
+    });
+  };
 
   return (
     <div className="bg-bg-section font-sans text-ink">
@@ -264,9 +309,9 @@ export default function Service() {
                     {verified && (
                       <>
                         <span className="text-stat-muted" aria-hidden>•</span>
-                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-success">
+                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand">
                           <BadgeCheck className="size-4 shrink-0" aria-hidden />
-                          Identity Verified
+                          Verified
                         </span>
                       </>
                     )}
@@ -276,10 +321,25 @@ export default function Service() {
                       <MapPin className="mt-0.5 size-6 shrink-0 text-brand-red" aria-hidden />
                       {locationText}
                     </p>
-                    <p className="flex items-start gap-1">
-                      <CheckCircle2 className="mt-0.5 size-6 shrink-0 text-brand-red" aria-hidden />
-                      Gidira member since March 2026
-                    </p>
+                    {memberSince ? (
+                      <p className="flex items-start gap-1">
+                        <CheckCircle2 className="mt-0.5 size-6 shrink-0 text-brand-red" aria-hidden />
+                        Gidira member since {memberSince}
+                      </p>
+                    ) : null}
+                    {verified && verifiedSince ? (
+                      <p className="flex items-start gap-1">
+                        <BadgeCheck className="mt-0.5 size-6 shrink-0 text-brand" aria-hidden />
+                        Verified since {verifiedSince}.
+                      </p>
+                    ) : null}
+                    {socialAccounts.length > 0 ? (
+                      <BusinessSocialLinks
+                        accounts={socialAccounts}
+                        className="pt-1"
+                        title="Connect on social"
+                      />
+                    ) : null}
                   </div>
                 </div>
 
@@ -312,6 +372,7 @@ export default function Service() {
                     <ShowPhoneNumberReveal
                       useShadcnButton
                       isolateFromParentClicks={false}
+                      phoneNumber={contactPhone}
                       className="h-14 w-full rounded-xl bg-brand-red text-base font-medium text-ice hover:bg-brand-red/90"
                       iconClassName="size-5 shrink-0"
                     />
@@ -322,6 +383,18 @@ export default function Service() {
                       <Link
                         to="/messages"
                         state={{ from: pathname }}
+                        onClick={(event) => {
+                          if (!isAuthReady) {
+                            event.preventDefault();
+                            return;
+                          }
+                          if (!isAuthenticated) {
+                            event.preventDefault();
+                            requireAuthNavigate("/messages", {
+                              state: { from: pathname },
+                            });
+                          }
+                        }}
                         className="inline-flex w-full items-center justify-center gap-2"
                       >
                         <MessageCircle className="size-5" aria-hidden />
@@ -360,6 +433,12 @@ export default function Service() {
                       </Button>
                     )}
                   </div>
+                  {socialAccounts.length > 0 ? (
+                    <BusinessSocialLinks
+                      accounts={socialAccounts}
+                      className="border-t border-border-light pt-5"
+                    />
+                  ) : null}
                   <div className="mt-6 space-y-4 border-t border-border-light pt-5">
                     <p className="flex items-center gap-3 text-sm font-medium text-ink">
                       <Clock className="size-4 shrink-0 text-stat-muted" aria-hidden />
@@ -370,20 +449,17 @@ export default function Service() {
                       Secure transaction protection
                     </p>
                   </div>
-                  <div className="mt-6 flex items-center justify-between text-xs font-medium uppercase tracking-tight text-stat-muted">
-                    <button type="button" className="inline-flex items-center gap-1 hover:text-ink">
-                      <Heart className="size-4" aria-hidden />
-                      Save
-                    </button>
-                    <button type="button" className="inline-flex items-center gap-1 hover:text-ink">
-                      <ExternalLink className="size-4" aria-hidden />
-                      Website
-                    </button>
-                    <button type="button" className="inline-flex items-center gap-1 hover:text-ink">
-                      <Share2 className="size-4" aria-hidden />
-                      Share listing
-                    </button>
-                  </div>
+                  {businessId !== null ? (
+                    <BusinessListingSecondaryActions
+                      businessId={businessId}
+                      businessName={name}
+                      website={business?.website ?? stateData?.website ?? null}
+                      initialFavorite={
+                        business?.isFavorite ?? stateData?.isFavorite ?? false
+                      }
+                      listingPath={pathname}
+                    />
+                  ) : null}
                 </div>
 
                 {businessFetching && !businessFetched ? (
@@ -491,13 +567,13 @@ export default function Service() {
                 <span className="ml-2 text-2xl text-stat-muted">({pagination.total})</span>
               )}
             </h2>
-            <Link
-              to="/reviews"
-              state={{ from: pathname, business_id: businessId, business_name: name }}
-              className="border-b-2 border-accent-foreground/20 pb-0.5 text-base font-semibold text-accent-foreground hover:opacity-90"
+            <button
+              type="button"
+              onClick={handleWriteReview}
+              className="border-b-2 border-accent-foreground/20 pb-0.5 text-left text-base font-semibold text-accent-foreground hover:opacity-90"
             >
               Write a review
-            </Link>
+            </button>
           </div>
 
           {reviewsList.length === 0 ? (
@@ -616,6 +692,7 @@ export default function Service() {
         businessName={name}
         photos={coverPhotos}
       />
+
     </div>
   );
 }

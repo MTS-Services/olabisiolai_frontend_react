@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle, Send, Star, Upload, X } from "lucide-react";
 import axios from "axios";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getAuthDisplayName } from "@/auth/displayName";
 import { useAuth } from "@/auth/useAuth";
+import { CUSTOMER_LOGIN_PATH } from "@/features/auth/loginReturn";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 import { submitReview } from "@/features/reviews/publicReviewApi";
@@ -18,7 +19,6 @@ type LocationState = {
   from?: string;
   business_id?: number;
   business_name?: string;
-  review_as_named?: boolean;
 } | null;
 
 export default function GiveReview() {
@@ -29,53 +29,31 @@ export default function GiveReview() {
   const businessId = state?.business_id;
   const businessName = state?.business_name ?? null;
 
-  const { user, isAuthenticated, isUserLoading } = useAuth();
+  const { user, isAuthenticated, isUserLoading, isSessionLoading } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagesId = useId();
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [fullName, setFullName] = useState("");
-  const [anonymous, setAnonymous] = useState(true);
   const [reviewText, setReviewText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
-  const redirectToLoginForNamedReview = useCallback(() => {
-    navigate("/login/email", {
-      state: {
-        from: {
-          pathname: location.pathname,
-          state: {
-            from,
-            business_id: businessId,
-            business_name: businessName,
-            review_as_named: true,
+  useEffect(() => {
+    if (isUserLoading || isSessionLoading) return;
+    if (!isAuthenticated) {
+      navigate(CUSTOMER_LOGIN_PATH, {
+        state: {
+          from: {
+            pathname: "/reviews",
+            search: location.search,
+            state: location.state,
           },
         },
-      },
-    });
-  }, [navigate, location.pathname, from, businessId, businessName]);
-
-  useEffect(() => {
-    if (state?.review_as_named) {
-      setAnonymous(false);
+      });
     }
-  }, [state?.review_as_named]);
-
-  useEffect(() => {
-    if (isUserLoading) return;
-
-    if (!anonymous && !isAuthenticated) {
-      redirectToLoginForNamedReview();
-      return;
-    }
-
-    if (!anonymous && isAuthenticated) {
-      setFullName(getAuthDisplayName(user));
-    }
-  }, [anonymous, isAuthenticated, isUserLoading, user, redirectToLoginForNamedReview]);
+  }, [isAuthenticated, isSessionLoading, isUserLoading, location.search, location.state, navigate]);
 
   useEffect(() => {
     return () => {
@@ -87,6 +65,8 @@ export default function GiveReview() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+
+  const displayName = getAuthDisplayName(user);
 
   const goBack = () => {
     if (typeof from === "string" && from.startsWith("/") && !from.startsWith("//")) {
@@ -115,22 +95,9 @@ export default function GiveReview() {
     setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAnonymousToggle = () => {
-    const nextAnonymous = !anonymous;
-    if (!nextAnonymous && !isAuthenticated && !isUserLoading) {
-      redirectToLoginForNamedReview();
-      return;
-    }
-    setAnonymous(nextAnonymous);
-    if (!nextAnonymous && isAuthenticated) {
-      setFullName(getAuthDisplayName(user));
-    }
-  };
-
   const validate = (): string | null => {
     if (!businessId) return "No business selected. Please go back and try again.";
     if (rating === 0) return "Please select a star rating.";
-    if (!anonymous && !isAuthenticated) return "Please sign in to post a review with your name.";
     if (reviewText.trim().length < 10) return "Review must be at least 10 characters.";
     return null;
   };
@@ -140,8 +107,16 @@ export default function GiveReview() {
     setError(null);
     setFieldErrors({});
 
-    if (!anonymous && !isAuthenticated) {
-      redirectToLoginForNamedReview();
+    if (!isAuthenticated) {
+      navigate(CUSTOMER_LOGIN_PATH, {
+        state: {
+          from: {
+            pathname: "/reviews",
+            search: location.search,
+            state: location.state,
+          },
+        },
+      });
       return;
     }
 
@@ -151,22 +126,30 @@ export default function GiveReview() {
       return;
     }
 
-    const resolvedName = anonymous
-      ? fullName.trim() || "Anonymous"
-      : getAuthDisplayName(user) || fullName.trim();
-
     setSubmitting(true);
     try {
       await submitReview({
         business_id: businessId!,
-        full_name: resolvedName,
-        is_anonymous: anonymous,
+        full_name: displayName,
+        is_anonymous: false,
         rating,
         review_text: reviewText,
         images: files.length > 0 ? files : undefined,
       });
       setSuccess(true);
     } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        navigate(CUSTOMER_LOGIN_PATH, {
+          state: {
+            from: {
+              pathname: "/reviews",
+              search: location.search,
+              state: location.state,
+            },
+          },
+        });
+        return;
+      }
       if (axios.isAxiosError(err) && err.response?.status === 422) {
         const data = err.response.data as {
           message?: string;
@@ -175,10 +158,6 @@ export default function GiveReview() {
         };
         setError(data.message ?? "Validation failed. Please check the form.");
         setFieldErrors(data.data?.errors ?? data.errors ?? {});
-        const authError = data.data?.errors?.is_anonymous?.[0] ?? data.errors?.is_anonymous?.[0];
-        if (authError?.toLowerCase().includes("logged in")) {
-          redirectToLoginForNamedReview();
-        }
       } else {
         setError("Something went wrong. Please try again.");
       }
@@ -212,7 +191,7 @@ export default function GiveReview() {
     );
   }
 
-  if (!anonymous && !isUserLoading && !isAuthenticated) {
+  if (isUserLoading || isSessionLoading || !isAuthenticated) {
     return (
       <div className={pageShell}>
         <div className={cn(container)}>
@@ -226,9 +205,6 @@ export default function GiveReview() {
       </div>
     );
   }
-
-  const showNameField = !anonymous;
-  const nameReadOnly = !anonymous && isAuthenticated;
 
   return (
     <div className={pageShell}>
@@ -249,6 +225,9 @@ export default function GiveReview() {
           <h1 className="text-xl font-semibold leading-7 text-ink-heading">
             {businessName ? `Review for ${businessName}` : "Write a Review"}
           </h1>
+          <p className="mt-2 text-sm text-body-secondary">
+            Reviews are posted under your account name. Please sign in to continue.
+          </p>
           {!businessId && (
             <p className="mt-3 rounded-lg bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
               No business selected. Please go back and try again.
@@ -295,56 +274,20 @@ export default function GiveReview() {
             )}
           </div>
 
-          {showNameField && (
-            <div className="mt-4 space-y-2 rounded-2xl p-4">
-              <label htmlFor="review-full-name" className="text-sm font-medium text-ink-heading">
-                Your Full Name
-              </label>
-              <Input
-                id="review-full-name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your name as shown on the review"
-                autoComplete="name"
-                readOnly={nameReadOnly}
-                disabled={nameReadOnly}
-                className={cn(
-                  "h-auto rounded-[10px] border-transparent bg-muted px-3 py-4 text-sm text-ink placeholder:text-placeholder-text focus-visible:ring-chat-accent-ring",
-                  nameReadOnly && "cursor-default opacity-90",
-                )}
-              />
-              {nameReadOnly && (
-                <p className="text-xs text-body-secondary">
-                  Using your account name. Turn on anonymous to hide your identity.
-                </p>
-              )}
-              {fieldErrors.full_name && (
-                <p className="text-xs text-red-600">{fieldErrors.full_name[0]}</p>
-              )}
-            </div>
-          )}
-
-          <div className="flex flex-wrap items-center gap-6 rounded-2xl px-4 py-3 sm:px-4">
-            <span className="text-sm font-medium text-ink-heading">Write as anonymous</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={anonymous}
-              onClick={handleAnonymousToggle}
-              className={cn(
-                "relative h-6 w-12 shrink-0 rounded-full transition-colors",
-                anonymous ? "bg-chat-accent" : "bg-stat-muted/35",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 size-5 rounded-full border border-white bg-white shadow-sm transition-[left]",
-                  anonymous ? "left-[26px]" : "left-0.5",
-                )}
-              />
-            </button>
-            {!anonymous && (
-              <span className="text-xs text-body-secondary">Sign-in required to show your name</span>
+          <div className="mt-4 space-y-2 rounded-2xl p-4">
+            <label htmlFor="review-full-name" className="text-sm font-medium text-ink-heading">
+              Your name
+            </label>
+            <Input
+              id="review-full-name"
+              value={displayName}
+              readOnly
+              disabled
+              className="h-auto cursor-default rounded-[10px] border-transparent bg-muted px-3 py-4 text-sm text-ink opacity-90 focus-visible:ring-chat-accent-ring"
+            />
+            <p className="text-xs text-body-secondary">Shown on your review from your account profile.</p>
+            {fieldErrors.full_name && (
+              <p className="text-xs text-red-600">{fieldErrors.full_name[0]}</p>
             )}
           </div>
 
@@ -459,4 +402,3 @@ export default function GiveReview() {
     </div>
   );
 }
-

@@ -1,15 +1,61 @@
+import axios from 'axios'
+
 import { request } from '@/api/request'
 
 /** Default page size for `GET /user/favorites` (dashboard + favorites page). */
 export const USER_FAVORITES_DEFAULT_PER_PAGE = 12
 
-export interface FavoriteToggleResponse {
-  success: boolean;
-  message: string;
-  data: {
-    favorited: boolean;
-    business_info_id: number;
-  };
+export type FavoriteToggleData = {
+  favorited: boolean
+  business_info_id: number
+}
+
+type LaravelEnvelope<T> = {
+  success?: boolean
+  message?: string
+  data?: T
+}
+
+function assertFavoriteResponse(
+  body: LaravelEnvelope<unknown> | undefined,
+  fallback: string,
+): void {
+  if (body?.success) return
+  throw new Error(body?.message || fallback)
+}
+
+function assertFavoriteSuccess<T>(body: LaravelEnvelope<T> | undefined, fallback: string): T {
+  if (body?.success && body.data !== undefined && body.data !== null) {
+    return body.data
+  }
+
+  throw new Error(body?.message || fallback)
+}
+
+export async function toggleFavorite(businessInfoId: number): Promise<FavoriteToggleData> {
+  const response = await request.post<LaravelEnvelope<FavoriteToggleData>>(
+    '/user/favorites/toggle',
+    {
+      business_info_id: businessInfoId,
+    },
+  )
+
+  return assertFavoriteSuccess(
+    response.data,
+    'Could not update saved listing. Please try again.',
+  )
+}
+
+/** `DELETE /user/favorites/:id` — remove saved favorite (authenticated). */
+export async function removeFavorite(businessInfoId: number): Promise<void> {
+  const response = await request.delete<LaravelEnvelope<null>>(
+    `/user/favorites/${businessInfoId}`,
+  )
+
+  assertFavoriteResponse(
+    response.data,
+    'Could not remove saved listing. Please try again.',
+  )
 }
 
 export type UserFavoriteLocation = {
@@ -50,28 +96,6 @@ type UserFavoritesApiEnvelope = {
   data: UserFavoritesPayload
 }
 
-export async function toggleFavorite(businessInfoId: number): Promise<FavoriteToggleResponse> {
-  try {
-    const response = await request.post('/user/favorites/toggle', {
-      business_info_id: businessInfoId
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Failed to toggle favorite:', error);
-    throw error;
-  }
-}
-
-/** `DELETE /user/favorites/:id` — remove saved favorite (authenticated). */
-export async function removeFavorite(businessInfoId: number): Promise<void> {
-  try {
-    await request.delete(`/user/favorites/${businessInfoId}`)
-  } catch (error) {
-    console.error('Failed to remove favorite:', error)
-    throw error
-  }
-}
-
 export async function fetchUserFavorites(params?: {
   page?: number
   per_page?: number
@@ -82,4 +106,14 @@ export async function fetchUserFavorites(params?: {
     throw new Error(body?.message || 'Could not load favorites')
   }
   return body.data
+}
+
+export function getFavoriteErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as LaravelEnvelope<unknown> | undefined
+    if (data?.message) return data.message
+  }
+
+  if (error instanceof Error && error.message) return error.message
+  return fallback
 }

@@ -1,10 +1,15 @@
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, MessageCircle, Phone } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Phone } from "lucide-react";
 
+import {
+  getContactSubmitErrorMessage,
+  submitContactMessage,
+} from "@/api/contactMessages";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { container } from "@/lib/container";
+import { showError } from "@/lib/sweetAlert";
 import { cn } from "@/lib/utils";
 
 const WHATSAPP_DISPLAY = "+2349047858961";
@@ -85,10 +90,33 @@ function ContactChannelCard({
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSubmitted(true);
+    const form = e.currentTarget;
+    const data = new FormData(form);
+
+    setSubmitting(true);
+    try {
+      await submitContactMessage({
+        full_name: String(data.get("name") ?? "").trim(),
+        email: String(data.get("email") ?? "").trim(),
+        subject: String(data.get("subject") ?? "").trim(),
+        message: String(data.get("message") ?? "").trim(),
+      });
+      setSubmitted(true);
+      form.reset();
+    } catch (error) {
+      showError(
+        getContactSubmitErrorMessage(
+          error,
+          "Could not send your message. Please try again.",
+        ),
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -152,7 +180,7 @@ export default function Contact() {
                 Thanks — your message has been noted. We&apos;ll reply soon.
               </p>
             ) : (
-              <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+              <form className="flex flex-col gap-4" onSubmit={(e) => void handleSubmit(e)}>
                 <div className="flex flex-col gap-2">
                   <label
                     htmlFor="contact-name"
@@ -217,9 +245,13 @@ export default function Contact() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full rounded-[10px] bg-brand py-4 text-sm font-medium text-ice transition-opacity hover:opacity-90"
+                  disabled={submitting}
+                  className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-brand py-4 text-sm font-medium text-ice transition-opacity hover:opacity-90 disabled:opacity-70"
                 >
-                  Send Message
+                  {submitting ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : null}
+                  {submitting ? "Sending…" : "Send Message"}
                 </button>
               </form>
             )}

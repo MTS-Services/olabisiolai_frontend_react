@@ -55,6 +55,8 @@ function mapFavoriteToCardProps(item: UserFavoriteBusiness) {
     reviews: item.reviews_count,
     image: userFavoriteImage(item),
     verified: item.is_verified,
+    phone: item.phone,
+    whatsapp: item.whatsapp,
   };
 }
 

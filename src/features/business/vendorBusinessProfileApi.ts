@@ -7,6 +7,7 @@ import {
   type BusinessHourEntry,
   type BusinessHoursDisplayRow,
 } from "@/features/business/businessHours";
+import { parseSocialAccounts, type SocialAccount } from "@/features/business/socialAccounts";
 import { resolveMediaUrl, resolveMediaUrls } from "@/lib/mediaUrl";
 
 type RawRecord = Record<string, unknown>;
@@ -28,6 +29,7 @@ export type VendorBusinessProfile = {
   phone: string;
   whatsapp: string;
   website: string;
+  socialAccounts: SocialAccount[];
   logoUrl: string;
   coverPhotoUrls: string[];
   verificationStatus: string;
@@ -122,6 +124,7 @@ export function parseVendorBusinessProfile(raw: unknown): VendorBusinessProfile 
     phone: pickString(item, ["phone"], ""),
     whatsapp: pickString(item, ["whatsapp"], ""),
     website: pickString(item, ["website"], ""),
+    socialAccounts: parseSocialAccounts(item.social_accounts ?? item.socialAccounts),
     logoUrl: resolveMediaUrl(pickString(item, ["logo_url", "logo"], "")),
     coverPhotoUrls: resolveMediaUrls(parseStringArray(item.cover_photo_urls)),
     verificationStatus: pickString(item, ["verification_status"], "none").toLowerCase(),

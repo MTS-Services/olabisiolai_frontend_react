@@ -16,6 +16,7 @@ import {
 } from "@/features/business/vendorBusinessProfileApi";
 import { updateVendorBusiness } from "@/features/business/vendorBusinessApi";
 import { validateBusinessHours } from "@/features/business/businessHours";
+import { normalizeSocialUrl, validateSocialAccounts } from "@/features/business/socialAccounts";
 import { parseVendorBusinessApiFailure } from "@/features/business/vendorBusinessFormErrors";
 import {
   profileToDraft,
@@ -187,6 +188,16 @@ export function VendorProfileProvider({ children }: { children: ReactNode }) {
         throw err;
       }
 
+      const activeSocialAccounts = draft.socialAccounts
+        .map((account) => ({ ...account, url: normalizeSocialUrl(account.url) }))
+        .filter((account) => account.url);
+      const socialError = validateSocialAccounts(activeSocialAccounts);
+      if (socialError) {
+        const err = new Error(socialError);
+        (err as Error & { socialError: string }).socialError = socialError;
+        throw err;
+      }
+
       const selectedLocation = parsedLocations.find((l) => l.id === draft.locationId);
       if (!selectedLocation) throw new Error("Invalid location selected.");
 
@@ -206,6 +217,7 @@ export function VendorProfileProvider({ children }: { children: ReactNode }) {
         phone: draft.phone,
         whatsapp: draft.whatsapp || undefined,
         website: draft.website || undefined,
+        social_accounts: activeSocialAccounts,
         logo: draft.logoFile,
         cover_photos: coverPhotos,
         business_hours: draft.businessHours,
@@ -223,6 +235,14 @@ export function VendorProfileProvider({ children }: { children: ReactNode }) {
         const hourErrors = (error as Error & { hourErrors?: Record<string, string> }).hourErrors;
         if (hourErrors) {
           setFieldErrors(hourErrors);
+          setSaveError(error.message);
+          return;
+        }
+      }
+      if (error instanceof Error && "socialError" in error) {
+        const socialError = (error as Error & { socialError?: string }).socialError;
+        if (socialError) {
+          setFieldErrors({ social_accounts: socialError });
           setSaveError(error.message);
           return;
         }

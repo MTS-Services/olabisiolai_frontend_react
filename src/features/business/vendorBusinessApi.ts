@@ -3,6 +3,10 @@ import {
   appendBusinessHoursToFormData,
   type BusinessHourEntry,
 } from "@/features/business/businessHours";
+import {
+  appendSocialAccountsToFormData,
+  type SocialAccount,
+} from "@/features/business/socialAccounts";
 
 export type CreateVendorBusinessPayload = {
   subscription_plan?: "free" | "premium";
@@ -21,6 +25,7 @@ export type CreateVendorBusinessPayload = {
   phone: string;
   whatsapp?: string;
   website?: string;
+  social_accounts?: SocialAccount[];
   logo?: File | null;
   cover_photos?: File[];
   business_hours?: BusinessHourEntry[];
@@ -64,6 +69,9 @@ export async function createVendorBusiness(
 
   appendIfTruthy(formData, "whatsapp", payload.whatsapp);
   appendIfTruthy(formData, "website", payload.website);
+  if (payload.social_accounts?.length) {
+    appendSocialAccountsToFormData(formData, payload.social_accounts);
+  }
   appendIfTruthy(formData, "full_address", payload.full_address);
 
   payload.services
@@ -118,6 +126,7 @@ export type UpdateVendorBusinessPayload = {
   phone: string;
   whatsapp?: string;
   website?: string;
+  social_accounts?: SocialAccount[];
   logo?: File | null;
   cover_photos?: File[];
   business_hours?: BusinessHourEntry[];
@@ -139,6 +148,7 @@ export async function updateVendorBusiness(payload: UpdateVendorBusinessPayload)
 
   appendIfTruthy(formData, "whatsapp", payload.whatsapp);
   appendIfTruthy(formData, "website", payload.website);
+  appendSocialAccountsToFormData(formData, payload.social_accounts ?? []);
 
   payload.services
     .map((service) => service.trim())

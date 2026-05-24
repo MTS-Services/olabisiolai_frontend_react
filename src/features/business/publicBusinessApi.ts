@@ -5,6 +5,7 @@ import {
   type BusinessHourEntry,
   type BusinessHoursDisplayRow,
 } from '@/features/business/businessHours';
+import { parseSocialAccounts, type SocialAccount } from '@/features/business/socialAccounts';
 import { resolveMediaUrl } from '@/lib/mediaUrl';
 
 export type PublicBusiness = {
@@ -16,6 +17,7 @@ export type PublicBusiness = {
   phone?: string | null;
   whatsapp?: string | null;
   website?: string | null;
+  socialAccounts: SocialAccount[];
   location: string;
   locationId?: number | null;
   locationName?: string | null;
@@ -107,6 +109,7 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const whatsapp = whatsappRaw || null;
   const websiteRaw = str(r.website, '').trim();
   const website = websiteRaw || null;
+  const socialAccounts = parseSocialAccounts(r.social_accounts ?? r.socialAccounts);
 
   const locObj = rec(r.location);
   const city = str(locObj?.city ?? r.city, '');
@@ -170,6 +173,7 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     phone,
     whatsapp,
     website,
+    socialAccounts,
     location,
     locationId,
     locationName,

@@ -1,5 +1,6 @@
 import { cloneBusinessHours } from "@/features/business/businessHours";
 import type { BusinessHourEntry } from "@/features/business/businessHours";
+import type { SocialAccount } from "@/features/business/socialAccounts";
 import type { VendorBusinessProfile } from "@/features/business/vendorBusinessProfileApi";
 
 export type VendorProfileDraft = {
@@ -12,6 +13,7 @@ export type VendorProfileDraft = {
   phone: string;
   whatsapp: string;
   website: string;
+  socialAccounts: SocialAccount[];
   logoFile: File | null;
   logoPreview: string;
   existingCoverUrls: string[];
@@ -31,6 +33,7 @@ export function profileToDraft(profile: VendorBusinessProfile): VendorProfileDra
     phone: profile.phone,
     whatsapp: profile.whatsapp,
     website: profile.website,
+    socialAccounts: profile.socialAccounts.map((account) => ({ ...account })),
     logoFile: null,
     logoPreview: profile.logoUrl,
     existingCoverUrls: [...profile.coverPhotoUrls],

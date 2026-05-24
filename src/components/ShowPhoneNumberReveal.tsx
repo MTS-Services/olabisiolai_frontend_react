@@ -2,14 +2,14 @@ import { useState } from "react";
 import { Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { formatPhoneDisplay } from "@/lib/whatsappUrl";
 import { cn } from "@/lib/utils";
-
-/** Placeholder until listings load a real phone from the API. */
-export const LISTING_DUMMY_PHONE_DISPLAY = "+234 803 123 4567";
 
 type ShowPhoneNumberRevealProps = {
   className?: string;
   iconClassName?: string;
+  /** Business phone from API (`phone` or `whatsapp`). */
+  phoneNumber?: string | null;
   /** Use shadcn `Button` (e.g. favorites / service sidebar). */
   useShadcnButton?: boolean;
   /**
@@ -22,10 +22,13 @@ type ShowPhoneNumberRevealProps = {
 export function ShowPhoneNumberReveal({
   className,
   iconClassName,
+  phoneNumber,
   useShadcnButton = false,
   isolateFromParentClicks = true,
 }: ShowPhoneNumberRevealProps) {
   const [shown, setShown] = useState(false);
+  const displayPhone = phoneNumber ? formatPhoneDisplay(phoneNumber) : null;
+  const hasPhone = Boolean(displayPhone);
 
   const isolateClick = (event: React.MouseEvent) => {
     if (!isolateFromParentClicks) return;
@@ -44,7 +47,7 @@ export function ShowPhoneNumberReveal({
 
   const reveal = () => setShown(true);
 
-  if (shown) {
+  if (shown && hasPhone) {
     return (
       <div
         role="status"
@@ -56,7 +59,7 @@ export function ShowPhoneNumberReveal({
         )}
       >
         <Phone className={iconClassName} aria-hidden />
-        {LISTING_DUMMY_PHONE_DISPLAY}
+        {displayPhone}
       </div>
     );
   }
@@ -64,18 +67,22 @@ export function ShowPhoneNumberReveal({
   const content = (
     <>
       <Phone className={iconClassName} aria-hidden />
-      Show phone number
+      {hasPhone ? "Show phone number" : "Phone unavailable"}
     </>
   );
+
+  const disabledClass = !hasPhone ? "cursor-not-allowed opacity-60" : undefined;
 
   if (useShadcnButton) {
     return (
       <Button
         type="button"
-        className={className}
+        className={cn(className, disabledClass)}
+        disabled={!hasPhone}
         onKeyDown={isolateKey}
         onClick={(event) => {
           isolateClick(event);
+          if (!hasPhone) return;
           reveal();
         }}
       >
@@ -87,10 +94,12 @@ export function ShowPhoneNumberReveal({
   return (
     <button
       type="button"
-      className={className}
+      className={cn(className, disabledClass)}
+      disabled={!hasPhone}
       onKeyDown={isolateKey}
       onClick={(event) => {
         isolateClick(event);
+        if (!hasPhone) return;
         reveal();
       }}
     >

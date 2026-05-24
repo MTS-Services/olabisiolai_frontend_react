@@ -78,6 +78,8 @@ export default function Featured() {
                   coverPhotoUrls={business.coverPhotoUrls}
                   verified={business.verified}
                   favorited={business.isFavorite}
+                  phone={business.phone}
+                  whatsapp={business.whatsapp}
                 />
               ))}
             </div>

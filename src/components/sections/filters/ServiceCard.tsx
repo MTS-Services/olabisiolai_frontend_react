@@ -3,6 +3,7 @@ import { Heart, MapPin, Star, CheckCircle, MessageCircle } from "lucide-react";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 import { encryptId } from "@/lib/encryptId";
+import { resolveBusinessContactPhone } from "@/lib/whatsappUrl";
 
 interface ServiceCardProps {
   id: number;
@@ -19,6 +20,8 @@ interface ServiceCardProps {
   coverPhotoUrls?: string[];
   verified: boolean;
   favorited?: boolean;
+  phone?: string | null;
+  whatsapp?: string | null;
 }
 
 export default function ServiceCard({
@@ -36,7 +39,10 @@ export default function ServiceCard({
   coverPhotoUrls,
   verified,
   favorited = false,
+  phone,
+  whatsapp,
 }: ServiceCardProps) {
+  const contactPhone = resolveBusinessContactPhone(whatsapp, phone);
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -59,6 +65,8 @@ export default function ServiceCard({
           coverPhotoUrls: coverPhotoUrls ?? (image ? [image] : []),
           verified,
           isFavorite: favorited,
+          phone: phone ?? null,
+          whatsapp: whatsapp ?? null,
         },
       },
     });
@@ -120,6 +128,7 @@ export default function ServiceCard({
         </p>
 
         <ShowPhoneNumberReveal
+          phoneNumber={contactPhone}
           className="mb-3 flex w-full items-center justify-center rounded-lg bg-destructive p-1 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 lg:w-50 lg:p-3"
           iconClassName="size-4 shrink-0"
         />

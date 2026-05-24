@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
 import { encryptId } from "@/lib/encryptId";
+import { resolveBusinessContactPhone } from "@/lib/whatsappUrl";
 import { removeFavorite, toggleFavorite } from "@/api/favorites";
 
 interface FeaturedCardProps {
@@ -28,6 +29,8 @@ interface FeaturedCardProps {
   coverPhotoUrls?: string[];
   verified: boolean;
   favorited?: boolean;
+  phone?: string | null;
+  whatsapp?: string | null;
 }
 
 export function FeaturedCard({
@@ -45,7 +48,10 @@ export function FeaturedCard({
   coverPhotoUrls,
   verified,
   favorited = false,
+  phone,
+  whatsapp,
 }: FeaturedCardProps) {
+  const contactPhone = resolveBusinessContactPhone(whatsapp, phone);
   const queryClient = useQueryClient();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -75,6 +81,8 @@ export function FeaturedCard({
           coverPhotoUrls: coverPhotoUrls ?? (image ? [image] : []),
           verified,
           isFavorite: isFavorited,
+          phone: phone ?? null,
+          whatsapp: whatsapp ?? null,
         },
       },
     });
@@ -167,6 +175,7 @@ export function FeaturedCard({
           {description}
         </p>
         <ShowPhoneNumberReveal
+          phoneNumber={contactPhone}
           className="mb-3 flex w-full items-center justify-center rounded-lg bg-destructive py-2 font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90"
           iconClassName="size-5 shrink-0"
         />

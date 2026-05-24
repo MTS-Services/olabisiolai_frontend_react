@@ -31,7 +31,10 @@ import { Button } from "@/components/ui/button";
 import { env } from "@/config/env";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
-import { buildWhatsAppUrl } from "@/lib/whatsappUrl";
+import {
+  buildBusinessWhatsAppUrl,
+  resolveBusinessContactPhone,
+} from "@/lib/whatsappUrl";
 
 const FALLBACK_COVER = "/images/service/hero.jpg";
 const FALLBACK_LOGO = "/images/service/avatar.jpg";
@@ -110,6 +113,8 @@ interface StateBusinessData {
   servicesOffered?: string[];
   verified: boolean;
   isFavorite?: boolean;
+  phone?: string | null;
+  whatsapp?: string | null;
 }
 
 function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
@@ -129,6 +134,8 @@ function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
     servicesOffered: data.servicesOffered ?? [],
     verified: data.verified,
     isFavorite: data.isFavorite ?? false,
+    phone: data.phone ?? null,
+    whatsapp: data.whatsapp ?? null,
     businessHours: [],
     businessHoursDisplay: [],
   };
@@ -184,7 +191,14 @@ export default function Service() {
   const latitude = business?.latitude ?? stateData?.latitude ?? null;
   const longitude = business?.longitude ?? stateData?.longitude ?? null;
   const verified = business?.verified ?? stateData?.verified ?? false;
-  const whatsappUrl = buildWhatsAppUrl(business?.whatsapp);
+  const contactPhone = resolveBusinessContactPhone(
+    business?.whatsapp ?? stateData?.whatsapp,
+    business?.phone ?? stateData?.phone,
+  );
+  const whatsappUrl = buildBusinessWhatsAppUrl(
+    business?.whatsapp ?? stateData?.whatsapp,
+    business?.phone ?? stateData?.phone,
+  );
 
   const coverPhotos = useMemo(() => {
     const fromApi = business?.coverPhotoUrls ?? [];
@@ -312,6 +326,7 @@ export default function Service() {
                     <ShowPhoneNumberReveal
                       useShadcnButton
                       isolateFromParentClicks={false}
+                      phoneNumber={contactPhone}
                       className="h-14 w-full rounded-xl bg-brand-red text-base font-medium text-ice hover:bg-brand-red/90"
                       iconClassName="size-5 shrink-0"
                     />

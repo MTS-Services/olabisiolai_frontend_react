@@ -13,6 +13,7 @@ export type PublicBusiness = {
   category: string;
   categoryId?: number | null;
   subcategory?: string | null;
+  phone?: string | null;
   whatsapp?: string | null;
   location: string;
   locationId?: number | null;
@@ -95,6 +96,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const categoryIdNorm = Number.isFinite(categoryId) && categoryId > 0 ? categoryId : null;
   const subcategoryRaw = str(r.subcategory, '').trim();
   const subcategory = subcategoryRaw || null;
+  const phoneRaw = str(r.phone, '').trim();
+  const phone = phoneRaw || null;
   const whatsappRaw = str(r.whatsapp, '').trim();
   const whatsapp = whatsappRaw || null;
 
@@ -152,6 +155,7 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     category,
     categoryId: categoryIdNorm,
     subcategory,
+    phone,
     whatsapp,
     location,
     locationId,

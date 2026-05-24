@@ -580,6 +580,8 @@ export default function Filters() {
                   coverPhotoUrls={business.coverPhotoUrls}
                   verified={business.verified}
                   favorited={business.isFavorite}
+                  phone={business.phone}
+                  whatsapp={business.whatsapp}
                 />
               ))
             )}

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useLocation, useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Eye } from "lucide-react";
 
 import { useAuth } from "@/auth/useAuth";
@@ -11,20 +12,13 @@ import { getUserRoles } from "@/auth/roles";
 import { extractUserFromAuthPayload } from "@/api/laravelResponse";
 import { loginUserWithRole, resolvePostLoginPath } from "@/features/auth/service";
 import { type AuthRole } from "@/features/auth/types";
-
-function isUnsafePostLoginPath(pathname: string | undefined) {
-  if (!pathname) return true;
-  return (
-    pathname === "/unauthorized" ||
-    pathname === "/login" ||
-    pathname.startsWith("/login/") ||
-    pathname.startsWith("/otp-verification")
-  );
-}
-
+import { type LoginReturnTarget } from "@/features/auth/loginReturn";
+import { navigateAfterLogin } from "@/features/auth/navigateAfterLogin";
+import { fulfillPendingFavoriteSave } from "@/features/auth/pendingFavoriteSave";
 
 export default function LoginEmail() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { setToken, setUser, refreshSession, resetAuthState, authStrategy } = useAuth();
@@ -51,8 +45,7 @@ export default function LoginEmail() {
     saveAuthRole(role);
 
     try {
-      const returnTo = (location.state as { from?: { pathname?: string; state?: unknown } } | null)
-        ?.from;
+      const returnTo = (location.state as { from?: LoginReturnTarget } | null)?.from;
 
       const loginResult = await loginUserWithRole(
         {
@@ -78,6 +71,8 @@ export default function LoginEmail() {
       const roles = getUserRoles(extractUserFromAuthPayload(loginResult.user));
       const isVendor = roles.includes("vendor") || role === "vendor";
 
+      await fulfillPendingFavoriteSave(queryClient);
+
       if (isVendor) {
         navigate(await resolvePostLoginPath(loginResult.user, role), {
           replace: true,
@@ -85,11 +80,7 @@ export default function LoginEmail() {
         return;
       }
 
-      if (returnTo?.pathname && !isUnsafePostLoginPath(returnTo.pathname)) {
-        navigate(returnTo.pathname, {
-          replace: true,
-          state: returnTo.state,
-        });
+      if (navigateAfterLogin(navigate, returnTo)) {
         return;
       }
 

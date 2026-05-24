@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, MapPin, Star, CheckCircle, MessageCircle } from "lucide-react";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
+import { useRequireAuthNavigate } from "@/features/auth/useRequireAuthNavigate";
 import { encryptId } from "@/lib/encryptId";
 import { resolveBusinessContactPhone } from "@/lib/whatsappUrl";
 
@@ -45,6 +46,8 @@ export default function ServiceCard({
   const contactPhone = resolveBusinessContactPhone(whatsapp, phone);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { requireAuthNavigate, isAuthReady, isAuthenticated } =
+    useRequireAuthNavigate();
 
   const goToService = () => {
     navigate(`/businesses/${encryptId(id)}`, {
@@ -136,7 +139,17 @@ export default function ServiceCard({
         <Link
           to="/messages"
           state={{ from: pathname }}
-          onClick={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!isAuthReady) {
+              event.preventDefault();
+              return;
+            }
+            if (!isAuthenticated) {
+              event.preventDefault();
+              requireAuthNavigate("/messages", { state: { from: pathname } });
+            }
+          }}
           className="border border-primary text-primary lg:w-50 w-full lg:p-3 p-1 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors text-sm"
         >
           <MessageCircle className="w-4 h-4 mr-1.5" aria-hidden />

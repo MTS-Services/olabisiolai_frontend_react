@@ -10,9 +10,15 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
+import { useRequireAuthNavigate } from "@/features/auth/useRequireAuthNavigate";
 import { encryptId } from "@/lib/encryptId";
 import { resolveBusinessContactPhone } from "@/lib/whatsappUrl";
-import { removeFavorite, toggleFavorite } from "@/api/favorites";
+import {
+  getFavoriteErrorMessage,
+  removeFavorite,
+  toggleFavorite,
+} from "@/api/favorites";
+import { showError, showSuccess } from "@/lib/sweetAlert";
 
 interface FeaturedCardProps {
   id: number;
@@ -55,6 +61,8 @@ export function FeaturedCard({
   const queryClient = useQueryClient();
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { requireAuthNavigate, isAuthReady, isAuthenticated } =
+    useRequireAuthNavigate();
   const [isFavorited, setIsFavorited] = useState(favorited);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
@@ -98,13 +106,22 @@ export function FeaturedCard({
         await removeFavorite(id);
         setIsFavorited(false);
       } else {
-        const response = await toggleFavorite(id);
-        setIsFavorited(response.data.favorited);
+        const result = await toggleFavorite(id);
+        setIsFavorited(result.favorited);
+        showSuccess(
+          result.favorited ? "Saved to your favorites" : "Removed from saved listings",
+        );
       }
       await queryClient.invalidateQueries({ queryKey: ["user-favorites"] });
       await queryClient.invalidateQueries({ queryKey: ["businesses", "home"] });
+      await queryClient.invalidateQueries({ queryKey: ["business", id] });
     } catch (error) {
-      console.error('Failed to toggle favorite:', error);
+      showError(
+        getFavoriteErrorMessage(
+          error,
+          "Could not update saved listing. Please try again.",
+        ),
+      );
     } finally {
       setFavoriteLoading(false);
     }
@@ -182,7 +199,17 @@ export function FeaturedCard({
         <Link
           to="/messages"
           state={{ from: pathname }}
-          onClick={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!isAuthReady) {
+              event.preventDefault();
+              return;
+            }
+            if (!isAuthenticated) {
+              event.preventDefault();
+              requireAuthNavigate("/messages", { state: { from: pathname } });
+            }
+          }}
           className="w-full border border-primary text-primary py-2 rounded-lg flex items-center justify-center font-semibold hover:bg-primary/10 transition-colors"
         >
           <MessageCircle className="w-5 h-5 mr-2" /> Direct Message

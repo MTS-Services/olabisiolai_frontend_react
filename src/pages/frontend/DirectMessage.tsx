@@ -1,16 +1,25 @@
 import * as React from "react";
 import { showError } from "@/lib/sweetAlert";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Navigate,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 import { createConversation } from "@/api/conversations";
 import { useAuth } from "@/auth/useAuth";
+import {
+  CUSTOMER_LOGIN_PATH,
+  loginReturnFromLocation,
+} from "@/features/auth/loginReturn";
 import { MessagingLayout } from "@/features/messaging/MessagingLayout";
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
 export default function DirectMessage() {
-  const { user, isAuthenticated, isUserLoading } = useAuth();
+  const { user, isAuthenticated, isSessionLoading, isUserLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,11 +63,21 @@ export default function DirectMessage() {
     navigate(-1);
   };
 
-  if (!isUserLoading && !isAuthenticated) {
+  if (isSessionLoading || isUserLoading) {
     return (
-      <div className={cn(container, "py-16")}>
-        <p className="text-ink">Sign in to use messages.</p>
+      <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
+        Loading…
       </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to={CUSTOMER_LOGIN_PATH}
+        replace
+        state={{ from: loginReturnFromLocation(location) }}
+      />
     );
   }
 

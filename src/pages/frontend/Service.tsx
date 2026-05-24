@@ -12,21 +12,20 @@ import {
   BadgeCheck,
   CheckCircle2,
   Clock,
-  ExternalLink,
-  Heart,
   Leaf,
   MapPin,
   MessageCircle,
-  Share2,
   Shield,
   Sparkles,
   Star,
 } from "lucide-react";
 
+import { BusinessListingSecondaryActions } from "@/components/business/BusinessListingSecondaryActions";
 import { BusinessHoursDisplay } from "@/components/business/BusinessHoursDisplay";
 import { ServicePhotosModal } from "@/components/Modal/ServicePhotosModal";
 import { BusinessServiceAreaMap } from "@/components/maps/BusinessServiceAreaMap";
 import { ShowPhoneNumberReveal } from "@/components/ShowPhoneNumberReveal";
+import { useRequireAuthNavigate } from "@/features/auth/useRequireAuthNavigate";
 import { Button } from "@/components/ui/button";
 import { env } from "@/config/env";
 import { container } from "@/lib/container";
@@ -112,9 +111,12 @@ interface StateBusinessData {
   coverPhotoUrls?: string[];
   servicesOffered?: string[];
   verified: boolean;
+  memberSince?: string | null;
+  verifiedSince?: string | null;
   isFavorite?: boolean;
   phone?: string | null;
   whatsapp?: string | null;
+  website?: string | null;
 }
 
 function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
@@ -133,9 +135,12 @@ function toPublicBusinessPlaceholder(data: StateBusinessData): PublicBusiness {
     coverPhotoUrls: data.coverPhotoUrls ?? (data.image ? [data.image] : []),
     servicesOffered: data.servicesOffered ?? [],
     verified: data.verified,
+    memberSince: data.memberSince ?? null,
+    verifiedSince: data.verifiedSince ?? null,
     isFavorite: data.isFavorite ?? false,
     phone: data.phone ?? null,
     whatsapp: data.whatsapp ?? null,
+    website: data.website ?? null,
     businessHours: [],
     businessHoursDisplay: [],
   };
@@ -148,6 +153,8 @@ export default function Service() {
   const location = useLocation();
   const { pathname } = location;
   const { slug } = useParams<{ slug: string }>();
+  const { requireAuthNavigate, isAuthReady, isAuthenticated } =
+    useRequireAuthNavigate();
 
   const businessId = slug ? resolveBusinessIdFromSlug(slug) : null;
   const stateData = (location.state as { from?: string; business?: StateBusinessData } | null)
@@ -191,6 +198,10 @@ export default function Service() {
   const latitude = business?.latitude ?? stateData?.latitude ?? null;
   const longitude = business?.longitude ?? stateData?.longitude ?? null;
   const verified = business?.verified ?? stateData?.verified ?? false;
+  const memberSince =
+    business?.memberSince ?? stateData?.memberSince ?? null;
+  const verifiedSince =
+    business?.verifiedSince ?? stateData?.verifiedSince ?? null;
   const contactPhone = resolveBusinessContactPhone(
     business?.whatsapp ?? stateData?.whatsapp,
     business?.phone ?? stateData?.phone,
@@ -278,9 +289,9 @@ export default function Service() {
                     {verified && (
                       <>
                         <span className="text-stat-muted" aria-hidden>•</span>
-                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-success">
+                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand">
                           <BadgeCheck className="size-4 shrink-0" aria-hidden />
-                          Identity Verified
+                          Verified
                         </span>
                       </>
                     )}
@@ -290,10 +301,18 @@ export default function Service() {
                       <MapPin className="mt-0.5 size-6 shrink-0 text-brand-red" aria-hidden />
                       {locationText}
                     </p>
-                    <p className="flex items-start gap-1">
-                      <CheckCircle2 className="mt-0.5 size-6 shrink-0 text-brand-red" aria-hidden />
-                      Gidira member since March 2026
-                    </p>
+                    {memberSince ? (
+                      <p className="flex items-start gap-1">
+                        <CheckCircle2 className="mt-0.5 size-6 shrink-0 text-brand-red" aria-hidden />
+                        Gidira member since {memberSince}
+                      </p>
+                    ) : null}
+                    {verified && verifiedSince ? (
+                      <p className="flex items-start gap-1">
+                        <BadgeCheck className="mt-0.5 size-6 shrink-0 text-brand" aria-hidden />
+                        Verified since {verifiedSince}.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -337,6 +356,18 @@ export default function Service() {
                       <Link
                         to="/messages"
                         state={{ from: pathname }}
+                        onClick={(event) => {
+                          if (!isAuthReady) {
+                            event.preventDefault();
+                            return;
+                          }
+                          if (!isAuthenticated) {
+                            event.preventDefault();
+                            requireAuthNavigate("/messages", {
+                              state: { from: pathname },
+                            });
+                          }
+                        }}
                         className="inline-flex w-full items-center justify-center gap-2"
                       >
                         <MessageCircle className="size-5" aria-hidden />
@@ -385,20 +416,17 @@ export default function Service() {
                       Secure transaction protection
                     </p>
                   </div>
-                  <div className="mt-6 flex items-center justify-between text-xs font-medium uppercase tracking-tight text-stat-muted">
-                    <button type="button" className="inline-flex items-center gap-1 hover:text-ink">
-                      <Heart className="size-4" aria-hidden />
-                      Save
-                    </button>
-                    <button type="button" className="inline-flex items-center gap-1 hover:text-ink">
-                      <ExternalLink className="size-4" aria-hidden />
-                      Website
-                    </button>
-                    <button type="button" className="inline-flex items-center gap-1 hover:text-ink">
-                      <Share2 className="size-4" aria-hidden />
-                      Share listing
-                    </button>
-                  </div>
+                  {businessId !== null ? (
+                    <BusinessListingSecondaryActions
+                      businessId={businessId}
+                      businessName={name}
+                      website={business?.website ?? stateData?.website ?? null}
+                      initialFavorite={
+                        business?.isFavorite ?? stateData?.isFavorite ?? false
+                      }
+                      listingPath={pathname}
+                    />
+                  ) : null}
                 </div>
 
                 {businessFetching && !businessFetched ? (

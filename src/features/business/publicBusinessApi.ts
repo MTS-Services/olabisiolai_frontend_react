@@ -15,6 +15,7 @@ export type PublicBusiness = {
   subcategory?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
+  website?: string | null;
   location: string;
   locationId?: number | null;
   locationName?: string | null;
@@ -29,6 +30,10 @@ export type PublicBusiness = {
   coverPhotoUrls: string[];
   servicesOffered: string[];
   verified: boolean;
+  /** e.g. "March 2026" — from API `member_since`. */
+  memberSince: string | null;
+  /** e.g. "May 2026" — from API `verified_since` when badge is shown. */
+  verifiedSince: string | null;
   /** From API e.g. `is_favorite` on GET /businesses/home when authenticated. */
   isFavorite: boolean;
   businessHours: BusinessHourEntry[];
@@ -100,6 +105,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const phone = phoneRaw || null;
   const whatsappRaw = str(r.whatsapp, '').trim();
   const whatsapp = whatsappRaw || null;
+  const websiteRaw = str(r.website, '').trim();
+  const website = websiteRaw || null;
 
   const locObj = rec(r.location);
   const city = str(locObj?.city ?? r.city, '');
@@ -147,7 +154,12 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
   const isFavorite =
     r.is_favorite === true ||
     r.isFavorite === true ||
-    r.favorited === true
+    r.favorited === true;
+
+  const memberSinceRaw = str(r.member_since ?? r.memberSince, "").trim();
+  const memberSince = memberSinceRaw || null;
+  const verifiedSinceRaw = str(r.verified_since ?? r.verifiedSince, "").trim();
+  const verifiedSince = verifiedSinceRaw || null;
 
   return {
     id,
@@ -157,6 +169,7 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     subcategory,
     phone,
     whatsapp,
+    website,
     location,
     locationId,
     locationName,
@@ -170,6 +183,8 @@ function parseBusiness(raw: unknown, idx: number): PublicBusiness | null {
     coverPhotoUrls,
     servicesOffered,
     verified,
+    memberSince,
+    verifiedSince,
     isFavorite,
     businessHours,
     businessHoursDisplay,

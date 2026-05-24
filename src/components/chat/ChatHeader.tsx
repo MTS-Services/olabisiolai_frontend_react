@@ -6,6 +6,12 @@ import type { Conversation } from '@/types/conversation'
 import { conversationPeerAvatar, getConversationTitle } from '@/utils/messageUtils'
 import { cn } from '@/lib/utils'
 import { messagingUserFromParticipant } from '@/types/conversation'
+import type { UserStatus } from '@/types/user'
+
+function normalizeUserStatus(value: string | undefined): UserStatus {
+  if (value === 'online' || value === 'away') return value
+  return 'offline'
+}
 
 interface ChatHeaderProps {
   conversation: Conversation
@@ -25,7 +31,9 @@ export function ChatHeader({
       : undefined
   const mu = messagingUserFromParticipant(peer)
   const avatarUrl = conversationPeerAvatar(conversation, selfUserId) ?? mu?.avatar ?? null
-  const status = conversation.peer?.presence?.status ?? mu?.status ?? 'offline'
+  const status = normalizeUserStatus(
+    conversation.peer?.presence?.status ?? mu?.status ?? 'offline',
+  )
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-chat-border bg-chat-surface-header px-4 backdrop-blur-sm sm:h-20 sm:px-6 md:px-8">

@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { container } from "@/lib/container";
-import { showError } from "@/lib/sweetAlert";
+import { alert, showError } from "@/lib/sweetAlert";
 import { cn } from "@/lib/utils";
 
 const WHATSAPP_DISPLAY = "+2349047858961";
@@ -105,8 +105,12 @@ export default function Contact() {
         subject: String(data.get("subject") ?? "").trim(),
         message: String(data.get("message") ?? "").trim(),
       });
-      setSubmitted(true);
       form.reset();
+      setSubmitted(true);
+      await alert.success(
+        "We've received your message and will get back to you within 24 hours.",
+        "Message sent",
+      );
     } catch (error) {
       showError(
         getContactSubmitErrorMessage(

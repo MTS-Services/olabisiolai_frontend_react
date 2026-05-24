@@ -3,7 +3,6 @@ import { ArrowLeft, Flag, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   fetchBusinessReportReasons,
   submitBusinessReport,

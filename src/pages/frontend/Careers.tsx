@@ -10,7 +10,29 @@ import {
 } from "lucide-react";
 
 import { container } from "@/lib/container";
+import { alert } from "@/lib/sweetAlert";
 import { cn } from "@/lib/utils";
+
+const HR_EMAIL = "hr@gidira.com";
+
+function applicationMailto(jobTitle: string): string {
+  const subject = `Application: ${jobTitle}`;
+  return `mailto:${HR_EMAIL}?subject=${encodeURIComponent(subject)}`;
+}
+
+async function handleApplyNow(jobTitle: string): Promise<void> {
+  const subject = `Application: ${jobTitle}`;
+  const confirmed = await alert.confirm({
+    title: "Apply for this role",
+    html: `<p class="text-sm">Your email app will open to <strong>${HR_EMAIL}</strong> with the subject line:</p><p class="mt-2 text-sm font-semibold">${subject}</p><p class="mt-3 text-sm text-body-secondary">Attach your CV and a short cover letter, then send the email.</p>`,
+    icon: "info",
+    confirmText: "Open email",
+    cancelText: "Cancel",
+  });
+  if (confirmed) {
+    window.location.href = applicationMailto(jobTitle);
+  }
+}
 
 /** Served from `public/images/careers/` — do not use temporary Figma MCP URLs. */
 const MISSION_IMAGE = "/images/careers/mission-vision.jpg";
@@ -198,34 +220,30 @@ export default function Careers() {
 
           <div className="flex flex-col gap-4">
             {OPEN_ROLES.map((job) => (
-              <a key={job.title} href="/single-application">
-                <div className="#">
-                  {/* rest of your code */}
-                  <div
-                    key={job.title}
-                    className="flex flex-col gap-4 rounded bg-card-ice p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex flex-col gap-2">
-                      <h3 className="text-xl font-bold text-foreground">{job.title}</h3>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="rounded bg-muted px-3 py-1 text-xs font-bold uppercase tracking-wide text-body-secondary">
-                          {job.dept}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-sm text-body-secondary">
-                          <MapPin className="size-3.5 shrink-0" aria-hidden />
-                          {job.location}
-                        </span>
-                      </div>
-                    </div>
-                    <a
-
-                      className="inline-flex shrink-0 items-center justify-center rounded bg-brand-red px-6 py-3 text-sm font-bold text-ice transition-opacity hover:opacity-90"
-                    >
-                      Apply Now
-                    </a>
+              <div
+                key={job.title}
+                className="flex flex-col gap-4 rounded bg-card-ice p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-xl font-bold text-foreground">{job.title}</h3>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="rounded bg-muted px-3 py-1 text-xs font-bold uppercase tracking-wide text-body-secondary">
+                      {job.dept}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-sm text-body-secondary">
+                      <MapPin className="size-3.5 shrink-0" aria-hidden />
+                      {job.location}
+                    </span>
                   </div>
                 </div>
-              </a>
+                <button
+                  type="button"
+                  onClick={() => void handleApplyNow(job.title)}
+                  className="inline-flex shrink-0 items-center justify-center rounded bg-brand-red px-6 py-3 text-sm font-bold text-ice transition-opacity hover:opacity-90"
+                >
+                  Apply Now
+                </button>
+              </div>
             ))}
           </div>
 
@@ -237,12 +255,13 @@ export default function Careers() {
               We&apos;re always looking for talented individuals. If you don&apos;t
               see a position that fits, we&apos;d still love to hear from you.
             </p>
-            <a
-              href="mailto:hr@gidira.com"
+            <button
+              type="button"
+              onClick={() => void handleApplyNow("General inquiry")}
               className="pt-2 text-base font-semibold text-brand-red hover:underline"
             >
               hr@gidira.com
-            </a>
+            </button>
           </div>
         </div>
       </section>

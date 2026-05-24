@@ -43,6 +43,24 @@ export function getMessagePreviewText(message: {
   return 'Message'
 }
 
+export function getConversationPreviewText(conversation: Conversation): string {
+  if (conversation.last_message) {
+    return getMessagePreviewText(conversation.last_message)
+  }
+  const preview = conversation.last_message_preview?.trim()
+  if (preview) return preview
+  if (conversation.unread_count > 0) return 'New message'
+  return 'No messages yet'
+}
+
+export function getConversationPreviewTime(conversation: Conversation): string {
+  return (
+    conversation.last_message?.created_at ??
+    conversation.last_message_at ??
+    conversation.updated_at
+  )
+}
+
 /** Parent snippet from API (no nested parent). */
 export function normalizeMessageParent(
   raw: Record<string, unknown>,
@@ -170,6 +188,8 @@ export function normalizeConversation(raw: Record<string, unknown>): Conversatio
       ? (parts as Conversation['participants'])
       : [],
     last_message,
+    last_message_preview: (raw.last_message_preview as string | null | undefined) ?? null,
+    last_message_at: (raw.last_message_at as string | null | undefined) ?? null,
     unread_count: Number(raw.unread_count ?? 0),
     is_archived: Boolean(raw.is_archived),
     tenant_id: raw.tenant_id as number | null | undefined,

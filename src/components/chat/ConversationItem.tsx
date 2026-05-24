@@ -4,7 +4,7 @@ import { OnlineStatus } from '@/components/chat/OnlineStatus'
 import { Avatar } from '@/components/ui/Avatar'
 import { UnreadCountBadge } from '@/components/chat/UnreadCountBadge'
 import type { Conversation } from '@/types/conversation'
-import { conversationPeerAvatar, getConversationTitle } from '@/utils/messageUtils'
+import { conversationPeerAvatar, getConversationPreviewText, getConversationPreviewTime, getConversationTitle } from '@/utils/messageUtils'
 import { formatRelative } from '@/utils/formatters'
 import { cn } from '@/lib/utils'
 import { messagingUserFromParticipant } from '@/types/conversation'
@@ -33,13 +33,15 @@ export const ConversationItem = React.memo(function ConversationItem({
   const mu = messagingUserFromParticipant(peer)
   const avatarUrl = conversationPeerAvatar(conversation, selfUserId) ?? mu?.avatar ?? null
   const typing = typingUsers.filter((t) => t.is_typing)
+  const previewText = getConversationPreviewText(conversation)
   const preview =
     typing.length > 0
       ? `${typing[0].user_name} is typing…`
-      : (conversation.last_message?.body?.slice(0, 40) ?? 'No messages yet')
+      : previewText.length > 40
+        ? `${previewText.slice(0, 40)}…`
+        : previewText
 
-  const timeSrc =
-    conversation.last_message?.created_at ?? conversation.updated_at
+  const timeSrc = getConversationPreviewTime(conversation)
 
   return (
     <button

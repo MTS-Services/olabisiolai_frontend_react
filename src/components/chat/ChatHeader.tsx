@@ -4,6 +4,7 @@ import { OnlineStatus } from '@/components/chat/OnlineStatus'
 import { Avatar } from '@/components/ui/Avatar'
 import type { Conversation } from '@/types/conversation'
 import { conversationPeerAvatar, getConversationTitle } from '@/utils/messageUtils'
+import { formatRelative } from '@/utils/formatters'
 import { cn } from '@/lib/utils'
 import { messagingUserFromParticipant } from '@/types/conversation'
 import type { UserStatus } from '@/types/user'
@@ -34,6 +35,8 @@ export function ChatHeader({
   const status = normalizeUserStatus(
     conversation.peer?.presence?.status ?? mu?.status ?? 'offline',
   )
+  const lastSeenAt =
+    conversation.peer?.presence?.last_seen_at ?? mu?.last_seen_at ?? null
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-chat-border bg-chat-surface-header px-4 backdrop-blur-sm sm:h-20 sm:px-6 md:px-8">
@@ -70,8 +73,8 @@ export function ChatHeader({
             <span className="text-xs font-semibold text-chat-online-text">
               {status === 'online'
                 ? 'Online'
-                : mu?.last_seen_at
-                  ? `Last seen ${mu.last_seen_at}`
+                : lastSeenAt
+                  ? `Last seen ${formatRelative(lastSeenAt)}`
                   : 'Offline'}
             </span>
           </div>

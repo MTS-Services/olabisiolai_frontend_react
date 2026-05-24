@@ -12,9 +12,8 @@ import {
 import { container } from "@/lib/container";
 import { cn } from "@/lib/utils";
 
-/** Figma export asset — replace with a hosted image in production if needed. */
-const MISSION_IMAGE =
-  "https://www.figma.com/api/mcp/asset/d6c102d9-53c6-4fbd-ad52-218116d5c1de";
+/** Served from `public/images/careers/` — do not use temporary Figma MCP URLs. */
+const MISSION_IMAGE = "/images/careers/mission-vision.jpg";
 
 const PERK_CARDS = [
   {
@@ -203,28 +202,28 @@ export default function Careers() {
                 <div className="#">
                   {/* rest of your code */}
                   <div
-                key={job.title}
-                className="flex flex-col gap-4 rounded bg-card-ice p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-xl font-bold text-foreground">{job.title}</h3>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded bg-muted px-3 py-1 text-xs font-bold uppercase tracking-wide text-body-secondary">
-                      {job.dept}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-sm text-body-secondary">
-                      <MapPin className="size-3.5 shrink-0" aria-hidden />
-                      {job.location}
-                    </span>
+                    key={job.title}
+                    className="flex flex-col gap-4 rounded bg-card-ice p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex flex-col gap-2">
+                      <h3 className="text-xl font-bold text-foreground">{job.title}</h3>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="rounded bg-muted px-3 py-1 text-xs font-bold uppercase tracking-wide text-body-secondary">
+                          {job.dept}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-sm text-body-secondary">
+                          <MapPin className="size-3.5 shrink-0" aria-hidden />
+                          {job.location}
+                        </span>
+                      </div>
+                    </div>
+                    <a
+
+                      className="inline-flex shrink-0 items-center justify-center rounded bg-brand-red px-6 py-3 text-sm font-bold text-ice transition-opacity hover:opacity-90"
+                    >
+                      Apply Now
+                    </a>
                   </div>
-                </div>
-                <a
-                  
-                  className="inline-flex shrink-0 items-center justify-center rounded bg-brand-red px-6 py-3 text-sm font-bold text-ice transition-opacity hover:opacity-90"
-                >
-                  Apply Now
-                </a>
-              </div>
                 </div>
               </a>
             ))}

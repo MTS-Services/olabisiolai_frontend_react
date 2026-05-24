@@ -48,6 +48,9 @@ export interface Conversation {
   peer?: ConversationPeer | null
   participants: ConversationParticipant[]
   last_message: Message | null
+  /** API fallback when last_message object is omitted. */
+  last_message_preview?: string | null
+  last_message_at?: string | null
   unread_count: number
   is_archived: boolean
   tenant_id?: number | null
